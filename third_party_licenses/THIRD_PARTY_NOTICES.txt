@@ -1,0 +1,68 @@
+Sigma – Measurement Uncertainty Toolkit
+Copyright © 2025-2026 Ramon Obdam
+
+This product includes third-party software components. The respective
+licenses and notices are provided below.
+
+------------------------------------------------------------
+Qt Framework
+------------------------------------------------------------
+
+This product dynamically links against the Qt framework.
+
+Qt is © The Qt Company Ltd. and other contributors.
+Qt is licensed under the GNU Lesser General Public License v3 (LGPL v3).
+
+Users may replace the Qt libraries in accordance with the terms of the GNU LGPL v3.
+A copy of the LGPL v3 license is included in this distribution.
+
+Source code for Qt is available from:
+https://www.qt.io
+
+------------------------------------------------------------
+ExprTk – C++ Mathematical Expression Toolkit Library
+------------------------------------------------------------
+
+Copyright © Arash Partow
+
+ExprTk is distributed under a permissive open-source license.
+See the official project page for full license details:
+https://www.partow.net/programming/exprtk/
+
+------------------------------------------------------------
+ALGLIB
+------------------------------------------------------------
+
+ALGLIB is used under the terms of its free edition license.
+
+Copyright © ALGLIB Project
+
+For full license details see:
+https://www.alglib.net
+
+------------------------------------------------------------
+Font Awesome
+------------------------------------------------------------
+
+Font Awesome Free is used in this product.
+
+Font Awesome Free is licensed under:
+- SIL Open Font License 1.1 (for fonts)
+- MIT License (for code)
+- Creative Commons Attribution 4.0 (for icons)
+
+Copyright © Fonticons, Inc.
+
+See:
+https://fontawesome.com
+
+------------------------------------------------------------
+Inter Typeface
+------------------------------------------------------------
+
+The Inter typeface is licensed under the SIL Open Font License 1.1.
+
+Copyright © Rasmus Andersson
+
+See:
+https://rsms.me/inter
