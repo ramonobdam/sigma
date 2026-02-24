@@ -39,14 +39,5 @@
 
 # debug information files
 *.dwo
-resources/.DS_Store
-resources/icons/.DS_Store
-qml/.DS_Store
-resources/third_party/.DS_Store
-resources/third_party/Font Awesome/.DS_Store
-src/.DS_Store
-third_party/.DS_Store
-third_party/Eigen/.DS_Store
-third_party/Eigen/src/.DS_Store
-third_party/Eigen/src/Geometry/.DS_Store
-third_party/exprtk/.DS_Store
+
+*.DS_Store
