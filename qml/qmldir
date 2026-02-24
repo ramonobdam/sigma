@@ -1,0 +1,8 @@
+module SigmaControls
+CheckBox 1.0 CheckBox.qml
+RadioButton 1.0 RadioButton.qml
+ScrollBar 1.0 ScrollBar.qml
+ScrollIndicator 1.0 ScrollIndicator.qml
+TableView 1.0 TableView.qml
+Text 1.0 Text.qml
+TextField 1.0 TextField.qml
