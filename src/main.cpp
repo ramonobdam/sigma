@@ -21,8 +21,8 @@ int main( int argc, char *argv[] ) {
     QGuiApplication app( argc, argv );
     app.setApplicationName( "Sigma - Measurement Uncertainty Toolkit" );
     app.setApplicationVersion( "1.0.0" );
-    app.setOrganizationName( "Future43" );
-    app.setOrganizationDomain( "future43.org" );
+    app.setOrganizationName( "Tiger Suit Interactive" );
+    app.setOrganizationDomain( "TigerSuitInteractive.org" );
     app.setWindowIcon(
         QIcon( "qrc:/qt/qml/Sigma/resources/icons/Icon1024_light.png" )
     );
