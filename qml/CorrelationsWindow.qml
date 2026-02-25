@@ -9,8 +9,6 @@ BaseWindow {
 
     property bool correlationAvailable: correlationsTable.rows > 0
     property TableView tableView
-    property alias editWindowX: editCorrelation.x
-    property alias editWindowY: editCorrelation.y
 
     function close() {
         control.hide()
@@ -41,8 +39,11 @@ BaseWindow {
     windowTitle: "Input parameter correlations"
     width: 500
     height: 420
+    settingsKey: "correlationsWindow"
+    settingsObject: settings
     onVisibleChanged: {
         if ( control.visible ) {
+            control.restorePosition()
             addCorrelationButton.forceActiveFocus()
         }
     }

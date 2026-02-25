@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtCore
 
 // Window with version and license information
 BaseWindow {
@@ -10,9 +11,12 @@ BaseWindow {
     height: container.childrenRect.height +
             container.anchors.margins +
             container.anchors.topMargin
+    settingsKey: "aboutWindow"
+    settingsObject: Settings {}
 
     Item {
         id: container
+
         anchors {
             fill: parent
             margins: properties.spacingM

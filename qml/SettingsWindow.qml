@@ -1,4 +1,5 @@
 import QtQuick
+import QtCore
 import Sigma
 
 // Window with a form to change the persistent settings
@@ -68,9 +69,12 @@ BaseWindow {
     height: container.childrenRect.height +
             container.anchors.margins +
             container.anchors.topMargin
+    settingsKey: "settingsWindow"
+    settingsObject: Settings {}
 
     onVisibleChanged: {
         if ( control.visible ) {
+            control.restorePosition()
             // Make sure all input field have the currently stores values
             appSettings.emitAllSettingsChanged()
             control.storeInitialValues()

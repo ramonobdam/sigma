@@ -1,4 +1,5 @@
 import QtQuick
+import QtCore
 import QtQuick.Controls
 import Sigma
 
@@ -169,8 +170,11 @@ BaseWindow {
     width: 385
     height: container.childrenRect.height + control.verticalWindowMargins
     windowTitle: ( control.edit ? "Edit" : "Add new" ) + " input parameter"
+    settingsKey: "inputParamWindow"
+    settingsObject: Settings {}
     onVisibleChanged: {
         if ( control.visible ) {
+            control.restorePosition()
             control.getParam()
             if ( !control.edit ) {
                 control.name = calculation.getNewInputParameterName()

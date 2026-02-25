@@ -1,4 +1,5 @@
 import QtQuick
+import QtCore
 import QtQuick.Controls
 import Sigma
 
@@ -151,8 +152,11 @@ BaseWindow {
     width: 440
     height: container.childrenRect.height + verticalWindowMargins
     windowTitle: ( control.edit ? "Edit" : "Add new" ) + " correlation"
+    settingsKey: "correlationEditWindow"
+    settingsObject: Settings {}
     onVisibleChanged: {
         if ( control.visible ) {
+            control.restorePosition()
             control.getCorrelation()
             control.setActiveFocus()
             control.showValid()

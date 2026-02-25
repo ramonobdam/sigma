@@ -194,23 +194,11 @@ ApplicationWindow {
         // Store persistent settings
         id: settings
 
-        // Window positions and dimensions:
+        // Main window position and dimensions:
         property alias x: window.x
         property alias y: window.y
         property alias width: window.width
         property alias height: window.height
-        property alias settingsX: settingsWindow.x
-        property alias settingsY: settingsWindow.y
-        property alias inputParamWindowX: inputParamWindow.x
-        property alias inputParamWindowY: inputParamWindow.y
-        property alias outputParamWindowX: outputParamWindow.x
-        property alias outputParamWindowY: outputParamWindow.y
-        property alias correlationsWindowX: correlationsWindow.x
-        property alias correlationsWindowY: correlationsWindow.y
-        property alias editCorrelationX: correlationsWindow.editWindowX
-        property alias editCorrelationY: correlationsWindow.editWindowY
-        property alias aboutWindowX: aboutWindow.x
-        property alias aboutWindowY: aboutWindow.y
 
         // Selected files:
         property alias projectFile: fileDialog.selectedFile
