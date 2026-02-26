@@ -145,6 +145,8 @@ qt_add_qml_module( Sigma
         src/uncertaintycomponent.h
         src/utils.cpp
         src/utils.h
+        src/windowscaptionhelper.cpp
+        src/windowscaptionhelper.h
     RESOURCES
         "resources/third_party/Font Awesome/Font Awesome 7 Free-Regular-400.otf"
         "resources/third_party/Font Awesome/Font Awesome 7 Free-Solid-900.otf"
