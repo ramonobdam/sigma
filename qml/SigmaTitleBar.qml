@@ -147,8 +147,8 @@ Rectangle {
     DragHandler {
         target: null
         onActiveChanged: {
-            if ( active && window ) {
-                window.startSystemMove()
+            if ( active && titleBar.Window.window ) {
+                titleBar.Window.window.startSystemMove()
             }
         }
     }
