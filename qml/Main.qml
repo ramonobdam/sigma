@@ -481,6 +481,7 @@ ApplicationWindow {
 
         title: properties.windowTitle
         titleBarHeight: window.titleBarHeight
+        color: window.color
     }
 
     SigmaSplitView {
