@@ -12,7 +12,9 @@ Window {
     property alias iconText: icon.text
     property alias iconColor: icon.color
     property alias headerText: header.text
+    property alias headerMaximumLineCount: header.maximumLineCount
     property alias subText: text.text
+    property alias subTextMaximumLineCount: text.maximumLineCount
     property alias primaryButton: primaryButton
     property alias secondaryButton: secondaryButton
     property alias tertiaryButton: tertiaryButton
@@ -139,6 +141,7 @@ Window {
                 font.bold: true
                 wrapMode: Text.Wrap
                 horizontalAlignment: Text.AlignHCenter
+                maximumLineCount: 10
             }
 
             Spacer {
@@ -152,6 +155,7 @@ Window {
                 color: properties.colorTextWeak
                 wrapMode: Text.Wrap
                 horizontalAlignment: Text.AlignHCenter
+                maximumLineCount: 10
             }
 
             Spacer {
