@@ -54,33 +54,27 @@ Button {
         }
     }
 
+    MouseArea {
+        // A MouseArea is used so the 'click' on the button can be accepted
+        // and the 'press' of the click doesn't trigger
+        // 'CloseOnReleaseOutsideParent' on the popup. Otherwise the popup
+        // will close on 'release' on the button.
+        anchors.fill: parent
+
+        onClicked: ( event ) => {
+            event.accepted = true
+            button.clicked()
+        }
+    }
+
     SigmaProperties {
         id: properties
     }
 
-    ToolTip {
+    SigmaToolTip {
         id: control
-        delay: properties.toolTipDelay
-        timeout: properties.toolTipTimeout
+
         visible: button.hovered && button.toolTipText.length > 0
-        padding: properties.spacingXS
-
-        contentItem: SigmaText {
-            text: button.enabled ? button.toolTipText :
-                                   button.toolTipTextDisabled
-            color: properties.colorTextStrong
-            textFormat: Text.StyledText
-        }
-
-        background: Rectangle {
-            color: properties.colorFill
-            border.color: properties.colorStrokeWeak
-            radius: properties.radiusS
-            layer.enabled: true
-            layer.effect: RoundedElevationEffect {
-                elevation: properties.elevationElevated
-                roundedScale: Material.ExtraSmallScale
-            }
-        }
+        text: button.enabled ? button.toolTipText : button.toolTipTextDisabled
     }
 }

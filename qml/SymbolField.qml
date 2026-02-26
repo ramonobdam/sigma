@@ -7,7 +7,7 @@ FocusScope {
     id: control
 
     property string symbols: "αβγδεζηθιξλμνξπρστυφχψωΓΔΘΛΞΠΣΦΨΩ"
-    property var field
+    property Item field
     property var buttonList
     property int rows: Math.ceil( buttonList.count / columns )
     property int columns: 11
@@ -48,8 +48,7 @@ FocusScope {
     buttonList: ListModel {
         Component.onCompleted: {
             for ( let i = 0; i < symbols.length; ++i ) {
-                append( { "buttonText": symbols[ i ],
-                          "symbol": symbols[ i ],} )
+                append( { "buttonText": symbols[ i ], "symbol": symbols[ i ] } )
             }
         }
     }
@@ -58,13 +57,31 @@ FocusScope {
         id: fieldButton
 
         focus: false
-        onToggled: popup.visible = !popup.visible
-        open: popup.visible
+        checked: popup.opened
+
+        MouseArea {
+            // A MouseArea is used so the 'click' on the button can be accepted
+            // and the 'press' of the click doesn't trigger
+            // 'CloseOnReleaseOutsideParent' on the popup. Otherwise the popup
+            // will open again on 'release' on the button.
+            anchors.fill: parent
+
+            onClicked: ( event ) => {
+                event.accepted = true
+                if ( popup.opened ) {
+                    popup.close()
+                }
+                else {
+                    popup.open()
+                }
+            }
+        }
     }
 
     Popup {
         id: popup
 
+        onOpened: control.field.forceActiveFocus()
         x: 0
         y: parent.height
         padding: bg.border.width
@@ -75,9 +92,7 @@ FocusScope {
                 flowContainer.spacing +
                 padding * 2
         popupType: Popup.Item
-        closePolicy: Popup.CloseOnPressOutsideParent
-
-        onVisibleChanged: visible ? field.forceActiveFocus() : {}
+        closePolicy: Popup.CloseOnReleaseOutsideParent
 
         background: Rectangle {
             id: bg
@@ -98,12 +113,12 @@ FocusScope {
             spacing: padding
 
             Instantiator {
-                model: buttonList
+                model: control.buttonList
                 onObjectAdded: (index, object) => object.parent = flowContainer
 
                 delegate: SymbolButton {
                     text: buttonText
-                    onClicked: insertAtCursor( symbol )
+                    onClicked: control.insertAtCursor( symbol )
                 }
             }
         }

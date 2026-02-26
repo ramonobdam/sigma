@@ -10,7 +10,6 @@ Button {
     property string backgroundColor: properties.colorElevated
     property string buttonIcon: properties.symbolIcon
     property var control
-    property bool open: checked
 
     height: properties.buttonHeight
     width: height
@@ -19,10 +18,10 @@ Button {
     bottomInset: 0
     hoverEnabled: true
     checkable: true
-    text: open ? properties.crossIcon : button.buttonIcon
-    font.family: open ? fonts.fontAwesome.font.family :
+    text: checked ? properties.crossIcon : button.buttonIcon
+    font.family: checked ? fonts.fontAwesome.font.family :
                         fonts.interSemiBold.font.family
-    font.pixelSize: open ? properties.fontSizeComboBoxIcon :
+    font.pixelSize: checked ? properties.fontSizeComboBoxIcon :
                            properties.fontSizeFieldButtonIcon
     font.bold: true
 
