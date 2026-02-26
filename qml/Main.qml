@@ -221,7 +221,7 @@ ApplicationWindow {
             calculation.getCorrelationColumnWidths()
     }
 
-    MenuBar {
+    menuBar: MenuBar {
         Menu {
             title: Application.name
 

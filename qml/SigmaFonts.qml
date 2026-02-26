@@ -26,4 +26,11 @@ Item {
         source:
             "qrc:/qt/qml/Sigma/resources/third_party/Font Awesome/Font Awesome 7 Free-Solid-900.otf"
     }
+
+    FontLoader {
+        id: fontAwesomeRegular
+
+        source:
+            "qrc:/qt/qml/Sigma/resources/third_party/Font Awesome/Font Awesome 7 Free-Regular-400.otf"
+    }
 }

@@ -17,6 +17,7 @@ Window {
     property int bottomLabelSpacing: properties.spacingXS
     property int interLabelSpacing: properties.spacingS
     property int interFieldSpacing: properties.spacingM
+    property alias titleBar: titleBar
     readonly property list<int> position: [ control.x, control.y ]
 
     function findScreenForPosition( position ) {
@@ -120,12 +121,10 @@ Window {
     minimumWidth: width
     minimumHeight: height
     modality: Qt.ApplicationModal
-    flags: properties.macOS ? (
-                                  Qt.NoTitleBarBackgroundHint |
-                                  Qt.ExpandedClientAreaHint |
-                                  Qt.Dialog
-                              ) :
-                              Qt.Dialog
+    flags: Qt.NoTitleBarBackgroundHint |
+           Qt.ExpandedClientAreaHint |
+           Qt.Dialog |
+           ( !properties.macOS ?  Qt.CustomizeWindowHint : Qt.WindowNoState )
 
     title: properties.macOS ? "" : windowTitle
     color: properties.colorElevated
@@ -135,8 +134,10 @@ Window {
     }
 
     SigmaTitleBar {
+        id: titleBar
         title: control.windowTitle
         titleBarHeight:
-            Math.min( SafeArea.margins.top, properties.minimumTitleBarHeight)
+            Math.max( SafeArea.margins.top, properties.minimumTitleBarHeight)
+    showMaximizeButton: false
     }
 }

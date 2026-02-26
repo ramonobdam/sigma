@@ -8,9 +8,7 @@ BaseWindow {
 
     windowTitle: "About " + Application.name
     width: 460
-    height: container.childrenRect.height +
-            container.anchors.margins +
-            container.anchors.topMargin
+    height: 610
     settingsKey: "aboutWindow"
     settingsObject: Settings {}
 
@@ -18,9 +16,11 @@ BaseWindow {
         id: container
 
         anchors {
-            fill: parent
+            left: parent.left
+            right: parent.right
+            top: titleBar.bottom
+            bottom: parent.bottom
             margins: properties.spacingM
-            topMargin: properties.spacingM + control.titleBarHeightWindow
         }
 
         focus: true
@@ -30,6 +30,7 @@ BaseWindow {
         Image {
             id: icon
 
+            y: -properties.spacingS
             anchors.horizontalCenter: parent.horizontalCenter
 
             source: properties.appIcon

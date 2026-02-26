@@ -123,6 +123,7 @@ QtObject {
     property string colorGrey1000: lightTheme ? colorGrey1000_Light :
                                                 colorGrey1000_Dark
     property string colorTransparent: "transparent"
+    property string colorClose: "#E81123"
     property var colorScale: lightTheme ? colorScale_Light : colorScale_Dark
 
     // Spacing options
@@ -169,6 +170,8 @@ QtObject {
     property int minimumTitleBarHeight: 28
     property int defaultTableWidth: 100
     property int appIconWidth: 128
+    property int titeBarButtonWidth: 40
+    property int titleBarIconWidth: 10
 
     // Time constants
     property int animationDuration: 100
@@ -187,11 +190,11 @@ QtObject {
     property int fontSizeValidIcon: 11
     property int fontSizeDialogIcon: 50
     property int fontSizeCheckBoxIcon: 13
-    property int fontSizeWindowIcon: 22
     property int fontSizeStepperIcon: 13
     property int fontSizeComboBoxIcon: 12
     property int fontSizeUnacceptableInputIcon: 9
     property int fontSizeFieldButtonIcon: 15
+    property int fontSizeTitleBarCloseIcon: 18
     property real headingLetterSpacing: -0.6
 
     // FontAwesome icons (unicode)
@@ -206,6 +209,7 @@ QtObject {
     property string crossIcon: "\uf00d"
     property string calculatorIcon: "\uf1ec"
     property string symbolIcon: "α"
+    property string titleBarCloseIcon: "🞨"
 
     // Default SplitView dimensions
     property int minWidthInputParam: 450

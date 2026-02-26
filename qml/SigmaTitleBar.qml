@@ -6,6 +6,9 @@ import QtQuick.Controls.Material
 Rectangle {
     id: titleBar
     
+    property bool showCloseButton: true
+    property bool showMaximizeButton: true
+    property bool showMinimizeButton: true
     property int titleBarHeight: properties.minimumTitleBarHeight
     property string title: ""
     
@@ -14,9 +17,9 @@ Rectangle {
         right: parent.right
         top: parent.top
     }
-    height: properties.macOS ? titleBarHeight : 0
-    visible: properties.macOS
-    color: properties.colorTransparent
+    height: titleBarHeight
+
+    color: properties.colorElevated
 
     SigmaProperties {
         id: properties
@@ -25,42 +28,128 @@ Rectangle {
     SigmaFonts {
         id: fonts
     }
+
+    TitleBarButton {
+        id: minimizeButton
+
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            right: maximizeButton.left
+        }
+
+        visible: !properties.macOS && titleBar.showMinimizeButton
+        hoverColor: properties.colorTextHover
+        onClicked: { Window.window.showMinimized() }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: properties.titleBarIconWidth
+            height: properties.borderWidth
+
+            color: properties.colorTextStrong
+        }
+    }
+
+    TitleBarButton {
+        id: maximizeButton
+
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            right: closeButton.left
+        }
+
+        property int offset: checked ? properties.borderWidth : 0
+
+        visible: !properties.macOS && titleBar.showMaximizeButton
+        checkable: true
+        checked: Window.window.visibility === Window.Maximized
+        hoverColor: properties.colorTextHover
+        onToggled: {
+            if ( Window.window.visibility === Window.Maximized ) {
+                Window.window.showNormal()
+            }
+            else {
+                Window.window.showMaximized()
+            }
+        }
+
+        RoundedRectangle {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: -maximizeButton.offset
+            anchors.horizontalCenterOffset: maximizeButton.offset
+            width: properties.titleBarIconWidth
+            height: width
+
+            cornerSide: RoundedRectangle.Direction.All
+            color: properties.colorTransparent
+            border.width: properties.borderWidth
+            border.color: properties.colorTextStrong
+            radius: properties.radiusXS
+        }
+
+        RoundedRectangle {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: maximizeButton.offset
+            anchors.horizontalCenterOffset: -maximizeButton.offset
+            width: properties.titleBarIconWidth
+            height: width
+
+            cornerSide: RoundedRectangle.Direction.All
+            color: parent.hovered ? parent.hoverColor : titleBar.color
+            border.width: properties.borderWidth
+            border.color: properties.colorTextStrong
+            radius: properties.radiusXS
+        }
+    }
+
+    TitleBarButton {
+        id: closeButton
+
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            right: parent.right
+        }
+
+        visible: !properties.macOS && titleBar.showCloseButton
+        text: properties.titleBarCloseIcon
+        hoverColor: properties.colorClose
+        font.pixelSize: properties.fontSizeTitleBarCloseIcon
+        onClicked: { Window.window.close() }
+    }
     
     SigmaText {
         anchors {
             left: parent.left
-            leftMargin: properties.titleBarTextLeftMargin
-            right: parent.right
+            leftMargin: properties.macOS ? properties.titleBarTextLeftMargin :
+                                           properties.spacingS
+            right: minimizeButton.left
             rightMargin: anchors.leftMargin
             top: parent.top
             bottom: parent.bottom
         }
         
         text: titleBar.title
+        color: properties.macOS ? properties.colorTextWeak :
+                                  properties.colorTextStrong
         font.family: fonts.interSemiBold.font.family
         font.pixelSize: properties.fontSizeTitleBar
-        font.bold: true
+        font.bold: properties.macOS
         clip: true
         elide: Text.ElideRight
-        horizontalAlignment: Text.AlignHCenter
+        horizontalAlignment: properties.macOS ? Text.AlignHCenter :
+                                                Text.AlignLeft
         verticalAlignment: Text.AlignVCenter
     }
     
-    MouseArea {
-        property var clickPos
-        
-        anchors.fill: parent
-        
-        // Move the window when the title bar is dragged.
-        onPressed: ( mouse ) => {
-                       clickPos  = Qt.point( mouse.x, mouse.y )
-                   }
-        onPositionChanged: ( mouse ) => {
-                               var delta = Qt.point( mouse.x - clickPos.x,
-                                                    mouse.y - clickPos.y
-                                                    )
-                               Window.window.x += delta.x
-                               Window.window.y += delta.y
-                           }
+    DragHandler {
+        target: null
+        onActiveChanged: {
+            if ( active && window ) {
+                window.startSystemMove()
+            }
+        }
     }
 }

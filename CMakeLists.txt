@@ -107,6 +107,7 @@ qt_add_qml_module( Sigma
         qml/Table.qml
         qml/TableContextMenu.qml
         qml/TableDelegate.qml
+        qml/TitleBarButton.qml
     SOURCES
         src/applicationsettings.cpp
         src/applicationsettings.h
@@ -145,6 +146,7 @@ qt_add_qml_module( Sigma
         src/utils.cpp
         src/utils.h
     RESOURCES
+        "resources/third_party/Font Awesome/Font Awesome 7 Free-Regular-400.otf"
         "resources/third_party/Font Awesome/Font Awesome 7 Free-Solid-900.otf"
         resources/icons/Icon1024_dark.png
         resources/icons/Icon1024_light.png
