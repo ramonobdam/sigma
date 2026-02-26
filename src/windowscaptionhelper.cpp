@@ -13,7 +13,7 @@ WindowsCaptionHelper* WindowsCaptionHelper::instance = nullptr;
 
 WindowsCaptionHelper::WindowsCaptionHelper( QObject *parent )
     :   QObject { parent },
-        mCaptionHeight { 28 },
+        mCaptionHeight {},
         mWindow {}
 {
 #ifdef Q_OS_WINDOWS
