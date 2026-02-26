@@ -23,12 +23,14 @@ FileDialog {
             }
             else if ( !success ) {
                 projectFailed.save = true
+                projectFailed.fileURL = selectedFile
                 projectFailed.show()
             }
         }
         else {
             if ( !calculation.loadProject( selectedFile ) ) {
                 projectFailed.save = false
+                projectFailed.fileURL = selectedFile
                 projectFailed.show()
             }
         }

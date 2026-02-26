@@ -279,9 +279,9 @@ bool UncertaintyCalculation::inputParameterIsConstant(
 
 
 bool UncertaintyCalculation::loadProject( const QUrl &url ) {
-    QString path { url.path() };
+    QString path { url.toLocalFile() };
     QFile loadFile( path );
-    if ( !url.isValid() || !loadFile.open( QIODevice::ReadOnly ) ) {
+    if ( !url.isLocalFile() || !loadFile.open( QIODevice::ReadOnly ) ) {
         qDebug() << QString( mLoadFailedString ).arg( path );
         resetProjectFilePath();
         return false;
