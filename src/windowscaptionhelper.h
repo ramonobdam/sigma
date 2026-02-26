@@ -51,6 +51,7 @@ private:
     );
     static WindowsCaptionHelper *instance;
     HWND mHwnd = nullptr;
+    WNDPROC mOriginalWindowProc = nullptr;
 #endif
 
     QWindow *mWindow;

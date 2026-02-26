@@ -2,6 +2,9 @@
 
 #include <QGuiApplication>
 
+#ifdef Q_OS_WINDOWS
+#include <windowsx.h>
+#endif
 
 #ifdef Q_OS_WINDOWS
 WindowsCaptionHelper* WindowsCaptionHelper::instance = nullptr;
@@ -36,13 +39,20 @@ void WindowsCaptionHelper::setCaptionHeight( const int &height ) {
 
 void WindowsCaptionHelper::attachTo( QWindow *window ) {
 #ifdef Q_OS_WINDOWS
+    if ( !window ) {
+        return;
+    }
+
     mWindow = window;
     mHwnd = reinterpret_cast<HWND>( window->winId() );
 
-    SetWindowLongPtr(
-        mHwnd,
-        GWLP_WNDPROC,
-        reinterpret_cast<LONG_PTR>(WndProc)
+    // Store original window procedure
+    mOriginalWindowProc = reinterpret_cast<WNDPROC> (
+        SetWindowLongPtr(
+            mHwnd,
+            GWLP_WNDPROC,
+            reinterpret_cast<LONG_PTR>( WndProc )
+        )
     );
 #endif
 }
@@ -53,7 +63,7 @@ LRESULT CALLBACK WindowsCaptionHelper::WndProc(
     HWND hwnd,
     UINT msg,
     WPARAM wParam,
-    LPARAM lParaz
+    LPARAM lParam
 ) {
     if ( msg == WM_NCHITTEST && instance ) {
         POINT pt;
@@ -67,6 +77,18 @@ LRESULT CALLBACK WindowsCaptionHelper::WndProc(
         }
     }
 
+    // Call original WindowProc safely
+    if ( instance && instance->mOriginalWindowProc ) {
+        return CallWindowProc(
+            instance->mOriginalWindowProc,
+            hwnd,
+            msg,
+            wParam,
+            lParam
+        );
+    }
+
+    // Fallback
     return DefWindowProc( hwnd, msg, wParam, lParam );
 }
 #endif
