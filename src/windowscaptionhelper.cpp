@@ -62,7 +62,7 @@ LRESULT CALLBACK WindowsCaptionHelper::WndProc(
 
         ScreenToClient( hwnd, &pt );
 
-        if ( pt.y < instance->mCaptionHeight ) }
+        if ( pt.y < instance->mCaptionHeight ) {
             return HTCAPTION;
         }
     }
