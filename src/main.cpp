@@ -4,6 +4,7 @@
 
 #include "applicationsettings.h"
 #include "uncertaintycalculation.h"
+#include "windowscaptionhelper.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -12,6 +13,7 @@
 #include <QObject>
 #include <QList>
 #include <QUrl>
+#include <QWindow>
 
 int main( int argc, char *argv[] ) {
     // The locale is set to US to have the number format (decimal . and thousand
@@ -37,6 +39,7 @@ int main( int argc, char *argv[] ) {
 
     ApplicationSettings *appSettings { new ApplicationSettings( &app ) };
     UncertaintyCalculation *calculation { new UncertaintyCalculation( &app ) };
+    WindowsCaptionHelper *captionHelper {new WindowsCaptionHelper( &app ) };
 
     // Load a project based on the command-line argument or restore the last
     // project
@@ -52,6 +55,7 @@ int main( int argc, char *argv[] ) {
     QQmlContext *rootContext { engine.rootContext() };
     rootContext->setContextProperty( "calculation", calculation );
     rootContext->setContextProperty( "appSettings", appSettings );
+    rootContext->setContextProperty( "captionHelper", captionHelper );
 
     // QObject ownership should remain with C++
     QList<const QObject *> objects {
@@ -70,6 +74,9 @@ int main( int argc, char *argv[] ) {
     }
 
     engine.loadFromModule( "Sigma", "Main" );
+
+    QWindow* window = qobject_cast<QWindow*> ( engine.rootObjects().constFirst() );
+    captionHelper->attachTo( window );
 
     return app.exec();
 }

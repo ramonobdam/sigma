@@ -101,6 +101,10 @@ Window {
         }
     }
 
+    Component.onCompleted: {
+            captionHelper.captionHeight = titleBarHeightWindow
+    }
+
     Component.onDestruction: {
         // Store window position in persistent settings
         if (
