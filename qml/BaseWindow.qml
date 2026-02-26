@@ -103,7 +103,7 @@ Window {
     }
 
     Component.onCompleted: {
-        //captionHelper.captionHeight = titleBarHeightWindow
+        captionHelper.captionHeight = titleBarHeightWindow
     }
 
     Component.onDestruction: {
