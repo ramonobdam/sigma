@@ -20,9 +20,9 @@ Button {
     checkable: true
     text: checked ? properties.crossIcon : button.buttonIcon
     font.family: checked ? fonts.fontAwesome.font.family :
-                        fonts.interSemiBold.font.family
+                           fonts.interSemiBold.font.family
     font.pixelSize: checked ? properties.fontSizeComboBoxIcon :
-                           properties.fontSizeFieldButtonIcon
+                              properties.fontSizeFieldButtonIcon
     font.bold: true
 
     contentItem: Text {
