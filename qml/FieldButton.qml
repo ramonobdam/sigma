@@ -31,7 +31,7 @@ Button {
         anchors.fill: parent
 
         text: button.text
-        font: parent.font
+        font: button.font
         color: bg.border.color
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
