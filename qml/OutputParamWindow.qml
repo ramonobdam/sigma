@@ -14,8 +14,6 @@ BaseWindow {
                                        confidenceField.acceptableInput
     property string nominal
     property string error
-    property int verticalWindowMargins: container.anchors.margins +
-                                        container.anchors.topMargin
     property TableView tableView
     property alias name: nameField.text
     property alias unit: unitCombo.editText
@@ -161,13 +159,14 @@ BaseWindow {
     }
 
     width: 528
-    height: container.childrenRect.height + control.verticalWindowMargins
+    height: container.childrenRect.height +
+            titleBar.height +
+            container.anchors.margins * 2
     windowTitle: ( control.edit ? "Edit" : "Add new" ) + " output parameter"
     settingsKey: "outputParamWindow"
     settingsObject: Settings {}
     onVisibleChanged: {
         if ( control.visible ) {
-            control.restorePosition()
             control.getParam()
             if ( !control.edit ) {
                 control.name = calculation.getNewOutputParameterName()
@@ -188,9 +187,11 @@ BaseWindow {
         id: container
 
         anchors {
-            fill: parent
+            left: parent.left
+            right: parent.right
+            top: titleBar.bottom
+            bottom: parent.bottom
             margins: properties.spacingM
-            topMargin: properties.spacingM + control.titleBarHeightWindow
         }
 
         focus: true

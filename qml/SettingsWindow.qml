@@ -67,14 +67,13 @@ BaseWindow {
     windowTitle: "Settings"
     width: 380
     height: container.childrenRect.height +
-            container.anchors.margins +
-            container.anchors.topMargin
+            titleBar.height +
+            container.anchors.margins * 2
     settingsKey: "settingsWindow"
     settingsObject: Settings {}
 
     onVisibleChanged: {
         if ( control.visible ) {
-            control.restorePosition()
             // Make sure all input field have the currently stores values
             appSettings.emitAllSettingsChanged()
             control.storeInitialValues()
@@ -86,10 +85,11 @@ BaseWindow {
     Item {
         id: container
         anchors {
-            fill: parent
-            margins: properties.spacingM
-            topMargin: properties.spacingM + control.titleBarHeightWindow
-        }
+            left: parent.left
+            right: parent.right
+            top: titleBar.bottom
+            bottom: parent.bottom
+            margins: properties.spacingM        }
 
         focus: true
         Keys.onEscapePressed: { control.cancel() }

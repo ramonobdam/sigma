@@ -4,21 +4,31 @@ import QtQuick.Controls.Material
 
 // A custom titlebar is used on macOS that visually integrates with the window
 Rectangle {
-    id: titleBar
+    id: control
     
     property bool showCloseButton: true
     property bool showMaximizeButton: true
     property bool showMinimizeButton: true
     property int titleBarHeight: properties.minimumTitleBarHeight
+    property int titleBarLeftMargin: properties.macOS ?
+                                         properties.titleBarTextLeftMargin :
+                                         properties.spacingXS
+    property int titleBarRightMargin: properties.macOS ?
+                                         properties.titleBarTextLeftMargin :
+                                         properties.spacingM
     property string title: ""
+    property int titleAlignment: properties.macOS ? Text.AlignHCenter :
+                                                    Text.AlignLeft
+    property alias icon: icon
     
     anchors {
         left: parent.left
         right: parent.right
         top: parent.top
     }
-    height: titleBarHeight
+    height: visible ? titleBarHeight : 0
 
+    visible: properties.macOS || properties.windows
     color: properties.colorElevated
 
     SigmaProperties {
@@ -38,13 +48,13 @@ Rectangle {
             right: maximizeButton.left
         }
 
-        visible: !properties.macOS && titleBar.showMinimizeButton
+        visible: properties.windows && control.showMinimizeButton
         hoverColor: properties.colorTextHover
         onClicked: { Window.window.showMinimized() }
 
         Rectangle {
             anchors.centerIn: parent
-            width: properties.titleBarIconWidth
+            width: properties.titleBarButtonIconWidth
             height: properties.borderWidth
 
             color: properties.colorTextStrong
@@ -62,42 +72,33 @@ Rectangle {
 
         property int offset: checked ? properties.borderWidth : 0
 
-        visible: !properties.macOS && titleBar.showMaximizeButton
+        visible: properties.windows && control.showMaximizeButton
         checkable: true
         checked: Window.window.visibility === Window.Maximized
         hoverColor: properties.colorTextHover
-        onToggled: {
-            if ( Window.window.visibility === Window.Maximized ) {
-                Window.window.showNormal()
-            }
-            else {
-                Window.window.showMaximized()
-            }
-        }
+        onClicked: { captionHelper.toggleMaximize( Window.window ) }
 
-        RoundedRectangle {
+        Rectangle {
             anchors.centerIn: parent
             anchors.verticalCenterOffset: -maximizeButton.offset
             anchors.horizontalCenterOffset: maximizeButton.offset
-            width: properties.titleBarIconWidth
+            width: properties.titleBarButtonIconWidth
             height: width
 
-            cornerSide: RoundedRectangle.Direction.All
             color: properties.colorTransparent
             border.width: properties.borderWidth
             border.color: properties.colorTextStrong
             radius: properties.radiusXS
         }
 
-        RoundedRectangle {
+        Rectangle {
             anchors.centerIn: parent
             anchors.verticalCenterOffset: maximizeButton.offset
             anchors.horizontalCenterOffset: -maximizeButton.offset
-            width: properties.titleBarIconWidth
+            width: properties.titleBarButtonIconWidth
             height: width
 
-            cornerSide: RoundedRectangle.Direction.All
-            color: parent.hovered ? parent.hoverColor : titleBar.color
+            color: parent.hovered ? parent.hoverColor : control.color
             border.width: properties.borderWidth
             border.color: properties.colorTextStrong
             radius: properties.radiusXS
@@ -113,42 +114,61 @@ Rectangle {
             right: parent.right
         }
 
-        visible: !properties.macOS && titleBar.showCloseButton
+        visible: properties.windows && control.showCloseButton
         text: properties.titleBarCloseIcon
         hoverColor: properties.colorClose
         font.pixelSize: properties.fontSizeTitleBarCloseIcon
         onClicked: { Window.window.close() }
     }
-    
-    SigmaText {
+
+    Image {
+        id: icon
+
         anchors {
             left: parent.left
-            leftMargin: properties.macOS ? properties.titleBarTextLeftMargin :
-                                           properties.spacingS
+            leftMargin: properties.spacingXS
+            verticalCenter: parent.verticalCenter
+        }
+
+        visible: properties.windows
+        source: properties.appIcon
+        width: visible ? properties.titleBarIconWidth : 0
+        height: width
+        fillMode: Image.PreserveAspectFit
+        mipmap: true
+    }
+    
+    SigmaText {
+        id: title
+
+        anchors {
+            left: icon.right
+            leftMargin: control.titleBarLeftMargin
             right: minimizeButton.left
-            rightMargin: anchors.leftMargin
+            rightMargin: control.titleBarRightMargin
             top: parent.top
             bottom: parent.bottom
         }
         
-        text: titleBar.title
+        text: control.title
         color: properties.macOS ? properties.colorTextWeak :
                                   properties.colorTextStrong
-        font.family: fonts.interSemiBold.font.family
+        font.family: properties.macOS ? fonts.interSemiBold.font.family :
+                                        fonts.inter.font.family
         font.pixelSize: properties.fontSizeTitleBar
         font.bold: properties.macOS
         clip: true
         elide: Text.ElideRight
-        horizontalAlignment: properties.macOS ? Text.AlignHCenter :
-                                                Text.AlignLeft
+        horizontalAlignment: control.titleAlignment
         verticalAlignment: Text.AlignVCenter
     }
-    
+
     DragHandler {
+        enabled: properties.windows
         target: null
         onActiveChanged: {
-            if ( active && titleBar.Window.window ) {
-                titleBar.Window.window.startSystemMove()
+            if ( active && control.Window.window ) {
+                control.Window.window.startSystemMove()
             }
         }
     }

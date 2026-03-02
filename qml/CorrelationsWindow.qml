@@ -43,7 +43,6 @@ BaseWindow {
     settingsObject: settings
     onVisibleChanged: {
         if ( control.visible ) {
-            control.restorePosition()
             addCorrelationButton.forceActiveFocus()
         }
     }
@@ -77,10 +76,11 @@ BaseWindow {
         id: container
 
         anchors {
-            fill: parent
+            left: parent.left
+            right: parent.right
+            top: titleBar.bottom
+            bottom: parent.bottom
             margins: properties.spacingM
-            topMargin:
-                properties.spacingM + control.titleBarHeightWindow
         }
 
         focus: true

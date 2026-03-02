@@ -12,7 +12,7 @@ Window {
     property var settingsObject: null
     property bool persistentPosition: true
     property int titleBarHeightWindow:
-        Math.min( SafeArea.margins.top, properties.minimumTitleBarHeight )
+        Math.max( SafeArea.margins.top, properties.minimumTitleBarHeight )
     property int topLabelSpacing: properties.spacingL
     property int bottomLabelSpacing: properties.spacingXS
     property int interLabelSpacing: properties.spacingS
@@ -83,7 +83,7 @@ Window {
             control.position
         )
 
-        Qt.callLater( function() {
+        //Qt.callLater( function() {
             let screen = control.findScreenForPosition( storedPostion )
 
             if ( screen ) {
@@ -93,20 +93,10 @@ Window {
             else {
                 control.centerOnPrimaryScreen()
             }
-        } )
+       // } )
     }
 
-    onVisibleChanged: {
-        if ( control.visible ) {
-            control.restorePosition()
-        }
-    }
-
-    Component.onCompleted: {
-        captionHelper.captionHeight = titleBarHeightWindow
-    }
-
-    Component.onDestruction: {
+    function storePosition() {
         // Store window position in persistent settings
         if (
             !control.persistentPosition ||
@@ -118,6 +108,21 @@ Window {
         control.settingsObject.setValue( control.settingsKey, control.position )
     }
 
+    Component.onCompleted: {
+        captionHelper.captionHeight = control.titleBarHeightWindow
+    }
+
+    onVisibleChanged: {
+        if ( control.visible ) {
+            // Create native framesless window on Windows
+            captionHelper.attachTo( control )
+            control.restorePosition()
+        }
+        else {
+            control.storePosition()
+        }
+    }
+
     x: transientParent.x + ( transientParent.width - control.width ) / 2
     y:  transientParent.y + ( transientParent.height - control.height ) / 2
     maximumWidth: width
@@ -125,10 +130,7 @@ Window {
     minimumWidth: width
     minimumHeight: height
     modality: Qt.ApplicationModal
-    flags: Qt.NoTitleBarBackgroundHint |
-           Qt.ExpandedClientAreaHint |
-           Qt.Dialog |
-           ( !properties.macOS ?  Qt.CustomizeWindowHint : Qt.WindowNoState )
+    flags: properties.windowFlags
 
     title: properties.macOS ? "" : windowTitle
     color: properties.colorElevated
@@ -140,8 +142,7 @@ Window {
     SigmaTitleBar {
         id: titleBar
         title: control.windowTitle
-        titleBarHeight:
-            Math.max( SafeArea.margins.top, properties.minimumTitleBarHeight)
-    showMaximizeButton: false
+        titleBarHeight: control.titleBarHeightWindow
+        showMaximizeButton: false
     }
 }

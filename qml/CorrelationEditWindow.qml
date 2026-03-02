@@ -14,8 +14,6 @@ BaseWindow {
                                        coefField.acceptableInput &&
                                        valid
     property bool valid
-    property int verticalWindowMargins: container.anchors.margins +
-                                        container.anchors.topMargin
     property string unacceptableInputMessage
     property TableView tableView
     property alias paramA: paramACombo.editText
@@ -150,13 +148,14 @@ BaseWindow {
     }
 
     width: 440
-    height: container.childrenRect.height + verticalWindowMargins
+    height: container.childrenRect.height +
+            titleBar.height +
+            container.anchors.margins * 2
     windowTitle: ( control.edit ? "Edit" : "Add new" ) + " correlation"
     settingsKey: "correlationEditWindow"
     settingsObject: Settings {}
     onVisibleChanged: {
         if ( control.visible ) {
-            control.restorePosition()
             control.getCorrelation()
             control.setActiveFocus()
             control.showValid()
@@ -171,9 +170,11 @@ BaseWindow {
         id: container
 
         anchors {
-            fill: parent
+            left: parent.left
+            right: parent.right
+            top: titleBar.bottom
+            bottom: parent.bottom
             margins: properties.spacingM
-            topMargin: properties.spacingM + control.titleBarHeightWindow
         }
 
         focus: true

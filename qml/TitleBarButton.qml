@@ -35,13 +35,6 @@ Button {
     background: Rectangle {
         color: control.hovered ? control.hoverColor :
                                  properties.colorTransparent
-        
-        Behavior on color {
-            ColorAnimation {
-                duration: properties.animationDuration
-                easing.type: Easing.InOutQuad
-            }
-        }
     }
 
     SigmaProperties {

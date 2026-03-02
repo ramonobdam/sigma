@@ -6,9 +6,11 @@ import QtCore
 BaseWindow {
     id: control
 
-    windowTitle: "About " + Application.name
+    windowTitle: "About " + Application.displayName
     width: 460
-    height: 610
+    height: container.childrenRect.height +
+            titleBar.height +
+            container.anchors.margins * 2
     settingsKey: "aboutWindow"
     settingsObject: Settings {}
 
@@ -51,7 +53,7 @@ BaseWindow {
                 right: parent.right
             }
 
-            text: Application.name
+            text: Application.displayName
             color: properties.colorTextStrong
         }
 

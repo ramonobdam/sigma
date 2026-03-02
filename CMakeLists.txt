@@ -86,6 +86,7 @@ qt_add_qml_module( Sigma
         qml/SigmaBusyIndicator.qml
         qml/SigmaCheckBox.qml
         qml/SigmaFonts.qml
+        qml/SigmaMenuBar.qml
         qml/SigmaProperties.qml
         qml/SigmaRadioButton.qml
         qml/SigmaRichText.qml

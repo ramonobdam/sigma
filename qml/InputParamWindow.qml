@@ -17,8 +17,6 @@ BaseWindow {
                                             dofInfinite
                                        )
     property bool noneDistribution: distribution === "none"
-    property int verticalWindowMargins: container.anchors.margins +
-                                        container.anchors.topMargin
     property TableView tableView
     property alias name: nameField.text
     property alias unit: unitCombo.editText
@@ -168,7 +166,9 @@ BaseWindow {
     }
 
     width: 385
-    height: container.childrenRect.height + control.verticalWindowMargins
+    height: container.childrenRect.height +
+            titleBar.height +
+            container.anchors.margins * 2
     windowTitle: ( control.edit ? "Edit" : "Add new" ) + " input parameter"
     settingsKey: "inputParamWindow"
     settingsObject: Settings {}
@@ -192,9 +192,11 @@ BaseWindow {
         id: container
 
         anchors {
-            fill: parent
+            left: parent.left
+            right: parent.right
+            top: titleBar.bottom
+            bottom: parent.bottom
             margins: properties.spacingM
-            topMargin: properties.spacingM + control.titleBarHeightWindow
         }
 
         focus: true

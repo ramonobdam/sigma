@@ -8,7 +8,7 @@ QtObject {
     property int defaultMainWindowWidth: 1440
     property int defaultMainWindowHeight: 810
     property string windowTitle:
-        Application.name +
+        Application.displayName +
         (
             filePathNotEmpty ?
                 ( " | " +  projectFileName + ( unsavedChanges ? "*" : "" ) ) :
@@ -171,7 +171,8 @@ QtObject {
     property int defaultTableWidth: 100
     property int appIconWidth: 128
     property int titeBarButtonWidth: 40
-    property int titleBarIconWidth: 10
+    property int titleBarIconWidth: 20
+    property int titleBarButtonIconWidth: 10
 
     // Time constants
     property int animationDuration: 100
@@ -290,4 +291,22 @@ QtObject {
     // OS
     property bool macOS: ( Qt.platform.os === "osx" ) ||
                          ( Qt.platform.os === "macos" )
+    property bool windows: Qt.platform.os === "windows"
+
+    // Window flags
+    property int windowFlags:
+        Qt.Window |
+        (
+            macOS ?
+              ( Qt.NoTitleBarBackgroundHint | Qt.ExpandedClientAreaHint ) :
+              ( windows ? Qt.FramelessWindowHint : Qt.Window )
+        )
+
+    property int dialogFlags:
+        Qt.Window |
+        (
+            macOS ?
+              ( Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint ) :
+              ( windows ? Qt.FramelessWindowHint : Qt.Window )
+        )
 }

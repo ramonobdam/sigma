@@ -146,7 +146,7 @@ ApplicationWindow {
 
     width: properties.defaultMainWindowWidth
     height: properties.defaultMainWindowHeight
-    topPadding: properties.macOS ? 0 : titleBarHeight
+    topPadding: 0
     minimumWidth: properties.minWidthParam +
                   properties.spacingM +
                   properties.minWidthMonteCarlo +
@@ -157,11 +157,7 @@ ApplicationWindow {
                    splitViewMain.anchors.margins * 2
     visible: true
     title: properties.macOS ? "" : properties.windowTitle
-    flags: properties.macOS ? (
-                                Qt.NoTitleBarBackgroundHint |
-                                Qt.ExpandedClientAreaHint
-                             ) :
-                             Qt.Window
+    flags: properties.windowFlags
     color: properties.colorBase
     font.family: fonts.inter.font.family
     font.pixelSize: properties.fontSizeBody
@@ -180,6 +176,11 @@ ApplicationWindow {
             discardUnsavedChanges.mode = DiscardUnsavedChanges.Close
             discardUnsavedChanges.show()
         }
+    }
+    Component.onCompleted: {
+        // Create native framesless window on Windows
+        captionHelper.attachTo( window )
+        captionHelper.captionHeight = window.titleBarHeight
     }
 
     SigmaProperties {
@@ -221,267 +222,266 @@ ApplicationWindow {
             calculation.getCorrelationColumnWidths()
     }
 
-    menuBar: MenuBar {
-        Menu {
-            title: Application.name
-
-            Action {
-                // Moved to Application Menu on Mac
-                text: "Settings"
-                onTriggered: { openSettings() }
-            }
-
-            Action {
-                // Moved to Application Menu on Mac
-                text: "&Quit"
-                shortcut: "Ctrl+Q"
-                onTriggered: { closeWindow() }
-            }
-        }
-
-        Menu {
-            title: "Project"
-
-            Action {
-                text: "&New..."
-                shortcut: "Ctrl+N"
-                enabled: !properties.outputLocked
-                onTriggered: { newProject() }
-            }
-
-            Action {
-                text: "&Open..."
-                shortcut: "Ctrl+O"
-                enabled: !properties.outputLocked
-                onTriggered: { openProject() }
-            }
-
-            MenuSeparator {}
-
-            Action {
-                text: "&Save"
-                shortcut: "Ctrl+S"
-                enabled: !properties.outputLocked && properties.unsavedChanges
-                onTriggered: {
-                    properties.filePathNotEmpty ? saveProject() :
-                                                  saveProjectAs()
-                }
-            }
-
-            Action {
-                text: "Save As..."
-                shortcut: "Shift+Ctrl+S"
-                enabled: !properties.outputLocked
-                onTriggered: { saveProjectAs() }
-            }
-
-            MenuSeparator {}
-
-            Action {
-                text: "Auto Save"
-                checkable: true
-                checked: properties.autoSaveProject
-                onToggled: {
-                    appSettings.setAutoSaveProject( this.checked )
-                    // When Auto Save is switched on, save any unsaved changes
-                    if ( this.checked && properties.unsavedChanges ) {
-                        calculation.saveProject()
-                    }
-                }
-            }
-
-            Action {
-                text: "Restore last project on startup"
-                checkable: true
-                checked: properties.restoreLastProject
-                onToggled: { appSettings.setRestoreLastProject( this.checked ) }
-            }
-
-            MenuSeparator {}
-
-            Action {
-                text: "Clear..."
-                shortcut: "Ctrl+delete"
-                onTriggered: { clearProject() }
-                enabled: !properties.outputLocked
-            }
-
-            MenuSeparator {}
-
-            Action {
-                text: "Export results to CSV file..."
-                shortcut: "Ctrl+E"
-                onTriggered: { openCSV() }
-                enabled: !properties.outputLocked
-            }
-        }
-
-        Menu {
-            title: "Input parameters"
-
-            Action {
-                text: "Add new..."
-                shortcut: "Shift+Ctrl+I"
-                enabled: !properties.outputLocked
-                onTriggered: { openInputParam( false ) }
-            }
-
-            MenuSeparator {}
-
-            Action {
-                text: "Edit" +
-                      (
-                           properties.inputParamAvailable ?
-                              ( " " + properties.inputName ) :
-                               ""
-                      )
-                      + "..."
-                enabled: !properties.outputLocked &&
-                         properties.inputParamAvailable
-                onTriggered:  { openInputParam( true ) }
-            }
-
-            Action {
-                text: "Delete" +
-                      (
-                          properties.inputParamAvailable ?
-                              ( " " + properties.inputName ) :
-                              ""
-                      ) +
-                      "..."
-                enabled: !properties.outputLocked && properties.inputParamAvailable
-                onTriggered: { deleteInputParam() }
-            }
-
-            MenuSeparator {}
-
-            Action {
-                text: "&Correlations..."
-                shortcut: "Shift+Ctrl+C"
-                enabled: !properties.outputLocked
-                onTriggered: { openCorrelations() }
-            }
-        }
-
-        Menu {
-            title: "Output parameters"
-
-            Action {
-                text: "Add new..."
-                shortcut: "Shift+Ctrl+O"
-                enabled: !properties.outputLocked
-                onTriggered: { openOutputParam( false ) }
-            }
-
-            MenuSeparator {}
-
-            Action {
-                text: "Edit" +
-                      (
-                          properties.outputParamAvailable ?
-                              ( " " + properties.outputName ) :
-                              ""
-                      ) +
-                      "..."
-                enabled: !properties.outputLocked &&
-                         properties.outputParamAvailable
-                onTriggered: { openOutputParam( true ) }
-            }
-
-            Action {
-                text: "Delete" +
-                      (
-                          properties.outputParamAvailable ?
-                              ( " " + properties.outputName ) :
-                              ""
-                      )
-                      + "..."
-                enabled: !properties.outputLocked &&
-                         properties.outputParamAvailable
-                onTriggered: { deleteOutputParam() }
-            }
-        }
-
-        Menu {
-            title: "Monte Carlo simulation"
-
-            Action {
-                text: "&Run"
-                shortcut: "Ctrl+R"
-                enabled: calculation.outputValid && !properties.outputLocked
-                onTriggered: calculation.runMonteCarlo()
-            }
-
-            Action {
-                text: "S&top"
-                shortcut: "Ctrl+T"
-                enabled: calculation.outputValid && properties.outputLocked
-                onTriggered: calculation.stopMonteCarlo()
-            }
-        }
-
-        Menu {
-            title: "Window"
-
-            Action {
-                text: "Minimize"
-                shortcut: "Ctrl+M"
-                enabled: !( window.visibility === Window.Minimized )
-                onTriggered: { window.showMinimized() }
-            }
-
-            Action {
-                text: "Maximize"
-                enabled: !( window.visibility === Window.Maximized ) &&
-                         !( window.visibility === Window.Minimized )
-                onTriggered: { window.showMaximized() }
-            }
-
-            Action {
-                text: "Restore"
-                enabled: !( window.visibility === Window.Windowed )
-                onTriggered: { window.showNormal() }
-            }
-
-            Action {
-                property bool fullScreen:
-                    window.visibility === Window.FullScreen
-                shortcut: fullScreen ? "Escape" : "Ctrl+F"
-                text: fullScreen ? "Exit Full Screen" : "Enter Full Screen"
-                enabled: !( window.visibility === Window.Minimized )
-                onTriggered: {
-                    if ( fullScreen ) {
-                        window.showNormal()
-                    }
-                    else {
-                        window.showFullScreen()
-                    }
-                }
-            }
-        }
-
-        Menu {
-            title: "Help"
-
-            Action {
-                // Moved to Application Menu on Mac
-                text: "About"
-                onTriggered: { openAbout() }
-            }
-
-            /*Action {
-                text: "&Documentation"
-                shortcut: "Ctrl+H"
-            }*/
-        }
-    }
-
     SigmaTitleBar {
         id: titleBar
 
         title: properties.windowTitle
         titleBarHeight: window.titleBarHeight
+        titleBarLeftMargin: properties.macOS ?
+                                properties.titleBarTextLeftMargin :
+                                menuBar.implicitWidth + properties.spacingM
+        titleAlignment: Text.AlignHCenter
         color: window.color
+
+        SigmaMenuBar {
+            id: menuBar
+
+            anchors {
+                left: titleBar.icon.right
+                leftMargin: properties.spacingXS
+            }
+
+            property bool fullScreen:
+                window.visibility === Window.FullScreen
+            property bool minimized: window.visibility === Window.Minimized
+            property bool maximized: window.visibility === Window.Maximized
+            property bool windowed: window.visibility === Window.Windowed
+
+            Menu {
+                title: Application.name
+
+                Action {
+                    // Moved to Application Menu on Mac
+                    text: "Settings..."
+                    onTriggered: { openSettings() }
+                }
+
+                Action {
+                    // Moved to Application Menu on Mac
+                    text: "About " + Application.name + "..."
+                    onTriggered: { openAbout() }
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    // Moved to Application Menu on Mac
+                    text: properties.macOs ? "Quit" : "Exit"
+                    shortcut: "Ctrl+Q"
+                    onTriggered: { closeWindow() }
+                }
+            }
+
+            Menu {
+                title: "Project"
+
+                Action {
+                    text: "New..."
+                    shortcut: "Ctrl+N"
+                    enabled: !properties.outputLocked
+                    onTriggered: { newProject() }
+                }
+
+                Action {
+                    text: "Open..."
+                    shortcut: "Ctrl+O"
+                    enabled: !properties.outputLocked
+                    onTriggered: { openProject() }
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    text: "Save"
+                    shortcut: "Ctrl+S"
+                    enabled: !properties.outputLocked &&
+                             properties.unsavedChanges
+                    onTriggered: {
+                        properties.filePathNotEmpty ? saveProject() :
+                                                      saveProjectAs()
+                    }
+                }
+
+                Action {
+                    text: "Save As..."
+                    shortcut: "Shift+Ctrl+S"
+                    enabled: !properties.outputLocked
+                    onTriggered: { saveProjectAs() }
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    text: "Auto Save"
+                    checkable: true
+                    checked: properties.autoSaveProject
+                    onToggled: {
+                        appSettings.setAutoSaveProject( this.checked )
+                        // When Auto Save is switched on, save any unsaved changes
+                        if ( this.checked && properties.unsavedChanges ) {
+                            calculation.saveProject()
+                        }
+                    }
+                }
+
+                Action {
+                    text: "Restore last project on startup"
+                    checkable: true
+                    checked: properties.restoreLastProject
+                    onToggled: { appSettings.setRestoreLastProject( this.checked ) }
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    text: "Clear..."
+                    shortcut: "Ctrl+delete"
+                    onTriggered: { clearProject() }
+                    enabled: !properties.outputLocked
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    text: "Export results to CSV file..."
+                    shortcut: "Ctrl+E"
+                    onTriggered: { openCSV() }
+                    enabled: !properties.outputLocked
+                }
+            }
+
+            Menu {
+                title: "Input parameters"
+
+                Action {
+                    text: "Add new..."
+                    shortcut: "Shift+Ctrl+I"
+                    enabled: !properties.outputLocked
+                    onTriggered: { openInputParam( false ) }
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    text: "Edit" +
+                          (
+                               properties.inputParamAvailable ?
+                                  ( " " + properties.inputName ) :
+                                   ""
+                          )
+                          + "..."
+                    enabled: !properties.outputLocked &&
+                             properties.inputParamAvailable
+                    onTriggered:  { openInputParam( true ) }
+                }
+
+                Action {
+                    text: "Delete" +
+                          (
+                              properties.inputParamAvailable ?
+                                  ( " " + properties.inputName ) :
+                                  ""
+                          ) +
+                          "..."
+                    enabled: !properties.outputLocked &&
+                             properties.inputParamAvailable
+                    onTriggered: { deleteInputParam() }
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    text: "Correlations..."
+                    shortcut: "Ctrl+Shift+C"
+                    enabled: !properties.outputLocked
+                    onTriggered: { openCorrelations() }
+                }
+            }
+
+            Menu {
+                title: "Output parameters"
+
+                Action {
+                    text: "Add new..."
+                    shortcut: "Shift+Ctrl+O"
+                    enabled: !properties.outputLocked
+                    onTriggered: { openOutputParam( false ) }
+                }
+
+                MenuSeparator {}
+
+                Action {
+                    text: "Edit" +
+                          (
+                              properties.outputParamAvailable ?
+                                  ( " " + properties.outputName ) :
+                                  ""
+                          ) +
+                          "..."
+                    enabled: !properties.outputLocked &&
+                             properties.outputParamAvailable
+                    onTriggered: { openOutputParam( true ) }
+                }
+
+                Action {
+                    text: "Delete" +
+                          (
+                              properties.outputParamAvailable ?
+                                  ( " " + properties.outputName ) :
+                                  ""
+                          )
+                          + "..."
+                    enabled: !properties.outputLocked &&
+                             properties.outputParamAvailable
+                    onTriggered: { deleteOutputParam() }
+                }
+            }
+
+            Menu {
+                title: "Monte Carlo simulation"
+
+                Action {
+                    text: "Run"
+                    shortcut: "Ctrl+R"
+                    enabled: calculation.outputValid && !properties.outputLocked
+                    onTriggered: calculation.runMonteCarlo()
+                }
+
+                Action {
+                    text: "Stop"
+                    shortcut: "Ctrl+T"
+                    enabled: calculation.outputValid && properties.outputLocked
+                    onTriggered: calculation.stopMonteCarlo()
+                }
+            }
+
+            Menu {
+                title: "Window"
+
+                Action {
+                    text: "Minimize"
+                    shortcut: "Ctrl+M"
+                    enabled: !menuBar.minimized
+                    onTriggered: { window.showMinimized() }
+                }
+
+                Action {
+                    text: menuBar.maximized ? "Restore" : "Maximize"
+                    enabled: !menuBar.fullScreen
+                    onTriggered: { captionHelper.toggleMaximize( window ) }
+                }
+
+
+                Action {
+                    text: menuBar.fullScreen ? "Exit Full Screen" :
+                                               "Full Screen"
+                    shortcut: properties.windows ?
+                                  "F11" :
+                                  ( menuBar.fullScreen ? "Escape" : "Ctrl+F" )
+                    onTriggered: { captionHelper.toggleFullScreen( window ) }
+                }
+            }
+        }
     }
 
     SigmaSplitView {

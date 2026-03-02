@@ -1,61 +1,68 @@
 #ifndef WINDOWSCAPTIONHELPER_H
 #define WINDOWSCAPTIONHELPER_H
 
-#include <QByteArray>
-#include <QObject>
+#include <QAbstractNativeEventFilter>
+#include <QHash>
+#include <QPointer>
 #include <QWindow>
+#include <QObject>
 
 #ifdef Q_OS_WINDOWS
 #include <windows.h>
 #endif
 
-// WindowsCaptionHelper is a small Windows-specific utility class that enables
-// fully native title bar dragging for frameless Qt windows. It intercepts the
-// Win32 WM_NCHITTEST message and marks a configurable top region of the window
-// as HTCAPTION, allowing the operating system to handle window movement
-// natively.
-class WindowsCaptionHelper : public QObject {
+class WindowsCaptionHelper :
+                             public QObject,
+                             public QAbstractNativeEventFilter
+{
     Q_OBJECT
-    Q_PROPERTY(
-        int captionHeight
-        READ getCaptionHeight
-        WRITE setCaptionHeight
-        NOTIFY captionHeightChanged
-)
+
+    Q_PROPERTY(int captionHeight
+                   READ captionHeight
+                       WRITE setCaptionHeight
+                           NOTIFY captionHeightChanged)
 
 public:
-    explicit WindowsCaptionHelper( QObject *parent = nullptr) ;
+    explicit WindowsCaptionHelper(QObject *parent = nullptr);
+    ~WindowsCaptionHelper() override;
 
-    int getCaptionHeight() const;
-    void setCaptionHeight( const int &height );
+    bool nativeEventFilter(
+        const QByteArray &eventType,
+        void *message,
+        qintptr *result) override;
 
-    Q_INVOKABLE void attachTo( QWindow *window );
+    int captionHeight() const;
+    void setCaptionHeight(int height);
+
+    Q_INVOKABLE void attachTo(QWindow *window);
+    Q_INVOKABLE void detachFrom(QWindow *window);
+    Q_INVOKABLE void setResizable(QWindow *window, bool value);
+
+    Q_INVOKABLE void maximize(QWindow *window);
+    Q_INVOKABLE void restore(QWindow *window);
+    Q_INVOKABLE void toggleMaximize(QWindow *window);
+
+    Q_INVOKABLE void showFullScreen(QWindow *window);
+    Q_INVOKABLE void toggleFullScreen(QWindow *window);
 
 signals:
     void captionHeightChanged();
 
-protected:
-    bool nativeEventFilter(
-        const QByteArray &eventType,
-        void *message,
-        qintptr *result
-    );
-
 private:
 #ifdef Q_OS_WINDOWS
-    static LRESULT CALLBACK WndProc(
-        HWND hwnd,
-        UINT msg,
-        WPARAM wParam,
-        LPARAM lParam
-    );
-    static WindowsCaptionHelper *instance;
-    HWND mHwnd = nullptr;
-    WNDPROC mOriginalWindowProc = nullptr;
+    struct WindowData {
+        QPointer<QWindow> window;
+        bool userResizable = true;
+    };
+
+    QHash<HWND, WindowData> mWindows;
+
+    void applyStyle(HWND hwnd);
+    void updateShadow(HWND hwnd);
+    static bool isFixedSize(QWindow *window);
 #endif
 
-    QWindow *mWindow;
-    int mCaptionHeight;
+    int mCaptionHeight = 32;
 };
 
-#endif // WINDOWSCAPTIONHELPER_H
+#endif

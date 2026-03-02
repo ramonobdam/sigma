@@ -13,6 +13,7 @@
 #include <QObject>
 #include <QList>
 #include <QUrl>
+#include <QQuickWindow>
 #include <QWindow>
 
 int main( int argc, char *argv[] ) {
@@ -21,7 +22,8 @@ int main( int argc, char *argv[] ) {
     QLocale::setDefault( QLocale( QLocale::English, QLocale::UnitedStates ) );
 
     QGuiApplication app( argc, argv );
-    app.setApplicationName( "Sigma - Measurement Uncertainty Toolkit" );
+    app.setApplicationName( "Sigma" );
+    app.setApplicationDisplayName( "Sigma - Measurement Uncertainty Toolkit" );
     app.setApplicationVersion( "1.0.0" );
     app.setOrganizationName( "Tiger Suit Interactive" );
     app.setOrganizationDomain( "TigerSuitInteractive.org" );
@@ -74,9 +76,6 @@ int main( int argc, char *argv[] ) {
     }
 
     engine.loadFromModule( "Sigma", "Main" );
-
-    QWindow* window = qobject_cast<QWindow*> ( engine.rootObjects().constFirst() );
-    captionHelper->attachTo( window );
 
     return app.exec();
 }

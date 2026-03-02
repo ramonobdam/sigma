@@ -50,7 +50,7 @@ Window {
     minimumWidth: width
     minimumHeight: height
     modality: Qt.ApplicationModal
-    flags: Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint
+    flags: properties.dialogFlags
     color: properties.colorTransparent
     onVisibleChanged: {
         if ( visible ) {
