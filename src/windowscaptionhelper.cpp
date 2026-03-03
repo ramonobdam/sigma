@@ -31,6 +31,7 @@ bool WindowsCaptionHelper::nativeEventFilter(
     void *message,
     qintptr *result
 ) {
+#ifdef Q_OS_WINDOWS
     if ( eventType != "windows_generic_MSG" ) {
         return false;
     }
@@ -205,7 +206,7 @@ bool WindowsCaptionHelper::nativeEventFilter(
             return false;
         }
     }
-
+#endif
     return false;
 }
 
@@ -226,11 +227,11 @@ void WindowsCaptionHelper::setCaptionHeight( const int &height ) {
 
 
 void WindowsCaptionHelper::attachTo( QWindow *window ) {
+#ifdef Q_OS_WINDOWS
     if ( !window ) {
         return;
     }
 
-#ifdef Q_OS_WINDOWS
     HWND hwnd { reinterpret_cast<HWND>( window->winId() ) };
     if ( !hwnd || mWindows.contains( hwnd ) ) {
         return;
@@ -289,6 +290,7 @@ void WindowsCaptionHelper::attachTo( QWindow *window ) {
 
 
 void WindowsCaptionHelper::detachFrom( QWindow *window ) {
+#ifdef Q_OS_WINDOWS
     if ( !window ) {
         return;
     }
@@ -296,6 +298,7 @@ void WindowsCaptionHelper::detachFrom( QWindow *window ) {
     // Remove window from the QHash
     HWND hwnd { reinterpret_cast<HWND>( window->winId() ) };
     mWindows.remove( hwnd );
+#endif
 }
 
 
