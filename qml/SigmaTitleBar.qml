@@ -191,4 +191,25 @@ Rectangle {
         font.pixelSize: properties.fontSizeTitleBarCloseIcon
         onClicked: { Window.window.close() }
     }
+
+    DragHandler {
+        enabled: properties.macOS
+        target: null
+        onActiveChanged: {
+            if ( active && control.Window.window ) {
+                control.Window.window.startSystemMove()
+            }
+        }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+
+        enabled: properties.macOS
+        onDoubleClicked: {
+            if ( control.Window.window ) {
+                captionHelper.toggleMaximize( Window.window )
+            }
+        }
+    }
 }
