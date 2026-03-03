@@ -117,6 +117,7 @@ Window {
             // Create native framesless window on Windows
             captionHelper.attachTo( control )
             control.restorePosition()
+            titleBar.updateExclusions()
         }
         else {
             control.storePosition()
