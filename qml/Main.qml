@@ -229,15 +229,43 @@ ApplicationWindow {
         titleBarHeight: window.titleBarHeight
         titleBarLeftMargin: properties.macOS ?
                                 properties.titleBarTextLeftMargin :
-                                menuBar.implicitWidth + properties.spacingM
+                                (
+                                    icon.anchors.leftMargin +
+                                    icon.width +
+                                    menuBar.anchors.leftMargin +
+                                    menuBar.implicitWidth +
+                                    properties.spacingM
+                                )
         titleAlignment: Text.AlignHCenter
         color: window.color
+
+        Component.onCompleted: {
+            registerItem( menuBar )
+        }
+
+        Image {
+            id: icon
+
+            anchors {
+                left: parent.left
+                leftMargin: properties.spacingM
+                verticalCenter: parent.verticalCenter
+                verticalCenterOffset: 1
+            }
+
+            visible: properties.windows
+            source: properties.appIcon
+            width: visible ? properties.titleBarIconWidth : 0
+            height: width
+            fillMode: Image.PreserveAspectFit
+            mipmap: true
+        }
 
         SigmaMenuBar {
             id: menuBar
 
             anchors {
-                left: titleBar.icon.right
+                left: icon.right
                 leftMargin: properties.spacingXS
             }
 
@@ -247,51 +275,55 @@ ApplicationWindow {
             property bool maximized: window.visibility === Window.Maximized
             property bool windowed: window.visibility === Window.Windowed
 
-            Menu {
+            SigmaMenu {
                 title: Application.name
+                width: 200
 
-                Action {
-                    // Moved to Application Menu on Mac
+                SigmaMenuBarMenuItem {
+                    // Moved to Application Menu on Mac by the OS
                     text: "Settings..."
                     onTriggered: { openSettings() }
                 }
 
-                Action {
-                    // Moved to Application Menu on Mac
+                ContextMenuRule {}
+
+                SigmaMenuBarMenuItem {
+                    // Moved to Application Menu on Mac by the OS
                     text: "About " + Application.name + "..."
                     onTriggered: { openAbout() }
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
-                    // Moved to Application Menu on Mac
+                SigmaMenuBarMenuItem {
+                    // Moved to Application Menu on Mac by the OS
                     text: properties.macOs ? "Quit" : "Exit"
                     shortcut: "Ctrl+Q"
                     onTriggered: { closeWindow() }
                 }
             }
 
-            Menu {
+            SigmaMenu {
                 title: "Project"
+                width: 300
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "New..."
                     shortcut: "Ctrl+N"
                     enabled: !properties.outputLocked
                     onTriggered: { newProject() }
                 }
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Open..."
                     shortcut: "Ctrl+O"
                     enabled: !properties.outputLocked
                     onTriggered: { openProject() }
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Save"
                     shortcut: "Ctrl+S"
                     enabled: !properties.outputLocked &&
@@ -302,16 +334,16 @@ ApplicationWindow {
                     }
                 }
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Save As..."
-                    shortcut: "Shift+Ctrl+S"
+                    shortcut: "Ctrl+Shift+S"
                     enabled: !properties.outputLocked
                     onTriggered: { saveProjectAs() }
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Auto Save"
                     checkable: true
                     checked: properties.autoSaveProject
@@ -324,25 +356,25 @@ ApplicationWindow {
                     }
                 }
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Restore last project on startup"
                     checkable: true
                     checked: properties.restoreLastProject
                     onToggled: { appSettings.setRestoreLastProject( this.checked ) }
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Clear..."
-                    shortcut: "Ctrl+delete"
+                    shortcut: "Ctrl+Delete"
                     onTriggered: { clearProject() }
                     enabled: !properties.outputLocked
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Export results to CSV file..."
                     shortcut: "Ctrl+E"
                     onTriggered: { openCSV() }
@@ -350,19 +382,20 @@ ApplicationWindow {
                 }
             }
 
-            Menu {
+            SigmaMenu {
                 title: "Input parameters"
+                width: 250
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Add new..."
-                    shortcut: "Shift+Ctrl+I"
+                    shortcut: "Ctrl+Shift+I"
                     enabled: !properties.outputLocked
                     onTriggered: { openInputParam( false ) }
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Edit" +
                           (
                                properties.inputParamAvailable ?
@@ -375,7 +408,7 @@ ApplicationWindow {
                     onTriggered:  { openInputParam( true ) }
                 }
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Delete" +
                           (
                               properties.inputParamAvailable ?
@@ -388,9 +421,9 @@ ApplicationWindow {
                     onTriggered: { deleteInputParam() }
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Correlations..."
                     shortcut: "Ctrl+Shift+C"
                     enabled: !properties.outputLocked
@@ -398,19 +431,20 @@ ApplicationWindow {
                 }
             }
 
-            Menu {
+            SigmaMenu {
                 title: "Output parameters"
+                width: 250
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Add new..."
-                    shortcut: "Shift+Ctrl+O"
+                    shortcut: "Ctrl+Shift+O"
                     enabled: !properties.outputLocked
                     onTriggered: { openOutputParam( false ) }
                 }
 
-                MenuSeparator {}
+                ContextMenuRule {}
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Edit" +
                           (
                               properties.outputParamAvailable ?
@@ -423,7 +457,7 @@ ApplicationWindow {
                     onTriggered: { openOutputParam( true ) }
                 }
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Delete" +
                           (
                               properties.outputParamAvailable ?
@@ -437,17 +471,18 @@ ApplicationWindow {
                 }
             }
 
-            Menu {
+            SigmaMenu {
                 title: "Monte Carlo simulation"
+                width: 160
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Run"
                     shortcut: "Ctrl+R"
                     enabled: calculation.outputValid && !properties.outputLocked
                     onTriggered: calculation.runMonteCarlo()
                 }
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Stop"
                     shortcut: "Ctrl+T"
                     enabled: calculation.outputValid && properties.outputLocked
@@ -455,24 +490,25 @@ ApplicationWindow {
                 }
             }
 
-            Menu {
+            SigmaMenu {
                 title: "Window"
+                width: 210
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: "Minimize"
                     shortcut: "Ctrl+M"
                     enabled: !menuBar.minimized
                     onTriggered: { window.showMinimized() }
                 }
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: menuBar.maximized ? "Restore" : "Maximize"
                     enabled: !menuBar.fullScreen
                     onTriggered: { captionHelper.toggleMaximize( window ) }
                 }
 
 
-                Action {
+                SigmaMenuBarMenuItem {
                     text: menuBar.fullScreen ? "Exit Full Screen" :
                                                "Full Screen"
                     shortcut: properties.windows ?

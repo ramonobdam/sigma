@@ -171,8 +171,10 @@ QtObject {
     property int defaultTableWidth: 100
     property int appIconWidth: 128
     property int titeBarButtonWidth: 40
-    property int titleBarIconWidth: 20
+    property int titleBarIconWidth: 21
     property int titleBarButtonIconWidth: 10
+    property int menuBarHeight: 20
+    property int menuItemShortcutWidth: 72
 
     // Time constants
     property int animationDuration: 100

@@ -43,7 +43,6 @@ BaseContextMenu {
     ContextMenuRule {
         visible: copyItem.visible &&
                  ( deleteItem.visible || addNewItem.visible )
-        color: properties.colorStrokeWeak
     }
 
     ContextMenuItem {
@@ -60,7 +59,6 @@ BaseContextMenu {
                      deleteItem.visible ||
                      copyItem.visible
                  )
-        color: properties.colorStrokeWeak
     }
 
     ContextMenuItem {

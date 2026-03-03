@@ -7,13 +7,21 @@ MenuItem {
 
     property int animationDuration: properties.animationDuration
     property string backgroundColor: properties.colorElevated
+    property alias properties: properties
+    property alias shortcut: itemAction.shortcut
 
     height: visible ? properties.rowHeight : 0
     padding: 0
     spacing: 0
 
+    action: Action {
+        id: itemAction
+    }
+
     contentItem: SigmaText {
-        width: parent.width
+        id: text
+
+        width: control.width
         text: control.text
         color: control.enabled ? (
                                      control.down ? properties.colorRaised :

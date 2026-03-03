@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import Sigma
 
 // A custom titlebar is used on macOS that visually integrates with the window
 Rectangle {
@@ -12,15 +13,60 @@ Rectangle {
     property int titleBarHeight: properties.minimumTitleBarHeight
     property int titleBarLeftMargin: properties.macOS ?
                                          properties.titleBarTextLeftMargin :
-                                         properties.spacingXS
+                                         properties.spacingM
     property int titleBarRightMargin: properties.macOS ?
                                          properties.titleBarTextLeftMargin :
                                          properties.spacingM
     property string title: ""
     property int titleAlignment: properties.macOS ? Text.AlignHCenter :
                                                     Text.AlignLeft
-    property alias icon: icon
-    
+    property list<Item> excludeItems: [
+        minimizeButton,
+        maximizeButton,
+        closeButton
+    ]
+
+    function updateExclusions() {
+        // Update items excluded from the hit detection
+        if ( !Window.window || !captionHelper ) {
+            return
+        }
+
+        let rects = []
+
+        for ( let i = 0; i < excludeItems.length; ++i ) {
+            let item = excludeItems[ i ]
+            if ( !item || !item.visible ) {
+                continue
+            }
+
+            let p = item.mapToItem( null, 0, 0 )
+            rects.push( Qt.rect( p.x, p.y, item.width, item.height ) )
+        }
+
+        captionHelper.setExclusionRects( Window.window, rects )
+    }
+
+    function registerItem( item ) {
+        if ( !item ) {
+            return
+        }
+
+        excludeItems.push( item )
+
+        item.xChanged.connect( updateExclusions )
+        item.yChanged.connect( updateExclusions )
+        item.widthChanged.connect( updateExclusions )
+        item.heightChanged.connect( updateExclusions )
+        item.visibleChanged.connect( updateExclusions )
+
+        updateExclusions()
+    }
+
+    Component.onCompleted: { updateExclusions() }
+    onWidthChanged: { updateExclusions() }
+    onHeightChanged: { updateExclusions() }
+
     anchors {
         left: parent.left
         right: parent.right
@@ -37,6 +83,31 @@ Rectangle {
 
     SigmaFonts {
         id: fonts
+    }
+
+    SigmaText {
+        id: title
+
+        anchors {
+            left: parent.left
+            leftMargin: control.titleBarLeftMargin
+            right: minimizeButton.left
+            rightMargin: control.titleBarRightMargin
+            top: parent.top
+            bottom: parent.bottom
+        }
+        
+        text: control.title
+        color: properties.macOS ? properties.colorTextWeak :
+                                  properties.colorTextStrong
+        font.family: properties.macOS ? fonts.interSemiBold.font.family :
+                                        fonts.inter.font.family
+        font.pixelSize: properties.fontSizeTitleBar
+        font.bold: properties.macOS
+        clip: true
+        elide: Text.ElideRight
+        horizontalAlignment: control.titleAlignment
+        verticalAlignment: Text.AlignVCenter
     }
 
     TitleBarButton {
@@ -119,57 +190,5 @@ Rectangle {
         hoverColor: properties.colorClose
         font.pixelSize: properties.fontSizeTitleBarCloseIcon
         onClicked: { Window.window.close() }
-    }
-
-    Image {
-        id: icon
-
-        anchors {
-            left: parent.left
-            leftMargin: properties.spacingXS
-            verticalCenter: parent.verticalCenter
-        }
-
-        visible: properties.windows
-        source: properties.appIcon
-        width: visible ? properties.titleBarIconWidth : 0
-        height: width
-        fillMode: Image.PreserveAspectFit
-        mipmap: true
-    }
-    
-    SigmaText {
-        id: title
-
-        anchors {
-            left: icon.right
-            leftMargin: control.titleBarLeftMargin
-            right: minimizeButton.left
-            rightMargin: control.titleBarRightMargin
-            top: parent.top
-            bottom: parent.bottom
-        }
-        
-        text: control.title
-        color: properties.macOS ? properties.colorTextWeak :
-                                  properties.colorTextStrong
-        font.family: properties.macOS ? fonts.interSemiBold.font.family :
-                                        fonts.inter.font.family
-        font.pixelSize: properties.fontSizeTitleBar
-        font.bold: properties.macOS
-        clip: true
-        elide: Text.ElideRight
-        horizontalAlignment: control.titleAlignment
-        verticalAlignment: Text.AlignVCenter
-    }
-
-    DragHandler {
-        enabled: properties.windows
-        target: null
-        onActiveChanged: {
-            if ( active && control.Window.window ) {
-                control.Window.window.startSystemMove()
-            }
-        }
     }
 }
