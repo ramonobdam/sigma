@@ -1063,7 +1063,7 @@ ApplicationWindow {
                                         anchors {
                                             left: parent.left
                                             leftMargin:
-                                                window.roundToDevicePixels( -1 )
+                                                window.roundToDevicePixels( .5 )
                                             right: parent.right
                                             top: parent.top
                                             bottom: parent.bottom
