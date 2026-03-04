@@ -129,6 +129,7 @@ Rectangle {
             height: properties.borderWidth
 
             color: properties.colorTextStrong
+            antialiasing: true
         }
     }
 
@@ -149,6 +150,10 @@ Rectangle {
         hoverColor: properties.colorTextHover
         onClicked: { captionHelper.toggleMaximize( Window.window ) }
 
+        // The icon of the maximize button is drawn using 2 rounded rectangles.
+        // The filled area of the rectangles is covered by a rounded rectangle
+        // with the same color to reduce the perceived line width after
+        // anti-aliasing and bring it in line with the other buttons.
         Rectangle {
             anchors.centerIn: parent
             anchors.verticalCenterOffset: -maximizeButton.offset
@@ -156,10 +161,18 @@ Rectangle {
             width: properties.titleBarButtonIconWidth
             height: width
 
-            color: properties.colorTransparent
+            color: parent.hovered ? parent.hoverColor : control.color
             border.width: properties.borderWidth
             border.color: properties.colorTextStrong
             radius: properties.radiusXS
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width - 2 * parent.border.width
+                height: parent.height - 2 * parent.border.width
+                color: parent.color
+                radius: parent.radius - parent.border.width
+            }
         }
 
         Rectangle {
@@ -173,6 +186,14 @@ Rectangle {
             border.width: properties.borderWidth
             border.color: properties.colorTextStrong
             radius: properties.radiusXS
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width - 2 * parent.border.width
+                height: parent.height - 2 * parent.border.width
+                color: parent.color
+                radius: parent.radius - parent.border.width
+            }
         }
     }
 
@@ -188,7 +209,9 @@ Rectangle {
         visible: properties.windows && control.showCloseButton
         text: properties.titleBarCloseIcon
         hoverColor: properties.colorClose
+        font.family: fonts.interSemiBold.font.family
         font.pixelSize: properties.fontSizeTitleBarCloseIcon
+        font.bold: true
         onClicked: { Window.window.close() }
     }
 

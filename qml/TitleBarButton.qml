@@ -30,6 +30,7 @@ Button {
         font: control.font
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
+        antialiasing: true
     }
     
     background: Rectangle {
