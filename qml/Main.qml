@@ -54,10 +54,18 @@ ApplicationWindow {
         }
     }
 
+    function roundToDevicePixels( value ) {
+        // Round the value in device independent pixels (DIP) to the nearest
+        // value in device pixels (DPI) to prevent pixel rounding issues when
+        // dpi-scaling is applied.
+        let valueDPIrounded = Math.round( value * Screen.devicePixelRatio )
+        return valueDPIrounded / Screen.devicePixelRatio
+    }
+
     // The following functions obtain and store the table column widths from the
     // persistent settings
     function getInputColumnWidth( column ) {
-        return settings.inputColumnWidths[ column ]
+        return roundToDevicePixels( settings.inputColumnWidths[ column ] )
     }
 
     function storeInputColumnWidths( tableView ) {
@@ -69,7 +77,7 @@ ApplicationWindow {
     }
 
     function getOutputColumnWidth( column ) {
-        return settings.outputColumnWidths[ column ]
+        return roundToDevicePixels( settings.outputColumnWidths[ column ] )
     }
 
     function storeOutputColumnWidths( tableView ) {
@@ -81,7 +89,7 @@ ApplicationWindow {
     }
 
     function getResultsColumnWidth( column ) {
-        return settings.resultsColumnWidths[ column ]
+        return roundToDevicePixels( settings.resultsColumnWidths[ column ] )
     }
 
     function storeResultsColumnWidths( tableView ) {
@@ -93,7 +101,7 @@ ApplicationWindow {
     }
 
     function getBudgetColumnWidth( column ) {
-        return settings.budgetColumnWidths[ column ]
+        return roundToDevicePixels( settings.budgetColumnWidths[ column ] )
     }
 
     function storeBudgetColumnWidths( tableView ) {
@@ -211,14 +219,14 @@ ApplicationWindow {
         property var svParam
 
         // Table column widths:
-        property list<int> inputColumnWidths: calculation.getInputColumnWidths()
-        property list<int> outputColumnWidths:
+        property list<real> inputColumnWidths: calculation.getInputColumnWidths()
+        property list<real> outputColumnWidths:
             calculation.getOutputColumnWidths()
-        property list<int> resultsColumnWidths:
+        property list<real> resultsColumnWidths:
             calculation.getResultsColumnWidths()
-        property list<int> budgetColumnWidths:
+        property list<real> budgetColumnWidths:
             calculation.getBudgetColumnWidths()
-        property list<int> correlationColumnWidths:
+        property list<real> correlationColumnWidths:
             calculation.getCorrelationColumnWidths()
     }
 
@@ -1054,7 +1062,8 @@ ApplicationWindow {
                                                 properties.colorBrand
                                         anchors {
                                             left: parent.left
-                                            leftMargin: -1
+                                            leftMargin:
+                                                window.roundToDevicePixels( -1 )
                                             right: parent.right
                                             top: parent.top
                                             bottom: parent.bottom

@@ -25,7 +25,7 @@ BaseWindow {
     }
 
     function getCorrelationColumnWidth( column ) {
-        return settings.correlationColumnWidths[ column ]
+        return roundToDevicePixels( settings.correlationColumnWidths[ column ] )
     }
 
     function storeCorrelationColumnWidths( tableView ) {
@@ -34,6 +34,14 @@ BaseWindow {
                 settings.correlationColumnWidths[ i ] = tableView.columnWidth( i )
             }
         }
+    }
+
+    function roundToDevicePixels( value ) {
+        // Round the value in device independent pixels (DIP) to the nearest
+        // value in device pixels (DPI) to prevent pixel rounding issues when
+        // dpi-scaling is applied.
+        let valueDPIrounded = Math.round( value * Screen.devicePixelRatio )
+        return valueDPIrounded / Screen.devicePixelRatio
     }
 
     windowTitle: "Input parameter correlations"
@@ -52,7 +60,7 @@ BaseWindow {
         id: settings
 
         // Table column widths:
-        property list<int> correlationColumnWidths:
+        property list<real> correlationColumnWidths:
             calculation.getCorrelationColumnWidths()
     }
 
