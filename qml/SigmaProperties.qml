@@ -8,10 +8,16 @@ QtObject {
     property int defaultMainWindowWidth: 1440
     property int defaultMainWindowHeight: 810
     property string windowTitle:
-        Application.displayName +
+        (
+            macOS ?
+                (
+                    Application.displayName + ( filePathNotEmpty ? " | " : "" )
+                ) :
+                ""
+        ) +
         (
             filePathNotEmpty ?
-                ( " | " +  projectFileName + ( unsavedChanges ? "*" : "" ) ) :
+                ( projectFileName + ( unsavedChanges ? "*" : "" ) ) :
                 ""
         )
 
@@ -174,6 +180,7 @@ QtObject {
     property int titleBarIconWidth: 21
     property int titleBarButtonIconWidth: 10
     property int menuBarHeight: 20
+    property int menuItemMargins: 18
     property int menuItemShortcutWidth: 72
 
     // Time constants
@@ -186,7 +193,7 @@ QtObject {
     property real toolTipBackgroundOpacity: 0.92
 
     // Font sizes
-    property int fontSizeTitleBar: 12
+    property int fontSizeTitleBar: macOS ? 12 : fontSizeBody
     property int fontSizeHeader: 22
     property int fontSizeBody: 13
     property int fontSizeHistogram: 12

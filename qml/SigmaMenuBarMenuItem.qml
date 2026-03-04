@@ -11,6 +11,11 @@ MenuItem {
     property string backgroundColor: properties.colorElevated
     property alias shortcut: itemAction.shortcut
 
+    implicitHeight: visible ? properties.rowHeight : 0
+    implicitWidth: parent.implicitWidth
+    padding: 0
+    spacing: 0
+
     contentItem: properties.macOS ? null : content
     action: itemAction
 
@@ -36,15 +41,15 @@ MenuItem {
                 top: parent.top
                 bottom: parent.bottom
             }
-            width: height
+            width: properties.menuItemMargins
 
             font.pixelSize: control.fontSize
             font.family: fonts.fontAwesome.font.family
             text: control.checked ? properties.validIcon : ""
             color: control.enabled ? (
-                                         control.down ? properties.colorRaised :
-                                                        properties.colorTextStrong
-                                      ) :
+                                       control.down ? properties.colorRaised :
+                                                      properties.colorTextStrong
+                                     ) :
                                      properties.colorStrokeStrong
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
@@ -62,9 +67,9 @@ MenuItem {
             font.pixelSize: control.fontSize
             text: control.text
             color: control.enabled ? (
-                                         control.down ? properties.colorRaised :
-                                                        properties.colorTextStrong
-                                      ) :
+                                       control.down ? properties.colorRaised :
+                                                      properties.colorTextStrong
+                                     ) :
                                      properties.colorStrokeStrong
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
@@ -75,6 +80,7 @@ MenuItem {
 
             anchors {
                 right: parent.right
+                rightMargin: properties.menuItemMargins
                 top: parent.top
                 bottom: parent.bottom
             }

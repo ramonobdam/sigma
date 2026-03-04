@@ -277,7 +277,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: Application.name
-                implicitWidth: 200
+                implicitWidth: 220
 
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
@@ -298,25 +298,25 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
                     text: properties.macOs ? "Quit" : "Exit"
-                    shortcut: StandardKey.Close
+                    shortcut: properties.macOs ? StandardKey.Close : "Alt+F4"
                     onTriggered: { closeWindow() }
                 }
             }
 
             SigmaMenu {
                 title: "Project"
-                implicitWidth: 300
+                implicitWidth: 320
 
                 SigmaMenuBarMenuItem {
                     text: "New..."
-                    shortcut: StandardKey.New
+                    shortcut: properties.macOs ? StandardKey.New : "Ctrl+N"
                     enabled: !properties.outputLocked
                     onTriggered: { newProject() }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Open..."
-                    shortcut: StandardKey.Open
+                    shortcut: properties.macOs ? StandardKey.Open : "Ctrl+O"
                     enabled: !properties.outputLocked
                     onTriggered: { openProject() }
                 }
@@ -325,7 +325,7 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Save"
-                    shortcut: StandardKey.Save
+                    shortcut: properties.macOs ? StandardKey.Save : "Ctrl+S"
                     enabled: !properties.outputLocked &&
                              properties.unsavedChanges
                     onTriggered: {
@@ -336,7 +336,8 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Save As..."
-                    shortcut: StandardKey.SaveAs
+                    shortcut: properties.macOs ? StandardKey.SaveAs :
+                                                 "Ctrl+Shift+S"
                     enabled: !properties.outputLocked
                     onTriggered: { saveProjectAs() }
                 }
@@ -384,7 +385,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Input parameters"
-                implicitWidth: 250
+                implicitWidth: 270
 
                 SigmaMenuBarMenuItem {
                     text: "Add new..."
@@ -433,7 +434,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Output parameters"
-                implicitWidth: 250
+                implicitWidth: 270
 
                 SigmaMenuBarMenuItem {
                     text: "Add new..."
@@ -473,7 +474,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Monte Carlo simulation"
-                implicitWidth: 160
+                implicitWidth: 170
 
                 SigmaMenuBarMenuItem {
                     text: "Run"
@@ -492,7 +493,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Window"
-                implicitWidth: 210
+                implicitWidth: 220
 
                 SigmaMenuBarMenuItem {
                     text: "Minimize"
