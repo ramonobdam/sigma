@@ -277,7 +277,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: Application.name
-                width: 200
+                implicitWidth: 200
 
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
@@ -298,25 +298,25 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
                     text: properties.macOs ? "Quit" : "Exit"
-                    shortcut: "Ctrl+Q"
+                    shortcut: StandardKey.Close
                     onTriggered: { closeWindow() }
                 }
             }
 
             SigmaMenu {
                 title: "Project"
-                width: 300
+                implicitWidth: 300
 
                 SigmaMenuBarMenuItem {
                     text: "New..."
-                    shortcut: "Ctrl+N"
+                    shortcut: StandardKey.New
                     enabled: !properties.outputLocked
                     onTriggered: { newProject() }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Open..."
-                    shortcut: "Ctrl+O"
+                    shortcut: StandardKey.Open
                     enabled: !properties.outputLocked
                     onTriggered: { openProject() }
                 }
@@ -325,7 +325,7 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Save"
-                    shortcut: "Ctrl+S"
+                    shortcut: StandardKey.Save
                     enabled: !properties.outputLocked &&
                              properties.unsavedChanges
                     onTriggered: {
@@ -336,7 +336,7 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Save As..."
-                    shortcut: "Ctrl+Shift+S"
+                    shortcut: StandardKey.SaveAs
                     enabled: !properties.outputLocked
                     onTriggered: { saveProjectAs() }
                 }
@@ -347,7 +347,7 @@ ApplicationWindow {
                     text: "Auto Save"
                     checkable: true
                     checked: properties.autoSaveProject
-                    onToggled: {
+                    onTriggered: {
                         appSettings.setAutoSaveProject( this.checked )
                         // When Auto Save is switched on, save any unsaved changes
                         if ( this.checked && properties.unsavedChanges ) {
@@ -360,7 +360,7 @@ ApplicationWindow {
                     text: "Restore last project on startup"
                     checkable: true
                     checked: properties.restoreLastProject
-                    onToggled: { appSettings.setRestoreLastProject( this.checked ) }
+                    onTriggered: { appSettings.setRestoreLastProject( this.checked ) }
                 }
 
                 ContextMenuRule {}
@@ -384,7 +384,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Input parameters"
-                width: 250
+                implicitWidth: 250
 
                 SigmaMenuBarMenuItem {
                     text: "Add new..."
@@ -433,7 +433,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Output parameters"
-                width: 250
+                implicitWidth: 250
 
                 SigmaMenuBarMenuItem {
                     text: "Add new..."
@@ -473,7 +473,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Monte Carlo simulation"
-                width: 160
+                implicitWidth: 160
 
                 SigmaMenuBarMenuItem {
                     text: "Run"
@@ -492,7 +492,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Window"
-                width: 210
+                implicitWidth: 210
 
                 SigmaMenuBarMenuItem {
                     text: "Minimize"
@@ -502,18 +502,19 @@ ApplicationWindow {
                 }
 
                 SigmaMenuBarMenuItem {
-                    text: menuBar.maximized ? "Restore" : "Maximize"
+                    text: properties.macOS ?
+                                "Zoom" :
+                                ( menuBar.maximized ? "Restore" : "Maximize" )
                     enabled: !menuBar.fullScreen
                     onTriggered: { captionHelper.toggleMaximize( window ) }
                 }
 
 
                 SigmaMenuBarMenuItem {
-                    text: menuBar.fullScreen ? "Exit Full Screen" :
-                                               "Full Screen"
-                    shortcut: properties.windows ?
-                                  "F11" :
-                                  ( menuBar.fullScreen ? "Escape" : "Ctrl+F" )
+                    text: "Full Screen"
+                    checkable: true
+                    checked: menuBar.fullScreen
+                    shortcut: properties.macOS ? StandardKey.FullScreen : "F11"
                     onTriggered: { captionHelper.toggleFullScreen( window ) }
                 }
             }

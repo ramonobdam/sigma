@@ -1,12 +1,33 @@
 import QtQuick
+import QtQuick.Controls
 
-// Styled MenuBar menu item based on ContextMenuItem
-ContextMenuItem {
+// Action item for native MenuBar on macOS and a styled MenuBar menu item on
+// Windows
+MenuItem {
     id: control
 
     property int fontSize: properties.fontSizeTitleBar
+    property int animationDuration: properties.animationDuration
+    property string backgroundColor: properties.colorElevated
+    property alias shortcut: itemAction.shortcut
 
-    contentItem: Item {
+    contentItem: properties.macOS ? null : content
+    action: itemAction
+
+    Action {
+        id: itemAction
+
+        text: control.text
+        enabled: control.enabled
+        checkable: control.checkable
+        checked: control.checked
+        icon: control.icon
+        onToggled: { control.toggled() }
+    }
+
+    Item {
+        id: content
+
         SigmaText {
             id: icon
 
@@ -60,11 +81,36 @@ ContextMenuItem {
             width: properties.menuItemShortcutWidth
 
             font.pixelSize: control.fontSize
-            text: control.action.shortcut ? control.action.shortcut : ""
+            text: control.shortcut ? control.shortcut : ""
             color: text.color
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignRight
         }
+    }
+
+    background: Rectangle {
+        anchors.fill: parent
+        color: control.down ? properties.colorBrand :
+                              (
+                                  control.highlighted ?
+                                      properties.colorTextHover :
+                                      control.backgroundColor
+                              )
+
+        Behavior on color {
+            ColorAnimation {
+                duration: control.animationDuration
+                easing.type: Easing.InOutQuad
+            }
+        }
+    }
+
+    indicator: Item {}
+
+    arrow: Item {}
+
+    SigmaProperties {
+        id: properties
     }
 
     SigmaFonts {

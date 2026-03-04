@@ -8,7 +8,7 @@ import QtQuick.Effects
 Menu {
     id: control
 
-    width: properties.contextMenuWidth
+    implicitWidth: properties.contextMenuWidth
     padding: bg.border.width
     verticalPadding: bg.border.width
 
