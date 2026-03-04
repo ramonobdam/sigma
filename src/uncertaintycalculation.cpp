@@ -297,10 +297,10 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
 
 
 bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
-    QString path { url.path() };
+    QString path { url.toLocalFile() };
     QSaveFile csvFile( path );
     if (
-        !url.isValid() ||
+        !url.isLocalFile() ||
         !csvFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
         qDebug() << QString( mCSVFailedString ).arg( path );
@@ -315,7 +315,7 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
 
 bool UncertaintyCalculation::saveProject() {
     QUrl url { getProjectFilePath() };
-    if ( url.isValid() ) {
+    if ( url.isLocalFile() ) {
         return saveProject( url );
     }
     return false;
@@ -323,10 +323,10 @@ bool UncertaintyCalculation::saveProject() {
 
 
 bool UncertaintyCalculation::saveProject( const QUrl &url ) {
-    QString path { url.path() };
+    QString path { url.toLocalFile() };
     QSaveFile saveFile( path );
     if (
-        !url.isValid() ||
+        !url.isLocalFile() ||
         !saveFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
         qDebug() << QString( mSaveFailedString ).arg( path );
