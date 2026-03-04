@@ -193,7 +193,7 @@ QtObject {
     property real toolTipBackgroundOpacity: 0.92
 
     // Font sizes
-    property int fontSizeTitleBar: macOS ? 12 : fontSizeBody
+    property int fontSizeTitleBar: fontSizeBody
     property int fontSizeHeader: 22
     property int fontSizeBody: 13
     property int fontSizeHistogram: 12
