@@ -2,14 +2,11 @@ import QtQuick
 
 // The rounded rectangle works mostly like a regular rectangle, but provides the
 // option to have rounded corners on only one side of the rectangle.
-// Adapted from: https://github.com/Ultimaker/Cura/blob/main/resources/qml/RoundedRectangle.qml
-Item {
-    id: roundedRectangle
 
-    // As per the regular rectangle
-    property color color
+Canvas {
+    id: canvas
 
-    // As per regular rectangle
+    property color color: "red"
     property int radius: 0
 
     // On what side should the corners be shown 5 can be used if no radius is needed.
@@ -17,7 +14,14 @@ Item {
     property int cornerSide: RoundedRectangle.Direction.None
 
     // Simple object to ensure that border.width and border.color work
-    property BorderGroup border: BorderGroup {}
+    property alias border: border
+    // Extra aliases are created to have signals when border width/color change
+    property alias borderColor: border.color
+    property alias borderWidth: border.width
+
+    BorderGroup {
+        id: border
+    }
 
     enum Direction {
         None = 0,
@@ -28,54 +32,144 @@ Item {
         All = 5
     }
 
-    Rectangle {
-        id: background
-        anchors.fill: parent
-        radius: cornerSide != RoundedRectangle.Direction.None ? parent.radius :
-                                                                0
-        color: parent.color
-        border.width: parent.border.width
-        border.color: parent.border.color
-    }
+    antialiasing: true
 
-    // The item that covers 2 of the corners to make them not rounded.
-    Rectangle {
-        visible: cornerSide != RoundedRectangle.Direction.None &&
-                 cornerSide != RoundedRectangle.Direction.All
-        height: cornerSide % 2 ? parent.radius: parent.height
-        width: cornerSide % 2 ? parent.width : parent.radius
-        color: parent.color
-        anchors {
-            right: cornerSide == RoundedRectangle.Direction.Left ? parent.right:
-                                                                   undefined
-            bottom: cornerSide == RoundedRectangle.Direction.Up ? parent.bottom:
-                                                                  undefined
+    onPaint: {
+        var ctx = getContext( "2d" )
+
+        var w = width
+        var h = height
+        var r = Math.min( radius, Math.min( w, h ) / 2 )
+
+        ctx.reset()
+
+        ctx.clearRect( 0, 0, w, h )
+
+        // Half-pixel correction for crisp borders
+        var offset = border.width > 0 ? border.width / 2 : 0
+
+        ctx.beginPath()
+
+        // Path construction
+        ctx.moveTo(
+            offset +
+            (
+                (
+                    cornerSide === RoundedRectangle.Direction.Left ||
+                    cornerSide === RoundedRectangle.Direction.Up ||
+                    cornerSide === RoundedRectangle.Direction.All
+                ) ? r : 0
+            ),
+            offset
+        )
+
+        // top edge
+        ctx.lineTo(
+            w - offset -
+            (
+                (
+                    cornerSide === RoundedRectangle.Direction.Right ||
+                    cornerSide === RoundedRectangle.Direction.Up ||
+                    cornerSide === RoundedRectangle.Direction.All
+                ) ? r : 0
+            ),
+            offset
+        )
+
+        if (
+                cornerSide === RoundedRectangle.Direction.Right ||
+                cornerSide === RoundedRectangle.Direction.Up ||
+                cornerSide === RoundedRectangle.Direction.All
+        ) {
+            ctx.arc( w - offset - r, offset + r, r, -Math.PI/2, 0 )
         }
 
-        border.width: parent.border.width
-        border.color: parent.border.color
+        // right edge
+        ctx.lineTo(
+            w - offset,
+            h - offset -
+            (
+                (
+                    cornerSide === RoundedRectangle.Direction.Right ||
+                    cornerSide === RoundedRectangle.Direction.Down ||
+                    cornerSide === RoundedRectangle.Direction.All
+                ) ? r : 0
+            )
+        )
 
-        Rectangle {
-            color: roundedRectangle.color
-            height: cornerSide % 2 ?
-                    roundedRectangle.border.width :
-                    roundedRectangle.height - 2 * roundedRectangle.border.width
-            width: cornerSide % 2 ?
-                    roundedRectangle.width - 2 * roundedRectangle.border.width :
-                    roundedRectangle.border.width
-            anchors {
-                right: cornerSide == RoundedRectangle.Direction.Right ?
-                           parent.right :
-                           undefined
-                bottom: cornerSide  == RoundedRectangle.Direction.Down ?
-                            parent.bottom: undefined
-                horizontalCenter: cornerSide % 2 ?
-                                      parent.horizontalCenter:
-                                      undefined
-                verticalCenter: cornerSide % 2 ?
-                                    undefined:
-                                    parent.verticalCenter
-            }
+        if (
+                cornerSide === RoundedRectangle.Direction.Right ||
+                cornerSide === RoundedRectangle.Direction.Down ||
+                cornerSide === RoundedRectangle.Direction.All
+        ) {
+            ctx.arc( w - offset - r, h - offset - r, r, 0, Math.PI/2 )
+        }
+
+        // bottom edge
+        ctx.lineTo(
+            offset +
+            (
+                (
+                    cornerSide === RoundedRectangle.Direction.Left ||
+                    cornerSide === RoundedRectangle.Direction.Down ||
+                    cornerSide === RoundedRectangle.Direction.All
+                ) ? r : 0
+            ),
+            h - offset
+        )
+
+        if (
+                (
+                    cornerSide === RoundedRectangle.Direction.Left ||
+                    cornerSide === RoundedRectangle.Direction.Down ||
+                    cornerSide === RoundedRectangle.Direction.All
+                )
+        ) {
+            ctx.arc( offset + r, h - offset - r, r, Math.PI/2, Math.PI )
+        }
+
+        // left edge
+        ctx.lineTo(
+            offset,
+            offset +
+            (
+                (
+                    cornerSide === RoundedRectangle.Direction.Left ||
+                    cornerSide === RoundedRectangle.Direction.Up ||
+                    cornerSide === RoundedRectangle.Direction.All
+                ) ? r : 0
+            )
+        )
+
+        if (
+                (
+                    cornerSide === RoundedRectangle.Direction.Left ||
+                    cornerSide === RoundedRectangle.Direction.Up ||
+                    cornerSide === RoundedRectangle.Direction.All
+                )
+        ) {
+            ctx.arc( offset + r, offset + r, r, Math.PI, 3 * Math.PI/2 )
+        }
+
+        ctx.closePath()
+
+        // fill
+        ctx.fillStyle = color
+        ctx.fill()
+
+        // border
+        if ( border.width > 0 ) {
+            ctx.lineWidth = border.width
+            ctx.strokeStyle = border.color
+            ctx.stroke()
         }
     }
+
+    onWidthChanged: { requestPaint() }
+    onHeightChanged: { requestPaint() }
+    onColorChanged: { requestPaint() }
+    onRadiusChanged: { requestPaint() }
+    onCornerSideChanged: { requestPaint() }
+    onBorderColorChanged: { requestPaint() }
+    onBorderWidthChanged: { requestPaint() }
 }
