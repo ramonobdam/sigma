@@ -1061,14 +1061,10 @@ ApplicationWindow {
                                                 properties.colorStrokeStrong :
                                                 properties.colorBrand
                                         anchors {
-                                            left: parent.left
-                                            leftMargin:
-                                                window.roundToDevicePixels( .5 )
-                                            right: parent.right
-                                            top: parent.top
-                                            bottom: parent.bottom
+                                            fill: parent
                                             bottomMargin: 1
                                         }
+                                        antialiasing: true
                                     }
                                 }
 
