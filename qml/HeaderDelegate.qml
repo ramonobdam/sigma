@@ -38,6 +38,7 @@ Item {
         width: properties.borderWidth
 
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 
     Text {
@@ -75,6 +76,7 @@ Item {
 
         visible: control.useValid
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 
     SigmaText {
@@ -107,6 +109,7 @@ Item {
 
         visible: control.lastColumn
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 
     Rectangle {
@@ -120,6 +123,7 @@ Item {
         height: properties.borderWidth
 
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 }
 

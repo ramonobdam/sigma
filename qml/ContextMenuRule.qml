@@ -11,6 +11,7 @@ MenuSeparator {
     contentItem: Rectangle {
         implicitHeight: visible ? properties.borderWidth : 0
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 
     SigmaProperties {

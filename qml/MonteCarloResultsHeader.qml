@@ -34,6 +34,7 @@ Item {
         width: properties.borderWidth
 
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 
     Rectangle {
@@ -52,6 +53,7 @@ Item {
         width: properties.borderWidth
 
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 
     SigmaText {
@@ -81,5 +83,6 @@ Item {
         height: properties.borderWidth
 
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 }

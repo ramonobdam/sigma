@@ -49,6 +49,7 @@ TableDelegate {
 
         visible: control.useValid
         color: control.backgroundColor
+        antialiasing: true
     }
 
     Rectangle {
@@ -93,6 +94,7 @@ TableDelegate {
 
         visible: control.useScale
         color: control.backgroundColor
+        antialiasing: true
     }
 
     Rectangle {
@@ -127,5 +129,6 @@ TableDelegate {
         height: properties.borderWidth
 
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 }

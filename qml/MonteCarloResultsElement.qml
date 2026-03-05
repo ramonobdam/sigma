@@ -70,6 +70,7 @@ Item {
 
         height: properties.borderWidth
         color: properties.colorStrokeWeak
+        antialiasing: true
     }
 }
 
