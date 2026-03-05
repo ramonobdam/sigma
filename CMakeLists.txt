@@ -153,8 +153,8 @@ qt_add_qml_module( Sigma
         src/windowscaptionhelper.h
     RESOURCES
         "resources/third_party/Font Awesome/Font Awesome 7 Free-Solid-900.otf"
-        resources/icons/Icon1024_dark.png
-        resources/icons/Icon1024_light.png
+        resources/icons/Icon800_dark.png
+        resources/icons/Icon800_light.png
         resources/third_party/inter/Inter-Regular.otf
         resources/third_party/inter/Inter-SemiBold.otf
 )

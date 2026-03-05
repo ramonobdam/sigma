@@ -256,9 +256,8 @@ ApplicationWindow {
 
             anchors {
                 left: parent.left
-                leftMargin: properties.spacingM
+                leftMargin: ( parent.height - height ) / 2
                 verticalCenter: parent.verticalCenter
-                verticalCenterOffset: 1
             }
 
             visible: properties.windows
@@ -267,6 +266,7 @@ ApplicationWindow {
             height: width
             fillMode: Image.PreserveAspectFit
             mipmap: true
+            antialiasing: true
         }
 
         SigmaMenuBar {

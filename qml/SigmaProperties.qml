@@ -175,9 +175,9 @@ QtObject {
     property int contextMenuWidthTextField: 120
     property int minimumTitleBarHeight: 28
     property int defaultTableWidth: 100
-    property int appIconWidth: 128
+    property int appIconWidth: 100
     property int titeBarButtonWidth: 40
-    property int titleBarIconWidth: 21
+    property int titleBarIconWidth: 16
     property int titleBarButtonIconWidth: 10
     property int menuBarHeight: 20
     property int menuItemMargins: 18
@@ -277,9 +277,9 @@ QtObject {
 
     // App icon url
     property url appIcon_Light:
-        "qrc:/qt/qml/Sigma/resources/icons/Icon1024_light.png"
+        "qrc:/qt/qml/Sigma/resources/icons/Icon800_light.png"
     property url appIcon_Dark:
-        "qrc:/qt/qml/Sigma/resources/icons/Icon1024_dark.png"
+        "qrc:/qt/qml/Sigma/resources/icons/Icon800_dark.png"
     property url appIcon: lightTheme ? appIcon_Light : appIcon_Dark
 
     // C++ properties

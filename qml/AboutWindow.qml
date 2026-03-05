@@ -32,7 +32,6 @@ BaseWindow {
         Image {
             id: icon
 
-            y: -properties.spacingS
             anchors.horizontalCenter: parent.horizontalCenter
 
             source: properties.appIcon
@@ -40,6 +39,7 @@ BaseWindow {
             height: width
             fillMode: Image.PreserveAspectFit
             mipmap: true
+            antialiasing: true
         }
 
         // Title + version
