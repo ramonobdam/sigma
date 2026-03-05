@@ -21,6 +21,9 @@ int main( int argc, char *argv[] ) {
     // separator ,) consistent wih exprtk
     QLocale::setDefault( QLocale( QLocale::English, QLocale::UnitedStates ) );
 
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough
+    );
     QGuiApplication app( argc, argv );
     app.setApplicationName( "Sigma" );
     app.setApplicationDisplayName( "Sigma - Measurement Uncertainty Toolkit" );

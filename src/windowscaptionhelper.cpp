@@ -77,14 +77,14 @@ bool WindowsCaptionHelper::nativeEventFilter(
 
             // DPI to DIPs
             const double scale { dpiScale( hwnd ) };
-            const int x { int( ptPx.x / scale) };
-            const int y { int( ptPx.y / scale) };
+            const int x { int( ptPx.x / scale ) };
+            const int y { int( ptPx.y / scale ) };
 
             RECT rectPx;
             GetClientRect( hwnd, &rectPx );
 
-            const int width  { int( rectPx.right  / scale) };
-            const int height { int( rectPx.bottom / scale) };
+            const int width  { int( rectPx.right  / scale ) };
+            const int height { int( rectPx.bottom / scale ) };
 
             // Resize border thickness (DIP)
             const int border {
@@ -93,7 +93,7 @@ bool WindowsCaptionHelper::nativeEventFilter(
                         GetSystemMetrics(SM_CXSIZEFRAME) +
                         GetSystemMetrics(SM_CXPADDEDBORDER)
                     )
-                    / dpiScale( hwnd )
+                    / scale
                 )
             };
 
@@ -554,7 +554,10 @@ bool WindowsCaptionHelper::isFixedSize( QWindow *window ) {
 
 
 double WindowsCaptionHelper::dpiScale( HWND hwnd ) {
-    UINT dpi { GetDpiForWindow( hwnd ) };
-    return dpi / defaultDPI;
+    if ( QWindow *w = QGuiApplication::focusWindow() ) {
+        return w->devicePixelRatio();
+    }
+
+    return GetDpiForWindow( hwnd ) / defaultDPI;
 }
 #endif
