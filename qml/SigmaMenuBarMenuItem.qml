@@ -87,10 +87,17 @@ MenuItem {
             width: properties.menuItemShortcutWidth
 
             font.pixelSize: control.fontSize
-            text: control.shortcut ? control.shortcut : ""
+            text: shortcutItem.nativeText
             color: text.color
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignRight
+
+            Shortcut{
+                // Small helper to enable nativeText
+                id: shortcutItem
+
+                sequence: control.shortcut
+            }
         }
     }
 
