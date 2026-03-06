@@ -485,7 +485,7 @@ ApplicationWindow {
                 implicitWidth: 170
 
                 SigmaMenuBarMenuItem {
-                    text: "Run"
+                    text: "Start"
                     shortcut: "Ctrl+R"
                     enabled: calculation.outputValid && !properties.outputLocked
                     onTriggered: calculation.runMonteCarlo()
