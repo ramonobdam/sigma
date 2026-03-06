@@ -4,6 +4,12 @@ It implements the classical GUM method ([JCGM 100:2008](https://doi.org/10.59161
 and also offers a Monte Carlo simulation approach ([JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008)) for more complex cases. 
 Both independent and correlated input parameters are supported.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="resources\screenshots\Sigma_main_H1_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="resources\screenshots\Sigma_main_H1_light.png">
+  <img alt="Sigma screenshot" src="screenshot-light.png">
+</picture>
+
 # Installation 
 Installers for Windows and macOS are bundled with the release. See the [latest release](https://github.com/ramonobdam/sigma/releases) on GitHub. 
 
