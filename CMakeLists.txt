@@ -12,7 +12,7 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 find_package( Qt6 REQUIRED COMPONENTS Quick Graphs )
 
-qt_standard_project_setup( REQUIRES 6.8 )
+qt_standard_project_setup( REQUIRES 6.9 )
 
 if ( WIN32 )
 #! [appicon_windows]
