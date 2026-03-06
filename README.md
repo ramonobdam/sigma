@@ -1,6 +1,6 @@
 # Sigma - Measurement Uncertainty Toolkit 
 Sigma – Measurement Uncertainty Toolkit is a desktop application for evaluating measurement uncertainty. 
-It implements the classical GUM method ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) for combined uncertainty and uncertainty budgets, 
+It implements the classical GUM (Guide to the expression of Uncertainty in Measurement) method ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) for combined uncertainty and uncertainty budgets, 
 and also offers a Monte Carlo simulation approach ([JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008)) for more complex cases. 
 Both independent and correlated input parameters are supported.
 
@@ -22,10 +22,15 @@ Compiling your own version of Sigma requires:
 
 # Quick start guide
 1. Open Sigma
-2. Define the input parameters
-3. Create at least one output parameter. The measurement function of the output parameter defines the mathematical relation between the output value and the input parameters.
+2. Define the input parameters. See the GUM for details on how to set the input estimate, standard uncertainty, probability distribution and degrees of freedom.
+3. Create at least one output parameter. The measurement function of the output parameter defines the mathematical relation between the output value and the input parameters. The level of confidence specifies the required coverage probability of the expanded uncertainty interval. In other words, it gives the fraction of all possible output values that is contained in the expanded uncertainty interval.
 4. The combined uncertainty and uncertainty budget are shown in the results panel on the bottom of the interface.
 5. Choose 'Monte Carlo simulation > Start' (Ctrl+R) from the main menu to start the Monte Carlo simulation. The results can be found in the Monte Carlo simulation panel on the right.
 6. To save a project, choose 'Project > Save...' (Ctrl+S) from the main menu, enter the filename and localion, and click 'Save project'. The file extension of Sigma projects is '.sig'.
 7. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' from the main menu. Subsequently, enter the filename and localion, and click 'Save CSV'.
 8. Application settings can be accessed via 'Sigma > Settings...' on Windows or 'Sigma > Preferences...' on macOS.
+
+# Demo projects
+The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects) folder contains Sigma project files for the calculation examples given in the GUM [JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) and [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008). Note that the demo projects are also added to the installation folder when you use the installer.
+
+Sigma projects can be opened using 'Project > Open...' (Ctrl+O) from the main menu.
