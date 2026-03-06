@@ -1,7 +1,25 @@
-# Sigma - Measurement Uncertainty Toolkit
+# Sigma - Measurement Uncertainty Toolkit 
+Sigma – Measurement Uncertainty Toolkit is a desktop application for evaluating measurement uncertainty. 
+It implements the classical GUM method ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) for combined uncertainty and uncertainty budgets, 
+and also offers a Monte Carlo simulation approach ([JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008)) for more complex cases. 
+Both independent and correlated input parameters are supported.
 
-The Sigma - Measurement Uncertainty Toolkit implements measurement uncertainty calculation in accordance with the Guide to the expression of Uncertainty in Measurement (GUM).
+# Installation 
+Installers for Windows and macOS are bundled with the release. See the [latest release](https://github.com/ramonobdam/sigma/releases) on GitHub. 
 
-The combined measurement uncertainty and uncertainty budget are calculated using the method of propagation of uncertainties as given in <a href='https://doi.org/10.59161/JCGM100-2008E'>GUM JCGM 100:2008</a>.
+Compiling your own version of Sigma requires:
+- Qt 6.9+ ([Qt Installer](https://www.qt.io/development/download))
+- Qt Creator or the command-line tools CMake 3.16+ and Ninja
+- C++ compiler:
+  - Windows: MSVC 2019/2022 ([Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads)) or MinGW
+  - macOS: Xcode command-line tools (xcode-select --install)
 
-In addition, a more broadly applicable Monte Carlo simulation option is available that implements the propagation of distributions method as given in <a href='https://doi.org/10.59161/JCGM101-2008'> GUM JCGM 101:2008</a>.
+# Quick start guide
+1. Open Sigma
+2. Define the input parameters
+3. Create at least one output parameter. The measurement function of the output parameter defines the mathematical relation between the output value and the input parameters.
+4. The combined uncertainty and uncertainty budget are shown in the results panel on the bottom of the interface.
+5. Choose 'Monte Carlo simulation > Start' (Ctrl+R) from the main menu to start the Monte Carlo simulation. The results can be found in the Monte Carlo simulation panel on the right.
+6. To save a project, choose 'Project > Save...' (Ctrl+S) from the main menu, enter the filename and localion, and click 'Save project'. The file extension of Sigma projects is '.sig'.
+7. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' from the main menu. Subsequently, enter the filename and localion, and click 'Save CSV'.
+8. Application settings can be accessed via 'Sigma > Settings...' on Windows or 'Sigma > Preferences...' on macOS.
