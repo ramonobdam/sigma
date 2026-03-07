@@ -404,7 +404,7 @@ void UncertaintyCalculation::clearProject() {
     InputParameter::clearSymbolTable();
     InputParameter::addConstantsToSymbolTable();
     emitOutputModelsReset();
-    emitAllResultsChanged();
+    setOutputRow();
     setUnsavedChanges( true );
 }
 
