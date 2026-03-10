@@ -5,7 +5,6 @@
 #ifndef UNCERTAINTYCALCULATION_H
 #define UNCERTAINTYCALCULATION_H
 
-#include "applicationsettings.h"
 #include "budgetmodel.h"
 #include "correlation.h"
 #include "inputparameter.h"
@@ -22,7 +21,6 @@
 #include <QStringListModel>
 #include <QUrl>
 #include <QtQmlIntegration/qqmlintegration.h>
-#include <limits>
 
 // The UncertaintyCalculation class combines the different parts of the
 // uncertainty calculation and interfaces with the QML UI layer

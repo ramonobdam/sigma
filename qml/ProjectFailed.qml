@@ -1,3 +1,7 @@
+// Sigma – Measurement Uncertainty Toolkit
+// Copyright (c) 2025–2026 Ramon Obdam
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Dialog to inform that saving the project failed
 BaseDialog {
     id: control

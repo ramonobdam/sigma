@@ -1,17 +1,29 @@
+// Sigma – Measurement Uncertainty Toolkit
+// Copyright (c) 2025–2026 Ramon Obdam
+// Licensed under the MIT License. See LICENSE file for details.
+
 import QtQuick
 
-// The rounded rectangle works mostly like a regular rectangle, but provides the
-// option to have rounded corners on only one side of the rectangle.
-
+// Rectangle with optional rounded corners on only one side of the rectangle
+// (which is not possible with a regular Rectangle element)
 Canvas {
     id: canvas
 
-    property color color: "red"
+    property color color
     property int radius: 0
 
-    // On what side should the corners be shown 5 can be used if no radius is needed.
+    // Which side should have the rounded corners?
     // 1 is down, 2 is left, 3 is up and 4 is right.
     property int cornerSide: RoundedRectangle.Direction.None
+
+    enum Direction {
+        None = 0,
+        Down = 1,
+        Left = 2,
+        Up = 3,
+        Right = 4,
+        All = 5
+    }
 
     // Simple object to ensure that border.width and border.color work
     property alias border: border
@@ -21,15 +33,6 @@ Canvas {
 
     BorderGroup {
         id: border
-    }
-
-    enum Direction {
-        None = 0,
-        Down = 1,
-        Left = 2,
-        Up = 3,
-        Right = 4,
-        All = 5
     }
 
     antialiasing: true
@@ -165,6 +168,7 @@ Canvas {
         }
     }
 
+    // Redraw when a property changes
     onWidthChanged: { requestPaint() }
     onHeightChanged: { requestPaint() }
     onColorChanged: { requestPaint() }
