@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.0.1 LANGUAGES CXX )
+project( Sigma VERSION 1.0.2 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -44,7 +44,7 @@ endif()
 
 qt_add_qml_module( Sigma
     URI Sigma
-    VERSION 1.0.1
+    VERSION 1.0.2
     QML_FILES
         qml/AboutWindow.qml
         qml/BaseContextMenu.qml
