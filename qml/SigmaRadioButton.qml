@@ -37,7 +37,7 @@ RadioButton {
     KeyNavigation.right: KeyNavigation.tab
     KeyNavigation.up: KeyNavigation.backtab
     KeyNavigation.down: KeyNavigation.tab
-    Keys.onReturnPressed: toggle()
+    Keys.onReturnPressed: { click() }
 
     indicator: Rectangle {
         implicitWidth: properties.radioButtonWidth
