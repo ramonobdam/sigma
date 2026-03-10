@@ -12,9 +12,7 @@ BaseWindow {
 
     windowTitle: "About " + Application.displayName
     width: 460
-    height: container.childrenRect.height +
-            titleBar.height +
-            container.anchors.margins * 2
+    height: 600
     settingsKey: "aboutWindow"
     settingsObject: Settings {}
 
