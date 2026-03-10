@@ -5,8 +5,8 @@ and also offers a Monte Carlo simulation approach ([JCGM 101:2008](https://doi.o
 Both independent and correlated input parameters are supported.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="resources\screenshots\Sigma_main_H1_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="resources\screenshots\Sigma_main_H1_light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="resources\screenshots\Sigma_H1_main_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="resources\screenshots\Sigma_H1_main_light.png">
   <img alt="Sigma screenshot" src="screenshot-light.png">
 </picture>
 
