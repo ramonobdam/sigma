@@ -87,17 +87,15 @@ Window {
             control.position
         )
 
-        //Qt.callLater( function() {
-            let screen = control.findScreenForPosition( storedPostion )
+        let screen = control.findScreenForPosition( storedPostion )
 
-            if ( screen ) {
-                control.x = storedPostion[ 0 ]
-                control.y = storedPostion[ 1 ]
-            }
-            else {
-                control.centerOnPrimaryScreen()
-            }
-       // } )
+        if ( screen ) {
+            control.x = storedPostion[ 0 ]
+            control.y = storedPostion[ 1 ]
+        }
+        else {
+            control.centerOnPrimaryScreen()
+        }
     }
 
     function storePosition() {
