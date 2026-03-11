@@ -41,13 +41,13 @@ Button {
     background: Rectangle {
         anchors.fill: parent
 
-        color: button.down ? (
-                                 properties.lightTheme ?
-                                     properties.colorTextWeak :
-                                     properties.colorStrokeStrong
-                             ) :
-                             button.hovered ? properties.colorTextDown :
-                                              properties.colorTextHover
+        color: mouseArea.pressed ? (
+                                        properties.lightTheme ?
+                                            properties.colorTextWeak :
+                                            properties.colorStrokeStrong
+                                    ) :
+                                    button.hovered ? properties.colorTextDown :
+                                                     properties.colorTextHover
         radius: properties.radiusS - properties.borderWidth
 
         Behavior on color {
@@ -59,6 +59,8 @@ Button {
     }
 
     MouseArea {
+        id: mouseArea
+
         // A MouseArea is used so the 'click' on the button can be accepted
         // and the 'press' of the click doesn't trigger
         // 'CloseOnReleaseOutsideParent' on the popup. Otherwise the popup
