@@ -288,7 +288,7 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     }
     QByteArray projectData = loadFile.readAll();
     QJsonDocument projectDoc( QJsonDocument::fromJson( projectData ) );
-    clearProject();
+    clearProject( false );  // Currently open project should not be saved
     parametersFromJson( projectDoc.object() );
     setProjectFilePath( url );
     setUnsavedChanges( false );
@@ -395,7 +395,7 @@ void UncertaintyCalculation::addUnit( const QString &name ) {
 }
 
 
-void UncertaintyCalculation::clearProject() {
+void UncertaintyCalculation::clearProject( const bool &unsavedChanges ) {
     emitOutputModelsAboutToBeReset();
     mOutputParametersModel->clear();
     mCorrelationModel->clear();
@@ -405,7 +405,7 @@ void UncertaintyCalculation::clearProject() {
     InputParameter::addConstantsToSymbolTable();
     emitOutputModelsReset();
     setOutputRow();
-    setUnsavedChanges( true );
+    setUnsavedChanges( unsavedChanges );
 }
 
 

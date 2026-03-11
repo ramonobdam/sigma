@@ -80,7 +80,7 @@ public:
     Q_INVOKABLE void addInputParameter( InputParameter *parameter );
     Q_INVOKABLE void addOutputParameter( OutputParameter *parameter );
     Q_INVOKABLE void addUnit( const QString &name );
-    Q_INVOKABLE void clearProject();
+    Q_INVOKABLE void clearProject( const bool &unsavedChanges = true );
     Q_INVOKABLE void newProject();
     Q_INVOKABLE void removeCorrelation();
     Q_INVOKABLE void removeInputParameter();
