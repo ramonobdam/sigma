@@ -27,7 +27,7 @@ int main( int argc, char *argv[] ) {
     QGuiApplication app( argc, argv );
     app.setApplicationName( "Sigma" );
     app.setApplicationDisplayName( "Sigma - Measurement Uncertainty Toolkit" );
-    app.setApplicationVersion( "1.0.3" );
+    app.setApplicationVersion( "1.0.4" );
     app.setOrganizationName( "Tiger Suit Interactive" );
     app.setOrganizationDomain( "TigerSuitInteractive.org" );
 
