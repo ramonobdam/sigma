@@ -97,9 +97,11 @@ MenuItem {
             horizontalAlignment: Text.AlignRight
 
             Shortcut{
-                // Small helper to enable nativeText
+                // Small helper to enable nativeText. The actual shortcut is
+                // disabled.
                 id: shortcutItem
 
+                enabled: false
                 sequence: control.shortcut
             }
         }
