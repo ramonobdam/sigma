@@ -11,7 +11,7 @@ Both independent and correlated input parameters are supported.
 </picture>
 
 ## Demo video
-Watch a short demo video on [YouTube](https://www.youtube.com/watch?v=I8RA858bZgc)
+Watch a short demo video on [YouTube](https://youtu.be/Oq3ydIS2QOc)
 
 ## Installation 
 Installers for Windows and macOS are bundled with the release. See the [latest release](https://github.com/ramonobdam/sigma/releases) on GitHub. 
