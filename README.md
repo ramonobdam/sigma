@@ -13,18 +13,33 @@ Arbitrary measurement functions can be evaluated, and both independent and corre
 ## Demo video
 Watch a short demo video on [YouTube](https://youtu.be/Oq3ydIS2QOc)
 
+## Design considerations
+Why a tool for interactive measurement uncertainty analysis?
+- To make the statistical process of measurement uncertainty easy for engineers
+- Manual derivation of the required sensitivity coefficients can be infeasible for complex models
+- The correlation between input parameters is often ignored due to the computational complexity
+
+*Sigma* provides an easy, structured and automated workflow for measurement uncertainty analysis:
+- The entered measurement function defines the relation between the input and output parameters
+- The correlations between input parameters are taken into account properly
+- The sensitivity coefficients are calculated automatically based on the partial derivatives of the measurement function
+- The combined uncertainty and the components of the uncertainty budget are instantly displayed in the interface. The critical components can quickly be observed by a color scale.
+- Monte Carlo simulation is available for more complex models. The visualization of the simulation output values provides insight into the probability distribution of the output parameter.
+- Calculation projects can easily be saved or exported
+
 ## Architecture
-- UI
-  - Qt Quick
-  - Customized QML components
+For maintainability and reusability, the code is split in a separate UI and Core layer. The Core layer handles the data storage and calculations, while the independent User Interface layer enables the definition of parameters and instant viewing of results.
 
+### UI layer
+- Qt Quick
+- Custom QML components
 
-- C++ backend
-  - Data models
-  - Mathematical expression parser 
-  - Uncertainty budget calculations 
-  - Correlated sampler
-  - Monte Carlo simulation
+### Core layer (C++)
+- Data models
+- Mathematical expression parser
+- Uncertainty budget calculations
+- Correlated sampler
+- Monte Carlo simulation
 
 ## Installation 
 Installers for Windows and macOS are bundled with the release. See the [latest release](https://github.com/ramonobdam/sigma/releases) on GitHub. 
