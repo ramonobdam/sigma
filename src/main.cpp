@@ -41,7 +41,7 @@ int main( int argc, char *argv[] ) {
 
     ApplicationSettings *appSettings { new ApplicationSettings( &app ) };
     UncertaintyCalculation *calculation { new UncertaintyCalculation( &app ) };
-    WindowsCaptionHelper *captionHelper {new WindowsCaptionHelper( &app ) };
+    WindowsCaptionHelper *captionHelper { new WindowsCaptionHelper( &app ) };
 
     // Load a project based on the command-line argument or restore the last
     // project

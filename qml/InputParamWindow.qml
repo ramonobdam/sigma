@@ -457,8 +457,8 @@ BaseWindow {
             text: "Save input parameter"
 
             onClicked: {
-                // Set the active focus to this button to make a pending input
-                // field is evaluated.
+                // Set the active focus to this button to make sure a pending
+                // input field is evaluated.
                 saveButton.forceActiveFocus()
                 control.saveAndReturn()
             }

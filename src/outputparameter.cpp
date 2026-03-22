@@ -649,13 +649,16 @@ void OutputParameter::stopMonteCarlo() {
     mMonteCarlo.stop();
 }
 
+
 QString OutputParameter::getConfidenceAsString() const {
     return QString::number( mConfidence * 100., 'f', 1 ) + "%";
 }
 
+
 QString OutputParameter::getError( const bool &csvMode ) const {
     return csvMode ? addQuotes( mError ) : mError;
 }
+
 
 QString OutputParameter::getFormula( const bool &csvMode ) const {
     return csvMode ? addQuotes( mFormula ) : mFormula;
@@ -671,6 +674,7 @@ QString OutputParameter::getNominalValueAsString( const bool &csvMode ) const {
     }
     return ret;
 }
+
 
 double OutputParameter::getConfidence() const {
     return mConfidence;
