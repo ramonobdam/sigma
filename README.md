@@ -28,7 +28,7 @@ Why a tool for interactive measurement uncertainty analysis?
 - Calculation projects can easily be saved or exported
 
 ## Architecture
-For maintainability and reusability, the code is split in a separate UI and Core layer. The Core layer handles the data storage and calculations, while the independent User Interface layer enables the definition of parameters and instant viewing of results. In addition, this separation will make it easy to add a command line interface in the future.
+For maintainability and reusability, the code is split in a separate UI and Core layer. The Core layer handles the data storage and calculations, while the independent User Interface layer enables the definition of parameters and instant viewing of results. In addition, this separation will make it easy to add a command-line interface in the future.
 
 ### UI layer
 - Qt Quick
