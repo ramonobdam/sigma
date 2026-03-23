@@ -15,17 +15,19 @@ std::mt19937 MixedCopulaSampler::mGenerator = std::mt19937();
 
 MixedCopulaSampler::MixedCopulaSampler( OutputParameter *parameter )
     :   mOutputParameter { parameter },
-        mL {}
+        mL {},
+        mReady { false },
+        mVariables {}
 {}
 
 
-OutputParameter *MixedCopulaSampler::getOutputParameter() const {
+OutputParameter * MixedCopulaSampler::getOutputParameter() const {
     return mOutputParameter;
 }
 
 
-void MixedCopulaSampler::addVariable( Distribution::InvCDF invCDF ) {
-    mVariables.emplace_back( std::move(invCDF) );
+void MixedCopulaSampler::addVariable( const Distribution::InvCDF &invCDF ) {
+    mVariables.emplace_back( std::move( invCDF ) );
 }
 
 void MixedCopulaSampler::clear(){

@@ -20,10 +20,10 @@ class OutputParameter;
 class MixedCopulaSampler {
 
 public:
-    MixedCopulaSampler( OutputParameter *parameter);
+    MixedCopulaSampler( OutputParameter *parameter );
 
     OutputParameter* getOutputParameter() const;
-    void addVariable( Distribution::InvCDF invCDF );
+    void addVariable( const Distribution::InvCDF &invCDF );
     void clear();
     void setLatentCorrelation( const Eigen::MatrixXd &rho );
     void setRandomSymbolValues() const;
@@ -35,7 +35,7 @@ private:
     std::vector<Distribution::InvCDF> mVariables;
     Eigen::MatrixXd mL;
     OutputParameter *mOutputParameter;
-    bool mReady = false;
+    bool mReady;
 
     static std::mt19937 mGenerator;
 };
