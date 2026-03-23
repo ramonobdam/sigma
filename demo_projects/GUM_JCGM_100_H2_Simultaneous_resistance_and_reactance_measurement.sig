@@ -1,4 +1,5 @@
 {
+    "Sigma version": "1.0.5",
     "correlations": [
         {
             "correlation": -0.36,

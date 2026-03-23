@@ -5,6 +5,7 @@
 #include "applicationsettings.h"
 #include "uncertaintycalculation.h"
 #include "windowscaptionhelper.h"
+#include <QCoreApplication>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -27,7 +28,7 @@ int main( int argc, char *argv[] ) {
     QGuiApplication app( argc, argv );
     app.setApplicationName( "Sigma" );
     app.setApplicationDisplayName( "Sigma - Measurement Uncertainty Toolkit" );
-    app.setApplicationVersion( "1.0.4" );
+    app.setApplicationVersion( QCoreApplication::applicationVersion() );
     app.setOrganizationName( "Tiger Suit Interactive" );
     app.setOrganizationDomain( "TigerSuitInteractive.org" );
 

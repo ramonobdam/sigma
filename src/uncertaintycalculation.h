@@ -237,6 +237,7 @@ private:
     };
     const QString mOutputParametersString { "outputParameters" };
     const QString mSaveFailedString { "Project file '%1' could not be saved." };
+    const QString mVersionString { "Sigma version" };
     const QStringList mDefaultUnits {
         "A",
         "°F",

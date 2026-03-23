@@ -5,6 +5,7 @@
 #include "montecarlo.h"
 #include "uncertaintycalculation.h"
 #include <QByteArray>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
 #include <QIODeviceBase>
@@ -550,6 +551,7 @@ void UncertaintyCalculation::unsavedChanges() {
 
 QJsonObject UncertaintyCalculation::parametersToJson() const {
     QJsonObject json {};
+    json[ mVersionString ] = QCoreApplication::applicationVersion();
     json[ mInputParametersString ] = InputParameter::parametersToJson();
     json[ mCorrelationsString ] = Correlation::correlationsToJson();
     json[ mOutputParametersString ] = OutputParameter::parametersToJson();
@@ -625,6 +627,9 @@ QString UncertaintyCalculation::outputParameterReferencesToString(
 
 QString UncertaintyCalculation::projectToString() const {
     QString result {};
+    // Add version number
+    result += "Sigma version: " + QCoreApplication::applicationVersion() + endl;
+
     // Add project title
     QString project { getProjectFileName() };
     if ( project.size() > 0 ) {
