@@ -42,9 +42,11 @@ else()
     qt_add_executable( Sigma src/main.cpp )
 endif()
 
+target_compile_definitions( Sigma PRIVATE APP_VERSION="${PROJECT_VERSION}" )
+
 qt_add_qml_module( Sigma
     URI Sigma
-    VERSION 1.0.5
+    VERSION ${PROJECT_VERSION}
     QML_FILES
         qml/AboutWindow.qml
         qml/BaseContextMenu.qml
