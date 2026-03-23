@@ -63,8 +63,14 @@ int main( int argc, char *argv[] ) {
     QList<const QObject *> objects {
         calculation->inputItemModel(),
         calculation->outputItemModel(),
+        calculation->correlationItemModel(),
+        calculation->resultsItemModel(),
+        calculation->budgetItemModel(),
+        calculation->distributionsModel(),
+        calculation->unitsModel(),
         calculation->inputSelectionModel(),
         calculation->outputSelectionModel(),
+        calculation->correlationSelectionModel()
     };
     for ( const QObject *object : objects ) {
         engine.setObjectOwnership(
