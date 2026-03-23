@@ -356,9 +356,17 @@ void UncertaintyCalculation::addInputParameter( InputParameter *parameter ) {
 }
 
 
-void UncertaintyCalculation::addOutputParameter( OutputParameter* parameter ) {
-    if ( parameter && parameter->addToModel() ) {
-        setUnsavedChanges( true );
+void UncertaintyCalculation::addOutputParameter( OutputParameter *parameter ) {
+    if ( parameter ) {
+        OutputParameter newParameter { *parameter };
+
+        // The signals of the OutputParameter are connected to its parent on
+        // construction, so its parent is set to this object.
+        newParameter.setParent( this );
+
+        if ( newParameter.addToModel() ) {
+            setUnsavedChanges( true );
+        }
     }
 }
 
@@ -516,8 +524,14 @@ void UncertaintyCalculation::updateOutputParameter(
     OutputParameter *parameter
 ) {
     if ( parameter ) {
+        OutputParameter newParameter { *parameter };
+
+        // The signals of the OutputParameter are connected to its parent on
+        // construction, so its parent is set to this object.
+        newParameter.setParent( this );
+
         emitOutputModelsAboutToBeReset();
-        parameter->updateSelectedModelRow();
+        newParameter.updateSelectedModelRow();
         emitOutputModelsReset();
         emitAllResultsChanged();
         setUnsavedChanges( true );
