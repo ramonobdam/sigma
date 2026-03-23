@@ -32,32 +32,22 @@ public:
     UncertaintyCalculation( QObject *parent = nullptr );
     ~UncertaintyCalculation();
 
+    Correlation *getSelectedCorrelation() const;
+    InputParameter *getSelectedInputParameter() const;
+    OutputParameter *getSelectedOutputParameter() const;
     QStringList getDistributionStrings() const;
     QStringList getUnits() const;
-    Correlation * const getSelectedCorrelation() const;
-    InputParameter * const getSelectedInputParameter() const;
-    OutputParameter * const getSelectedOutputParameter() const;
 
-    Q_INVOKABLE const BudgetModel *budgetItemModel() const;
-    Q_INVOKABLE const QItemSelectionModel* correlationSelectionModel() const;
-    Q_INVOKABLE const QItemSelectionModel* inputSelectionModel() const;
-    Q_INVOKABLE const QItemSelectionModel* outputSelectionModel() const;
-    Q_INVOKABLE const QList<int> getBudgetColumnWidths() const;
-    Q_INVOKABLE const QList<int> getCorrelationColumnWidths() const;
-    Q_INVOKABLE const QList<int> getInputColumnWidths() const;
-    Q_INVOKABLE const QList<int> getOutputColumnWidths() const;
-    Q_INVOKABLE const QList<int> getResultsColumnWidths() const;
-    Q_INVOKABLE const QObject *correlationItemModel() const;
-    Q_INVOKABLE const QObject *inputItemModel() const;
-    Q_INVOKABLE const QObject *outputItemModel() const;
-    Q_INVOKABLE const QString getMonteCarloHeader( const int &column ) const;
-    Q_INVOKABLE const QString getNewInputParameterName() const;
-    Q_INVOKABLE const QString getNewOutputParameterName() const;
-    Q_INVOKABLE const QString getSelectedCorrelationReferences() const;
-    Q_INVOKABLE const QString getSelectedInputParameterReferences() const;
-    Q_INVOKABLE const QStringListModel *distributionsModel() const;
-    Q_INVOKABLE const QStringListModel *unitsModel() const;
-    Q_INVOKABLE const ResultsModel *resultsItemModel() const;
+    Q_INVOKABLE QList<int> getBudgetColumnWidths() const;
+    Q_INVOKABLE QList<int> getCorrelationColumnWidths() const;
+    Q_INVOKABLE QList<int> getInputColumnWidths() const;
+    Q_INVOKABLE QList<int> getOutputColumnWidths() const;
+    Q_INVOKABLE QList<int> getResultsColumnWidths() const;
+    Q_INVOKABLE QString getMonteCarloHeader( const int &column ) const;
+    Q_INVOKABLE QString getNewInputParameterName() const;
+    Q_INVOKABLE QString getNewOutputParameterName() const;
+    Q_INVOKABLE QString getSelectedCorrelationReferences() const;
+    Q_INVOKABLE QString getSelectedInputParameterReferences() const;
     Q_INVOKABLE bool inputParameterIsConstant( const QString &name ) const;
     Q_INVOKABLE bool loadProject( const QUrl &url );
     Q_INVOKABLE bool saveCSV( const QUrl &url );
@@ -71,6 +61,16 @@ public:
         const QString &name,
         const bool &checkCurrentSelection = false
     ) const;
+    Q_INVOKABLE const BudgetModel *budgetItemModel() const;
+    Q_INVOKABLE const QItemSelectionModel *correlationSelectionModel() const;
+    Q_INVOKABLE const QItemSelectionModel *inputSelectionModel() const;
+    Q_INVOKABLE const QItemSelectionModel *outputSelectionModel() const;
+    Q_INVOKABLE const QObject *correlationItemModel() const;
+    Q_INVOKABLE const QObject *inputItemModel() const;
+    Q_INVOKABLE const QObject *outputItemModel() const;
+    Q_INVOKABLE const QStringListModel *distributionsModel() const;
+    Q_INVOKABLE const QStringListModel *unitsModel() const;
+    Q_INVOKABLE const ResultsModel *resultsItemModel() const;
     Q_INVOKABLE void addCorrelation( Correlation *correlation );
     Q_INVOKABLE void addInputParameter( InputParameter *parameter );
     Q_INVOKABLE void addOutputParameter( OutputParameter *parameter );
@@ -205,7 +205,6 @@ private:
     ) const;
     QStringList getMonteCarloResults() const;
     QUrl getProjectFilePath() const;
-    bool addVariableToSymbolTable( InputParameter &parameter );
     bool getHistogramValid() const;
     bool getOutputLocked() const;
     bool getOutputValid() const;

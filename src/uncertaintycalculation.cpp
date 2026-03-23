@@ -60,6 +60,32 @@ UncertaintyCalculation::UncertaintyCalculation( QObject *parent )
 UncertaintyCalculation::~UncertaintyCalculation(){}
 
 
+Correlation * UncertaintyCalculation::getSelectedCorrelation() const {
+    if ( mCorrelationModel ) {
+        return mCorrelationModel->getSelectedRow();
+    }
+    return nullptr;
+}
+
+
+InputParameter * UncertaintyCalculation::getSelectedInputParameter(
+) const {
+    if ( mInputParametersModel ) {
+        return mInputParametersModel->getSelectedRow();
+    }
+    return nullptr;
+}
+
+
+OutputParameter * UncertaintyCalculation::getSelectedOutputParameter(
+) const {
+    if ( mOutputParametersModel ) {
+        return mOutputParametersModel->getSelectedRow();
+    }
+    return nullptr;
+}
+
+
 QStringList UncertaintyCalculation::getDistributionStrings() const {
     QStringList distributionList {};
     QList<Distribution::Type> distributions {
@@ -79,96 +105,32 @@ QStringList UncertaintyCalculation::getUnits() const {
 }
 
 
-InputParameter * const UncertaintyCalculation::getSelectedInputParameter(
-) const {
-    if ( mInputParametersModel ) {
-        return mInputParametersModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
-OutputParameter * const UncertaintyCalculation::getSelectedOutputParameter(
-) const {
-    if ( mOutputParametersModel ) {
-        return mOutputParametersModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
-const BudgetModel * UncertaintyCalculation::budgetItemModel() const {
-    return &mBudgetModel;
-}
-
-
-Correlation * const UncertaintyCalculation::getSelectedCorrelation() const {
-    if ( mCorrelationModel ) {
-        return mCorrelationModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
-const QItemSelectionModel * UncertaintyCalculation::correlationSelectionModel(
-) const {
-    return mCorrelationModel->selectionModel();
-}
-
-
-const QItemSelectionModel * UncertaintyCalculation::inputSelectionModel(
-) const {
-    return mInputParametersModel->selectionModel();
-}
-
-
-const QItemSelectionModel * UncertaintyCalculation::outputSelectionModel(
-) const {
-    return mOutputParametersModel->selectionModel();
-}
-
-
-const QList<int> UncertaintyCalculation::getBudgetColumnWidths() const {
+QList<int> UncertaintyCalculation::getBudgetColumnWidths() const {
     return UncertaintyComponent::columnWidths;
 }
 
 
-const QList<int> UncertaintyCalculation::getCorrelationColumnWidths() const {
+QList<int> UncertaintyCalculation::getCorrelationColumnWidths() const {
     return Correlation::columnWidths;
 }
 
 
-const QList<int> UncertaintyCalculation::getInputColumnWidths() const {
+QList<int> UncertaintyCalculation::getInputColumnWidths() const {
     return InputParameter::columnWidths;
 }
 
 
-const QList<int> UncertaintyCalculation::getOutputColumnWidths() const {
+QList<int> UncertaintyCalculation::getOutputColumnWidths() const {
     return OutputParameter::columnWidths;
 }
 
 
-const QList<int> UncertaintyCalculation::getResultsColumnWidths() const {
+QList<int> UncertaintyCalculation::getResultsColumnWidths() const {
     return OutputParameter::resultColumnWidths;
 }
 
 
-const QObject * UncertaintyCalculation::correlationItemModel() const {
-    return mCorrelationModel->itemModel();
-}
-
-
-const QObject * UncertaintyCalculation::inputItemModel() const {
-    return mInputParametersModel->itemModel();
-}
-
-
-const QObject * UncertaintyCalculation::outputItemModel() const {
-    return mOutputParametersModel->itemModel();
-}
-
-
-const QString UncertaintyCalculation::getMonteCarloHeader(
+QString UncertaintyCalculation::getMonteCarloHeader(
     const int &column
 ) const {
     if ( column >= 0 && column < MonteCarlo::headerLabels.size() ) {
@@ -178,7 +140,7 @@ const QString UncertaintyCalculation::getMonteCarloHeader(
 }
 
 
-const QString UncertaintyCalculation::getNewInputParameterName() const {
+QString UncertaintyCalculation::getNewInputParameterName() const {
     QString newName {};
     int num { 0 };
     do {
@@ -189,7 +151,7 @@ const QString UncertaintyCalculation::getNewInputParameterName() const {
 }
 
 
-const QString UncertaintyCalculation::getNewOutputParameterName() const {
+QString UncertaintyCalculation::getNewOutputParameterName() const {
     QString newName {};
     int num { 0 };
     do {
@@ -200,7 +162,7 @@ const QString UncertaintyCalculation::getNewOutputParameterName() const {
 }
 
 
-const QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
+QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
     // Return a string that lists the OutputParameters that are referenced by
     // both InputParameters of the selected correlation
     QString string {};
@@ -222,7 +184,7 @@ const QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
 }
 
 
-const QString UncertaintyCalculation::getSelectedInputParameterReferences(
+QString UncertaintyCalculation::getSelectedInputParameterReferences(
 ) const {
     // Return a string that lists the OutputParameters that are referenced by
     // the selected InputParameter
@@ -231,20 +193,6 @@ const QString UncertaintyCalculation::getSelectedInputParameterReferences(
     return outputParameterReferencesToString( references );
 }
 
-
-const QStringListModel * UncertaintyCalculation::distributionsModel() const {
-    return &mDistributionModel;
-}
-
-
-const QStringListModel * UncertaintyCalculation::unitsModel() const {
-    return &mUnitsModel;
-}
-
-
-const ResultsModel * UncertaintyCalculation::resultsItemModel() const {
-    return &mResultsModel;
-}
 
 bool UncertaintyCalculation::inputParameterIsConstant(
     const QString &name
@@ -330,6 +278,59 @@ bool UncertaintyCalculation::validOutputName(
     const bool &checkCurrentSelection
 ) const {
     return OutputParameter::validName( name, checkCurrentSelection );
+}
+
+
+const BudgetModel * UncertaintyCalculation::budgetItemModel() const {
+    return &mBudgetModel;
+}
+
+
+const QItemSelectionModel * UncertaintyCalculation::correlationSelectionModel(
+) const {
+    return mCorrelationModel->selectionModel();
+}
+
+
+const QItemSelectionModel * UncertaintyCalculation::inputSelectionModel(
+) const {
+    return mInputParametersModel->selectionModel();
+}
+
+
+const QItemSelectionModel * UncertaintyCalculation::outputSelectionModel(
+) const {
+    return mOutputParametersModel->selectionModel();
+}
+
+
+const QObject * UncertaintyCalculation::correlationItemModel() const {
+    return mCorrelationModel->itemModel();
+}
+
+
+const QObject * UncertaintyCalculation::inputItemModel() const {
+    return mInputParametersModel->itemModel();
+}
+
+
+const QObject * UncertaintyCalculation::outputItemModel() const {
+    return mOutputParametersModel->itemModel();
+}
+
+
+const QStringListModel * UncertaintyCalculation::distributionsModel() const {
+    return &mDistributionModel;
+}
+
+
+const QStringListModel * UncertaintyCalculation::unitsModel() const {
+    return &mUnitsModel;
+}
+
+
+const ResultsModel * UncertaintyCalculation::resultsItemModel() const {
+    return &mResultsModel;
 }
 
 
@@ -640,6 +641,7 @@ QString UncertaintyCalculation::projectToString() const {
 
     return result;
 }
+
 
 QStringList UncertaintyCalculation::getInputParameterReferences(
     InputParameter * const &inputParameter
