@@ -11,7 +11,6 @@ import Sigma
 BaseWindow {
     id: control
 
-    property OutputParameter param: calculation.getQMLOutputParameter()
     property bool edit: true
     property bool valid
     property bool allAcceptableInputs: nameField.valid &&
@@ -34,7 +33,7 @@ BaseWindow {
 
     function getParam() {
         // Set the input field values to the selected parameter in the TableView
-        calculation.setQMLOutputParameterToSelected()
+        param.setToSelected();
         control.name = param.getName()
         control.unit = param.getUnit()
         control.getCurrentIndexUnit()
@@ -48,10 +47,10 @@ BaseWindow {
 
     function setParam() {
         // Set param to the current input field values
-        control.param.setName( control.name )
-        control.param.setUnit( control.unit )
-        control.param.setFormula( control.formula )
-        control.param.setConfidence(
+        param.setName( control.name )
+        param.setUnit( control.unit )
+        param.setFormula( control.formula )
+        param.setConfidence(
                           Number.fromLocaleString( control.confidence ) / 100.
                       )
     }
@@ -65,9 +64,9 @@ BaseWindow {
 
     function addParam() {
         // Add a new OutputParameter
-        control.param.setLocked( false );
+        param.setLocked( false );
         control.setParam()
-        calculation.addOutputParameter( control.param )
+        calculation.addOutputParameter( param )
     }
 
     function addUnit() {
@@ -156,7 +155,7 @@ BaseWindow {
         // Evaluate the current measurement function and set the nominal value
         // and error
         control.setParam()
-        control.param.compile()
+        param.compile()
         control.nominal = param.getNominalValueAsString()
         control.valid = param.getValid()
         control.error = param.getError()
@@ -181,6 +180,10 @@ BaseWindow {
             control.showValidName()
             control.setCurrentIndexParam()
         }
+    }
+
+    OutputParameter {
+        id: param
     }
 
     SigmaFonts {

@@ -193,6 +193,17 @@ void Correlation::setCorrelation( const double &correlation ) {
 }
 
 
+void Correlation::setToSelected() {
+    Correlation * const correlation { mCorrelationModel.getSelectedRow() };
+    if ( correlation ) {
+        *this = *correlation;
+    }
+    else {
+        reset();
+    }
+}
+
+
 bool Correlation::addToModel() {
     if ( correlationIsUnique( this ) ) {
         mCorrelationModel.appendRow( *this );

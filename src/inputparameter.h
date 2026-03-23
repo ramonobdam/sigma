@@ -60,6 +60,7 @@ public:
     Q_INVOKABLE void setDOFInfinite( const bool &DOFInfinite );
     Q_INVOKABLE void setDistribution( const QString &distributionString );
     Q_INVOKABLE void setStdUncertainty( const double &stdUncertainty );
+    Q_INVOKABLE void setToSelected();
 
     static InputParameter fromJson(
         const QJsonObject &json,

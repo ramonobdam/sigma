@@ -66,7 +66,9 @@ public:
     UncertaintyComponent *getComponent( const int &row ) const;
     bool addToModel( const bool &resetMonteCarlo = true );
     bool getMonteCarloValid() const;
-    bool isInputParameterReferenced( InputParameter *inputParameter ) const;
+    bool isInputParameterReferenced(
+        InputParameter * const &inputParameter
+    ) const;
     bool updateSelectedModelRow();
     double getCombinedStdUncertainty() const;
     double getComponentContribution( const int &row ) const;
@@ -108,6 +110,7 @@ public:
     Q_INVOKABLE void compile( const bool &resetMonteCarlo = true );
     Q_INVOKABLE void setConfidence( const double &confidence );
     Q_INVOKABLE void setFormula( const QString &formula );
+    Q_INVOKABLE void setToSelected();
 
     static ModelControl<OutputParameter *> *getOutputModel();
     static OutputParameter fromJson(

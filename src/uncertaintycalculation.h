@@ -32,18 +32,13 @@ public:
     UncertaintyCalculation( QObject *parent = nullptr );
     ~UncertaintyCalculation();
 
-    InputParameter *getInputParameter() const;
-    OutputParameter *getOutputParameter() const;
     QStringList getDistributionStrings() const;
     QStringList getUnits() const;
+    Correlation * const getSelectedCorrelation() const;
+    InputParameter * const getSelectedInputParameter() const;
+    OutputParameter * const getSelectedOutputParameter() const;
 
     Q_INVOKABLE const BudgetModel *budgetItemModel() const;
-    Q_INVOKABLE const Correlation *getQMLCorrelation() const;
-    Q_INVOKABLE const Correlation *getSelectedCorrelation() const;
-    Q_INVOKABLE const InputParameter *getSelectedInputParameter() const;
-    Q_INVOKABLE const InputParameter* getQMLInputParameter() const;
-    Q_INVOKABLE const OutputParameter *getSelectedOutputParameter() const;
-    Q_INVOKABLE const OutputParameter* getQMLOutputParameter() const;
     Q_INVOKABLE const QItemSelectionModel* correlationSelectionModel() const;
     Q_INVOKABLE const QItemSelectionModel* inputSelectionModel() const;
     Q_INVOKABLE const QItemSelectionModel* outputSelectionModel() const;
@@ -87,9 +82,6 @@ public:
     Q_INVOKABLE void removeOutputParameter();
     Q_INVOKABLE void resetDisplay();
     Q_INVOKABLE void runMonteCarlo();
-    Q_INVOKABLE void setQMLCorrelationToSelected();
-    Q_INVOKABLE void setQMLInputParameterToSelected();
-    Q_INVOKABLE void setQMLOutputParameterToSelected();
     Q_INVOKABLE void stopMonteCarlo();
     Q_INVOKABLE void updateCorrelation( Correlation *correlation );
     Q_INVOKABLE void updateInputParameter( InputParameter *parameter );
@@ -209,7 +201,7 @@ private:
     ) const;
     QString projectToString() const;
     QStringList getInputParameterReferences(
-        InputParameter *inputParameter
+        InputParameter * const &inputParameter
     ) const;
     QStringList getMonteCarloResults() const;
     QUrl getProjectFilePath() const;
@@ -281,12 +273,9 @@ private:
     };
     const int maxNameAttempts { 100 };
     BudgetModel mBudgetModel;
-    Correlation mQMLCorrelation;
-    InputParameter mQMLInputParameter;
     ModelControl<Correlation *> *mCorrelationModel;
     ModelControl<InputParameter *> *mInputParametersModel;
     ModelControl<OutputParameter *> *mOutputParametersModel;
-    OutputParameter mQMLOutputParameter;
     QStringList mUnits;
     QStringListModel mDistributionModel;
     QStringListModel mUnitsModel;

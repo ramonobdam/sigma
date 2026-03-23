@@ -371,7 +371,7 @@ bool OutputParameter::getMonteCarloValid() const {
 
 
 bool OutputParameter::isInputParameterReferenced(
-    InputParameter *inputParameter
+    InputParameter * const &inputParameter
 ) const {
     if ( inputParameter ) {
         for ( const UncertaintyComponent &component : mComponents ) {
@@ -836,6 +836,14 @@ void OutputParameter::setConfidence( const double &confidence ) {
 
 void OutputParameter::setFormula( const QString &formula ) {
     mFormula = formula.trimmed();
+}
+
+
+void OutputParameter::setToSelected() {
+    OutputParameter * const parameter { mOutputModel.getSelectedRow() };
+    if ( parameter ) {
+        *this = *parameter;
+    }
 }
 
 

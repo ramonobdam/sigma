@@ -11,7 +11,6 @@ import Sigma
 BaseWindow {
     id: control
 
-    property InputParameter param: calculation.getQMLInputParameter()
     property bool edit: true
     property bool allAcceptableInputs: nameField.valid &&
                                        nominalField.acceptableInput &&
@@ -40,7 +39,7 @@ BaseWindow {
     function getParam() {
         // Set the input field values to the selected parameter in the
         // TableView
-        calculation.setQMLInputParameterToSelected()
+        param.setToSelected();
         control.name = param.getName()
         control.unit = param.getUnit()
         control.getCurrentIndexUnit()
@@ -54,25 +53,25 @@ BaseWindow {
 
     function setParam() {
         // Set param to the current input field values
-        control.param.setName( control.name )
-        control.param.setUnit( control.unit )
-        control.param.setNominalValue( control.nominal )
+        param.setName( control.name )
+        param.setUnit( control.unit )
+        param.setNominalValue( control.nominal )
 
         // stdUncertainty is set to zero when the 'none' distribution type is
         // chosen
         let std = control.noneDistribution ? 0 : control.stdUncertainty
 
-        control.param.setStdUncertainty( std )
-        control.param.setDistribution( control.distribution )
-        control.param.setDOFInfinite( control.dofInfinite )
-        control.param.setDOF( control.dof )
+        param.setStdUncertainty( std )
+        param.setDistribution( control.distribution )
+        param.setDOFInfinite( control.dofInfinite )
+        param.setDOF( control.dof )
     }
 
     function updateParam() {
         // Update the selected parameter in the model to the current input field
         // values
         control.setParam()
-        calculation.updateInputParameter(param)
+        calculation.updateInputParameter( param )
     }
 
     function addParam() {
@@ -186,6 +185,11 @@ BaseWindow {
             control.setActiveFocus()
             control.showValidName()
         }
+    }
+
+    // Working copy of the input parameter to be defined or edited
+    InputParameter {
+        id: param
     }
 
     SigmaProperties {

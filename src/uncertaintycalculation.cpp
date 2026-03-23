@@ -23,9 +23,6 @@ UncertaintyCalculation::UncertaintyCalculation( QObject *parent )
         mOutputParametersModel { OutputParameter::getOutputModel() },
         mUnitsModel { QStringListModel( this ) },
         mDistributionModel { QStringListModel( this ) },
-        mQMLCorrelation { Correlation( this ) },
-        mQMLInputParameter { InputParameter( this ) },
-        mQMLOutputParameter { OutputParameter( this ) },
         mBudgetModel { BudgetModel( this ) },
         mResultsModel { ResultsModel ( this) },
         mUnits { mDefaultUnits },
@@ -63,22 +60,6 @@ UncertaintyCalculation::UncertaintyCalculation( QObject *parent )
 UncertaintyCalculation::~UncertaintyCalculation(){}
 
 
-InputParameter * UncertaintyCalculation::getInputParameter() const {
-    if ( mInputParametersModel ) {
-        return mInputParametersModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
-OutputParameter * UncertaintyCalculation::getOutputParameter() const {
-    if ( mOutputParametersModel ) {
-        return mOutputParametersModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
 QStringList UncertaintyCalculation::getDistributionStrings() const {
     QStringList distributionList {};
     QList<Distribution::Type> distributions {
@@ -98,40 +79,34 @@ QStringList UncertaintyCalculation::getUnits() const {
 }
 
 
+InputParameter * const UncertaintyCalculation::getSelectedInputParameter(
+) const {
+    if ( mInputParametersModel ) {
+        return mInputParametersModel->getSelectedRow();
+    }
+    return nullptr;
+}
+
+
+OutputParameter * const UncertaintyCalculation::getSelectedOutputParameter(
+) const {
+    if ( mOutputParametersModel ) {
+        return mOutputParametersModel->getSelectedRow();
+    }
+    return nullptr;
+}
+
+
 const BudgetModel * UncertaintyCalculation::budgetItemModel() const {
     return &mBudgetModel;
 }
 
 
-const Correlation * UncertaintyCalculation::getQMLCorrelation() const {
-    return &mQMLCorrelation;
-}
-
-
-const Correlation * UncertaintyCalculation::getSelectedCorrelation() const {
-    return mCorrelationModel->getSelectedRow();
-}
-
-
-const InputParameter * UncertaintyCalculation::getSelectedInputParameter(
-) const {
-    return mInputParametersModel->getSelectedRow();
-}
-
-
-const InputParameter * UncertaintyCalculation::getQMLInputParameter() const {
-    return &mQMLInputParameter;
-}
-
-
-const OutputParameter * UncertaintyCalculation::getSelectedOutputParameter(
-) const {
-    return mOutputParametersModel->getSelectedRow();
-}
-
-
-const OutputParameter * UncertaintyCalculation::getQMLOutputParameter() const {
-    return &mQMLOutputParameter;
+Correlation * const UncertaintyCalculation::getSelectedCorrelation() const {
+    if ( mCorrelationModel ) {
+        return mCorrelationModel->getSelectedRow();
+    }
+    return nullptr;
 }
 
 
@@ -229,7 +204,7 @@ const QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
     // Return a string that lists the OutputParameters that are referenced by
     // both InputParameters of the selected correlation
     QString string {};
-    const Correlation *correlation { getSelectedCorrelation() };
+    Correlation * const correlation { getSelectedCorrelation() };
     if ( correlation ) {
         InputParameter *paramA { correlation->getInputParameterA() };
         InputParameter *paramB { correlation->getInputParameterB() };
@@ -251,7 +226,7 @@ const QString UncertaintyCalculation::getSelectedInputParameterReferences(
 ) const {
     // Return a string that lists the OutputParameters that are referenced by
     // the selected InputParameter
-    InputParameter *inputParameter { getInputParameter() };
+    InputParameter * const inputParameter { getSelectedInputParameter() };
     QStringList references { getInputParameterReferences( inputParameter ) };
     return outputParameterReferencesToString( references );
 }
@@ -416,7 +391,7 @@ void UncertaintyCalculation::newProject() {
 
 
 void UncertaintyCalculation::removeCorrelation() {
-    const Correlation *correlation { getSelectedCorrelation() };
+    Correlation * const correlation { getSelectedCorrelation() };
     if ( correlation ) {
         // Store referenced InputParameters and correlation coefficient
         InputParameter *paramA { correlation->getInputParameterA() };
@@ -462,46 +437,15 @@ void UncertaintyCalculation::resetDisplay() {
 
 
 void UncertaintyCalculation::runMonteCarlo() {
-    OutputParameter *parameter {
-        const_cast<OutputParameter *>( getSelectedOutputParameter() )
-    };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter ) {
         parameter->startMonteCarlo();
     }
 }
 
 
-void UncertaintyCalculation::setQMLCorrelationToSelected() {
-    const Correlation *correlation { getSelectedCorrelation() };
-    if ( correlation ) {
-        mQMLCorrelation = *correlation;
-    }
-    else {
-        mQMLCorrelation.reset();
-    }
-}
-
-
-void UncertaintyCalculation::setQMLInputParameterToSelected() {
-    const InputParameter *parameter { getSelectedInputParameter() };
-    if ( parameter ) {
-        mQMLInputParameter = *parameter;
-    }
-}
-
-
-void UncertaintyCalculation::setQMLOutputParameterToSelected() {
-    const OutputParameter *parameter { getSelectedOutputParameter() };
-    if ( parameter ) {
-        mQMLOutputParameter = *parameter;
-    }
-}
-
-
 void UncertaintyCalculation::stopMonteCarlo() {
-    OutputParameter *parameter {
-        const_cast<OutputParameter *>( getSelectedOutputParameter() )
-    };
+    OutputParameter *parameter { getSelectedOutputParameter() };
     if ( parameter ) {
         parameter->stopMonteCarlo();
     }
@@ -511,7 +455,7 @@ void UncertaintyCalculation::stopMonteCarlo() {
 void UncertaintyCalculation::updateCorrelation( Correlation *correlation ) {
     if ( correlation ) {
         bool recompile { true };
-        const Correlation *selectedCorrelation { getSelectedCorrelation() };
+        Correlation * const selectedCorrelation { getSelectedCorrelation() };
         // Store the InputParameters that are currently referenced
         InputParameter *originalParamA { correlation->getInputParameterA() };
         InputParameter *originalParamB { correlation->getInputParameterB() };
@@ -613,7 +557,7 @@ QJsonObject UncertaintyCalculation::parametersToJson() const {
 
 
 QList<double> UncertaintyCalculation::getHistogramValues() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramValues();
     }
@@ -623,7 +567,7 @@ QList<double> UncertaintyCalculation::getHistogramValues() const {
 
 QString UncertaintyCalculation::getInputName() const
 {
-    InputParameter *parameter { getInputParameter() };
+    const InputParameter *parameter { getSelectedInputParameter() };
     if ( parameter ) {
         return parameter->getName();
     }
@@ -632,7 +576,7 @@ QString UncertaintyCalculation::getInputName() const
 
 
 QString UncertaintyCalculation::getOutputName() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter ) {
         return parameter->getName();
     }
@@ -641,7 +585,7 @@ QString UncertaintyCalculation::getOutputName() const {
 
 
 QString UncertaintyCalculation::getOutputUnit() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter ) {
         return parameter->getUnit();
     }
@@ -698,7 +642,7 @@ QString UncertaintyCalculation::projectToString() const {
 }
 
 QStringList UncertaintyCalculation::getInputParameterReferences(
-    InputParameter *inputParameter
+    InputParameter * const &inputParameter
 ) const {
     // Return a list of OutputParameter names that references this
     // InputParameter
@@ -724,7 +668,7 @@ QStringList UncertaintyCalculation::getInputParameterReferences(
 QStringList UncertaintyCalculation::getMonteCarloResults() const {
     QStringList results {};
     results.fill( "", MonteCarlo::headerLabels.size() );
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter ) {
         return parameter->getMonteCarloResults();
     }
@@ -738,7 +682,7 @@ QUrl UncertaintyCalculation::getProjectFilePath() const {
 
 
 bool UncertaintyCalculation::getHistogramValid() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() && !parameter->getLocked() ) {
         return parameter->getMonteCarloValid();
     }
@@ -747,7 +691,7 @@ bool UncertaintyCalculation::getHistogramValid() const {
 
 
 bool UncertaintyCalculation::getOutputLocked() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter ) {
         return parameter->getLocked();
     }
@@ -756,7 +700,7 @@ bool UncertaintyCalculation::getOutputLocked() const {
 
 
 bool UncertaintyCalculation::getOutputValid() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter ) {
         return parameter->getValid();
     }
@@ -770,7 +714,7 @@ bool UncertaintyCalculation::getUnsavedChanges() const {
 
 
 double UncertaintyCalculation::getHistogramXMax() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramXMax();
     }
@@ -779,7 +723,7 @@ double UncertaintyCalculation::getHistogramXMax() const {
 
 
 double UncertaintyCalculation::getHistogramXMin() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramXMin();
     }
@@ -788,7 +732,7 @@ double UncertaintyCalculation::getHistogramXMin() const {
 
 
 double UncertaintyCalculation::getHistogramYMax() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramYMax();
     }
@@ -797,7 +741,7 @@ double UncertaintyCalculation::getHistogramYMax() const {
 
 
 double UncertaintyCalculation::getMonteCarloConvergenceFactor() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getMonteCarloConvergenceFactor();
     }
@@ -806,7 +750,7 @@ double UncertaintyCalculation::getMonteCarloConvergenceFactor() const {
 
 
 int UncertaintyCalculation::getHistogramHigherIndex() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramHigherIndex();
     }
@@ -815,7 +759,7 @@ int UncertaintyCalculation::getHistogramHigherIndex() const {
 
 
 int UncertaintyCalculation::getHistogramLowerIndex() const {
-    OutputParameter *parameter { getOutputParameter() };
+    OutputParameter * const parameter { getSelectedOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramLowerIndex();
     }

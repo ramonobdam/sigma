@@ -11,7 +11,6 @@ import Sigma
 BaseWindow {
     id: control
 
-    property Correlation correlation: calculation.getQMLCorrelation()
     property bool edit: true
     property bool allAcceptableInputs: paramACombo.valid &&
                                        paramBCombo.valid &&
@@ -31,7 +30,7 @@ BaseWindow {
 
     function getCorrelation() {
         // Set the input field values to the selected correlation
-        calculation.setQMLCorrelationToSelected()
+        correlation.setToSelected()
         control.getCurrentIndexParamA( correlation.getInputParameterNameA() )
         control.getCurrentIndexParamB( correlation.getInputParameterNameB() )
         control.coef = correlation.getCorrelation()
@@ -39,22 +38,22 @@ BaseWindow {
 
     function setCorrelation() {
         // Set correlation to the current input field values
-        control.correlation.setInputParameterA( control.paramA )
-        control.correlation.setInputParameterB( control.paramB )
-        control.correlation.setCorrelation( control.coef )
+        correlation.setInputParameterA( control.paramA )
+        correlation.setInputParameterB( control.paramB )
+        correlation.setCorrelation( control.coef )
     }
 
     function updateCorrelation() {
         // Update the selected correlation in the model to the current input
         // field values
         control.setCorrelation()
-        calculation.updateCorrelation( control.correlation )
+        calculation.updateCorrelation( correlation )
     }
 
     function addCorrelation() {
         // Add a new Correlation
         control.setCorrelation()
-        calculation.addCorrelation( control.correlation )
+        calculation.addCorrelation( correlation )
     }
 
     function saveAndReturn( currentColumn = 0 ) {
@@ -126,7 +125,7 @@ BaseWindow {
 
         // The correlation must be unique or equal to the correlation being
         // being edited
-        if ( !control.correlation.isUnique( control.edit ) ) {
+        if ( !correlation.isUnique( control.edit ) ) {
             control.valid = false
             control.unacceptableInputMessage =
                     properties.errorCorrelationNotUnique
@@ -164,6 +163,10 @@ BaseWindow {
             control.setActiveFocus()
             control.showValid()
         }
+    }
+
+    Correlation {
+        id: correlation
     }
 
     SigmaFonts {

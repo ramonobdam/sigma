@@ -8,7 +8,6 @@ BaseDialog {
     property string references
     property string paramA
     property string paramB
-    property Correlation correlation: calculation.getQMLCorrelation()
 
     function deleteAndHide() {
         // Remove the correlation and hide the window
@@ -19,7 +18,7 @@ BaseDialog {
     onVisibleChanged: {
         if ( visible ) {
             Qt.callLater( centerOnParent )
-            calculation.setQMLCorrelationToSelected()
+            correlation.setToSelected()
             paramA = correlation.getInputParameterNameA()
             paramB = correlation.getInputParameterNameB()
             references = calculation.getSelectedCorrelationReferences()
@@ -50,4 +49,8 @@ BaseDialog {
     secondaryButton.KeyNavigation.backtab: primaryButton
 
     tertiaryButton.visible: false
+
+    Correlation {
+        id: correlation
+    }
 }

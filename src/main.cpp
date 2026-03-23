@@ -65,8 +65,6 @@ int main( int argc, char *argv[] ) {
         calculation->outputItemModel(),
         calculation->inputSelectionModel(),
         calculation->outputSelectionModel(),
-        calculation->getQMLInputParameter(),
-        calculation->getQMLOutputParameter()
     };
     for ( const QObject *object : objects ) {
         engine.setObjectOwnership(

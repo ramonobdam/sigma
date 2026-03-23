@@ -45,6 +45,7 @@ public:
     QJsonObject toJson() const;
     QString toString() const;
     QVariant get( const int &column, const bool &csvMode = false ) const;
+
     Q_INVOKABLE QString getInputParameterNameA(
         const bool csvMode = false
     ) const;
@@ -58,6 +59,8 @@ public:
     Q_INVOKABLE bool setInputParameterB( const QString &name );
     Q_INVOKABLE double getCorrelation() const;
     Q_INVOKABLE void setCorrelation( const double &correlation = 0. );
+    Q_INVOKABLE void setToSelected();
+
     bool addToModel();
     bool getValid() const;
     void reset();

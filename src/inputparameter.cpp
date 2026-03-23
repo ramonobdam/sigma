@@ -294,6 +294,14 @@ void InputParameter::setStdUncertainty( const double &stdUncertainty ) {
 }
 
 
+void InputParameter::setToSelected() {
+    const InputParameter *parameter { mInputModel.getSelectedRow() };
+    if ( parameter ) {
+        *this = *parameter;
+    }
+}
+
+
 InputParameter InputParameter::fromJson(
     const QJsonObject &json,
     const bool &addToModel,
