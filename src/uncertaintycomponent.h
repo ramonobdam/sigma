@@ -16,7 +16,7 @@
 // Uncertainty component objects are used to store the references to the
 // InputParameters detected in the measurement formula of an OutputParameter. It
 // also provides methods used to calculate the sensitivity of the
-// OutputParameter dwith respect to this component.
+// OutputParameter with respect to this component.
 class UncertaintyComponent : private Settings {
 
 public:

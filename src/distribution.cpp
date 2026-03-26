@@ -90,7 +90,7 @@ namespace Distribution {
         const double &stdDev,
         const int &dof,
         const bool &dofInfinite
-        ) {
+    ) {
         double halfWidth {};
 
         switch ( distribution ) {

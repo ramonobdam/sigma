@@ -182,6 +182,7 @@ BaseWindow {
         }
     }
 
+    // Working copy of the output parameter to be defined or edited
     OutputParameter {
         id: param
     }

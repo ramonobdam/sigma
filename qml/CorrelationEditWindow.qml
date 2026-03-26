@@ -165,6 +165,7 @@ BaseWindow {
         }
     }
 
+    // Working copy of the correlation to be defined or edited
     Correlation {
         id: correlation
     }

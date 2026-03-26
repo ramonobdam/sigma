@@ -22,7 +22,7 @@ class MixedCopulaSampler {
 public:
     MixedCopulaSampler( OutputParameter *parameter );
 
-    OutputParameter* getOutputParameter() const;
+    OutputParameter *getOutputParameter() const;
     void addVariable( const Distribution::InvCDF &invCDF );
     void clear();
     void setLatentCorrelation( const Eigen::MatrixXd &rho );
