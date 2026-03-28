@@ -28,11 +28,19 @@ Why a tool for interactive measurement uncertainty analysis?
 - Calculation projects can easily be saved or exported
 
 ## Architecture
-For maintainability and reusability, the code is split in a separate UI and Core layer. The Core layer handles the data storage and calculations, while the independent User Interface layer enables the definition of parameters and instant viewing of results. In addition, this separation will make it easy to add a command-line interface in the future.
+For maintainability and reusability, *Sigma* is structured into separate UI, Orchestration, and Core layers. This separation makes it straightforward to add a command-line interface in the future.
 
-### UI layer
-- Qt Quick
+The Core layer handles data storage and numerical computations. The UI layer is independent of the core and provides an interactive environment for defining parameters and immediate visualization of results. The Orchestration layer acts as the interface between the UI and the Core systems. It orchestrates the execution of calculations, manages data flow between components, and handles file I/O.
+
+### UI layer (Qt Quick)
+- User interaction
+- Data input
+- Results visualization
 - Custom QML components
+
+### Orchestration layer (C++)
+- Orchestration of calculations and data flow
+- File I/O
 
 ### Core layer (C++)
 - Data models
@@ -40,6 +48,7 @@ For maintainability and reusability, the code is split in a separate UI and Core
 - Uncertainty budget calculations
 - Correlated sampler
 - Monte Carlo simulation
+- Statistics
 
 ## Installation 
 Installers for Windows and macOS are bundled with the release. See the [latest release](https://github.com/ramonobdam/sigma/releases) on GitHub. 
