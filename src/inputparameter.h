@@ -38,13 +38,13 @@ public:
     bool operator!= ( const InputParameter &ip ) const;
 
     Distribution::Type getDistribution() const;
+    InputParameter *addToModel();
     InputParameter *updateSelectedModelRow();
     QJsonObject toJson() const;
     QString getDOFAsString() const;
     QString toString() const;
     QVariant get( const int &column, const bool &csvMode = false ) const;
     Distribution::InvCDF getInvCDF() const;
-    bool addToModel();
     double *getSymbolPtr() const;
     void resetSymbolValue();
     void set( const int &column, const QVariant &value );

@@ -111,7 +111,15 @@ Distribution::Type InputParameter::getDistribution() const {
 }
 
 
-InputParameter* InputParameter::updateSelectedModelRow() {
+InputParameter * InputParameter::addToModel() {
+    if ( validName( getName() ) && addToSymbolTable() ) {
+        return mInputModel.appendRow( *this );
+    }
+    return nullptr;
+}
+
+
+InputParameter * InputParameter::updateSelectedModelRow() {
     if ( validName( getName(), true ) ) {
         InputParameter *currentParameter { mInputModel.getSelectedRow() };
         if ( currentParameter && removeSymbol( currentParameter->getName() ) ) {
@@ -183,15 +191,6 @@ Distribution::InvCDF InputParameter::getInvCDF() const {
         mDOF,
         mDOFInfinite
     );
-}
-
-
-bool InputParameter::addToModel() {
-    if ( validName( getName() ) && addToSymbolTable() ) {
-        mInputModel.appendRow( *this );
-        return true;
-    }
-    return false;
 }
 
 

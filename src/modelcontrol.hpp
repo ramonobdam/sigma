@@ -55,18 +55,17 @@ public:
     }
 
 
-    int appendRow( const T &parameter ) {
+    T *appendRow( const T &parameter ) {
         mModel.appendRow( parameter );
         int row { rowCount() - 1 };
         selectRow( row );
-        return row;
+        return getRow( row );
     }
 
 
     void updateSelectedRow( const T &parameter ) {
         int row { selectedRow() };
-        if ( row >= 0 )
-        {
+        if ( row >= 0 ) {
             updateRow( row, parameter );
         }
     }

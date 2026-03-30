@@ -215,6 +215,7 @@ private:
     double getMonteCarloConvergenceFactor() const;
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
+    void connectToOutputParameter( const OutputParameter *parameter);
     void emitAllResultsChanged();
     void emitOutputModelsAboutToBeReset();
     void emitOutputModelsReset();

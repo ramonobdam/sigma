@@ -86,6 +86,14 @@ bool Correlation::operator!= ( const Correlation &cor ) const {
 }
 
 
+Correlation * Correlation::addToModel() {
+    if ( correlationIsUnique( this ) ) {
+        return mCorrelationModel.appendRow( *this );
+    }
+    return nullptr;
+}
+
+
 Correlation * Correlation::updateSelectedModelRow() {
     Correlation *currentCorrelation { mCorrelationModel.getSelectedRow() };
     if ( currentCorrelation ) {
@@ -204,15 +212,6 @@ void Correlation::setToSelected() {
 }
 
 
-bool Correlation::addToModel() {
-    if ( correlationIsUnique( this ) ) {
-        mCorrelationModel.appendRow( *this );
-        return true;
-    }
-    return false;
-}
-
-
 bool Correlation::getValid() const {
     // Both InputParameters must be different and the coefficient between -1 and
     // 1
@@ -311,15 +310,6 @@ Correlation Correlation::fromJson(
 }
 
 
-bool Correlation::removeSelectedModelRow() {
-    Correlation *correlation { mCorrelationModel.getSelectedRow() };
-    if ( correlation ) {
-        return mCorrelationModel.removeSelectedRow();
-    }
-    return false;
-}
-
-
 ModelControl<Correlation *> * Correlation::getCorrelationModel() {
     return &mCorrelationModel;
 }
@@ -379,6 +369,15 @@ bool Correlation::inputParameterCorrelated( InputParameter *inputParameter ) {
             ) {
             return true;
         }
+    }
+    return false;
+}
+
+
+bool Correlation::removeSelectedModelRow() {
+    Correlation *correlation { mCorrelationModel.getSelectedRow() };
+    if ( correlation ) {
+        return mCorrelationModel.removeSelectedRow();
     }
     return false;
 }

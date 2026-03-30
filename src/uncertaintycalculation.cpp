@@ -187,8 +187,8 @@ QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
 
 QString UncertaintyCalculation::getSelectedInputParameterReferences(
 ) const {
-    // Return a string that lists the OutputParameters that are referenced by
-    // the selected InputParameter
+    // Return a string that lists the OutputParameters that are referencing the
+    // selected InputParameter
     InputParameter * const inputParameter { getSelectedInputParameter() };
     QStringList references { getInputParameterReferences( inputParameter ) };
     return outputParameterReferencesToString( references );
@@ -358,13 +358,11 @@ void UncertaintyCalculation::addInputParameter( InputParameter *parameter ) {
 
 void UncertaintyCalculation::addOutputParameter( OutputParameter *parameter ) {
     if ( parameter ) {
-        OutputParameter newParameter { *parameter };
+        const OutputParameter *newParameter { parameter->addToModel() };
 
-        // The signals of the OutputParameter are connected to its parent on
-        // construction, so its parent is set to this object.
-        newParameter.setParent( this );
+        if ( newParameter ) {
+            connectToOutputParameter( newParameter );
 
-        if ( newParameter.addToModel() ) {
             setUnsavedChanges( true );
         }
     }
@@ -524,14 +522,8 @@ void UncertaintyCalculation::updateOutputParameter(
     OutputParameter *parameter
 ) {
     if ( parameter ) {
-        OutputParameter newParameter { *parameter };
-
-        // The signals of the OutputParameter are connected to its parent on
-        // construction, so its parent is set to this object.
-        newParameter.setParent( this );
-
         emitOutputModelsAboutToBeReset();
-        newParameter.updateSelectedModelRow();
+        parameter->updateSelectedModelRow();
         emitOutputModelsReset();
         emitAllResultsChanged();
         setUnsavedChanges( true );
@@ -665,7 +657,7 @@ QString UncertaintyCalculation::projectToString() const {
 QStringList UncertaintyCalculation::getInputParameterReferences(
     InputParameter * const &inputParameter
 ) const {
-    // Return a list of OutputParameter names that references this
+    // Return a list of OutputParameter names that reference this
     // InputParameter
     QStringList references {};
     if ( inputParameter ) {
@@ -788,6 +780,58 @@ int UncertaintyCalculation::getHistogramLowerIndex() const {
 }
 
 
+void UncertaintyCalculation::connectToOutputParameter(
+    const OutputParameter *parameter
+){
+    // Connect the signals of the OutputParameter to this object's signals and
+    // slots
+    if ( parameter ) {
+        connect(
+            parameter,
+            &OutputParameter::monteCarloStarted,
+            this,
+            &UncertaintyCalculation::monteCarloValuesChanged
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloFinished,
+            this,
+            &UncertaintyCalculation::monteCarloValuesChanged
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloStatusChanged,
+            this,
+            &UncertaintyCalculation::monteCarloResultsListChanged
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloConvergenceFactorChanged,
+            this,
+            &UncertaintyCalculation::monteCarloConvergenceFactorChanged
+        );
+        connect(
+            parameter,
+            &OutputParameter::lockedChanged,
+            this,
+            &UncertaintyCalculation::lockItemSelectionModels
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloStarted,
+            this,
+            &UncertaintyCalculation::unsavedChanges
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloFinished,
+            this,
+            &UncertaintyCalculation::unsavedChanges
+        );
+    }
+}
+
+
 void UncertaintyCalculation::emitAllResultsChanged() {
     emit resultsChanged();
     emit monteCarloResultsListChanged();
@@ -822,6 +866,12 @@ void UncertaintyCalculation::parametersFromJson( const QJsonObject &json ) {
     if ( const QJsonValue v = json[ mOutputParametersString ]; v.isArray() ) {
         const QJsonArray paramArray { v.toArray() };
         OutputParameter::parametersFromJson( paramArray, this );
+
+        // Create connections between the new OutputParameters and this object's
+        // signals and slots
+        for ( OutputParameter* &param : mOutputParametersModel->getAllRows() ) {
+            connectToOutputParameter( param );
+        }
     }
 
     updateUnits();
@@ -897,7 +947,7 @@ void UncertaintyCalculation::updateUnits() {
     for ( InputParameter * &parameter : mInputParametersModel->getAllRows() ) {
         addUnit( parameter->getUnit() );
     }
-    for ( OutputParameter* &parameter : mOutputParametersModel->getAllRows() ) {
+    for ( OutputParameter * &parameter : mOutputParametersModel->getAllRows() ) {
         addUnit( parameter->getUnit() );
     }
 }

@@ -48,6 +48,7 @@ public:
 
     MixedCopulaSampler getMixedCopulaSampler() const;
     MonteCarlo getMonteCarlo() const;
+    OutputParameter *addToModel( const bool &resetMonteCarlo = true );
     QJsonObject toJson() const;
     QList<UncertaintyComponent> getComponents() const;
     QList<double> getHistogramValues();
@@ -64,7 +65,6 @@ public:
     QVariant get( const int &column, const bool &csvMode = false ) const;
     QVariant getResult( const int &column, const bool &csvMode = false ) const;
     UncertaintyComponent *getComponent( const int &row ) const;
-    bool addToModel( const bool &resetMonteCarlo = true );
     bool getMonteCarloValid() const;
     bool isInputParameterReferenced(
         InputParameter * const &inputParameter
@@ -139,6 +139,10 @@ public:
 
 signals:
     void lockedChanged();
+    void monteCarloConvergenceFactorChanged();
+    void monteCarloFinished();
+    void monteCarloStarted();
+    void monteCarloStatusChanged();
 
 private:
     QString getCombinedStdUncertaintyAsString(

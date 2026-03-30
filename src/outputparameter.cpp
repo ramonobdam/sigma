@@ -4,7 +4,6 @@
 
 #include "third_party/alglib/specialfunctions.h"
 #include "outputparameter.h"
-#include "uncertaintycalculation.h"
 #include <third_party/Eigen/Dense>
 #include <QRegularExpression>
 #include <cmath>
@@ -120,8 +119,6 @@ OutputParameter& OutputParameter::operator= ( const OutputParameter &op ) {
     mMonteCarlo.setOutputParameter( this );
     mMixedCopulaSampler.setOutputParameter( this );
 
-    createConnections();
-
     return *this;
 }
 
@@ -146,6 +143,15 @@ MixedCopulaSampler OutputParameter::getMixedCopulaSampler() const {
 
 MonteCarlo OutputParameter::getMonteCarlo() const {
     return mMonteCarlo;
+}
+
+
+OutputParameter * OutputParameter::addToModel( const bool &resetMonteCarlo ) {
+    if ( validName( getName() ) ) {
+        compile( resetMonteCarlo );
+        return mOutputModel.appendRow( *this );
+    }
+    return nullptr;
 }
 
 
@@ -352,16 +358,6 @@ UncertaintyComponent * OutputParameter::getComponent( const int &row ) const {
         return const_cast<UncertaintyComponent *> ( &mComponents[ row ] );
     }
     return nullptr;
-}
-
-
-bool OutputParameter::addToModel( const bool &resetMonteCarlo ) {
-    if ( validName( getName() ) ) {
-        compile( resetMonteCarlo );
-        mOutputModel.appendRow( *this );
-        return true;
-    }
-    return false;
 }
 
 
@@ -1032,38 +1028,29 @@ bool OutputParameter::allComponentsNormal() const {
 
 
 void OutputParameter::createConnections() {
-    // Connect to UncertaintyCalculation (i.e. parent)
-    UncertaintyCalculation *ptr {
-        dynamic_cast<UncertaintyCalculation *> ( parent() )
-    };
-    if ( ptr ) {
-        connect( &mMonteCarlo,
-                 &MonteCarlo::started,
-                 ptr,
-                 &UncertaintyCalculation::monteCarloValuesChanged );
-        connect( &mMonteCarlo,
-                 &MonteCarlo::finished,
-                 ptr,
-                 &UncertaintyCalculation::monteCarloValuesChanged );
-        connect( &mMonteCarlo,
-                 &MonteCarlo::monteCarloStatusChanged,
-                 ptr,
-                 &UncertaintyCalculation::monteCarloResultsListChanged );
-        connect( &mMonteCarlo,
-                 &MonteCarlo::convergenceFactorChanged,
-                 ptr,
-                 &UncertaintyCalculation::monteCarloConvergenceFactorChanged );
-        connect( this,
-                 &OutputParameter::lockedChanged,
-                 ptr,
-                 &UncertaintyCalculation::lockItemSelectionModels );
-        connect( &mMonteCarlo,
-                 &MonteCarlo::started,
-                 ptr,
-                 &UncertaintyCalculation::unsavedChanges );
-        connect( &mMonteCarlo,
-                 &MonteCarlo::finished,
-                 ptr,
-                 &UncertaintyCalculation::unsavedChanges );
-    }
+    // Connect to Monte Carlo object
+    connect(
+        &mMonteCarlo,
+        &MonteCarlo::started,
+        this,
+        &OutputParameter::monteCarloStarted
+    );
+    connect(
+        &mMonteCarlo,
+        &MonteCarlo::finished,
+        this,
+        &OutputParameter::monteCarloFinished
+    );
+    connect(
+        &mMonteCarlo,
+        &MonteCarlo::monteCarloStatusChanged,
+        this,
+        &OutputParameter::monteCarloStatusChanged
+    );
+    connect(
+        &mMonteCarlo,
+        &MonteCarlo::convergenceFactorChanged,
+        this,
+        &OutputParameter::monteCarloConvergenceFactorChanged
+    );
 }

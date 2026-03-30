@@ -39,6 +39,7 @@ public:
     bool operator== ( const Correlation &cor ) const;
     bool operator!= ( const Correlation &cor ) const;
 
+    Correlation *addToModel();
     Correlation *updateSelectedModelRow();
     InputParameter *getInputParameterA() const;
     InputParameter *getInputParameterB() const;
@@ -61,7 +62,6 @@ public:
     Q_INVOKABLE void setCorrelation( const double &correlation = 0. );
     Q_INVOKABLE void setToSelected();
 
-    bool addToModel();
     bool getValid() const;
     void reset();
     void set( const int &column, const QVariant &value );
