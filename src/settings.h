@@ -22,7 +22,7 @@ public:
     Q_ENUM( DisplayTheme )
 
     Settings();
-    ~Settings();
+    virtual ~Settings() = default;
 
     Settings& operator= ( const Settings &settings );
 

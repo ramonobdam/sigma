@@ -38,9 +38,6 @@ Parameter::Parameter(
 {}
 
 
-Parameter::~Parameter() {}
-
-
 bool Parameter::getLocked() const {
     return mLocked;
 }

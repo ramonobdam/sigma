@@ -190,9 +190,7 @@ QString OutputParameter::componentsToString() const {
     for ( int row { 0 }; row < rows; ++row ) {
         UncertaintyComponent *component { getComponent( row ) };
         if ( component ) {
-            int columns {
-                static_cast<int>( UncertaintyComponent::headerLabels.size() )
-            };
+            int columns { staticColumnCount() };
 
             // The first columns contain component data
             for ( int column { 0 }; column < columns - 3; ++column ) {
@@ -260,8 +258,7 @@ QString OutputParameter::resultsToString() const {
 
 QString OutputParameter::toString() const {
     QStringList results {};
-    qsizetype columns { headerLabels.size() };
-    for ( int column { 0 }; column < columns; ++column ) {
+    for ( int column { 0 }; column < staticColumnCount(); ++column ) {
         results.append( get( column, true ).toString() );
     }
     return results.join( mCSVSeparator );
@@ -350,6 +347,11 @@ QVariant OutputParameter::getResult(
         default:
             return QVariant();
     }
+}
+
+
+QVariant OutputParameter::headerData( const int &column ) const {
+    return staticHeaderData( column );
 }
 
 
@@ -509,6 +511,11 @@ double OutputParameter::getMonteCarloConvergenceFactor() const {
 
 double OutputParameter::getTotalContribution( const int &row ) const {
     return getComponentContribution( row ) + getCorrelationContribution( row );
+}
+
+
+int OutputParameter::columnCount() const {
+    return staticColumnCount();
 }
 
 
@@ -954,6 +961,19 @@ bool OutputParameter::validName(
         return true;
     }
     return !mOutputModel.nameIsPresent( name ) && name.size() > 0;
+}
+
+
+QVariant OutputParameter::staticHeaderData( const int &column ) {
+    if ( column >= 0 && column < staticColumnCount() ) {
+        return headerLabels[ column ];
+    }
+    return QVariant();
+}
+
+
+int OutputParameter::staticColumnCount() {
+    return headerLabels.size();
 }
 
 

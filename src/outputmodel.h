@@ -10,22 +10,35 @@
 #include <QAbstractTableModel>
 #include <QObject>
 
-// Base class that wraps a QAbstractTableModel around the selected
-// OutputParameter. This is used to display the results in table format in the
-// QML interface. Virtual methods data, headerData, rowCount and columnCount
-// need to be overriden in the derived class.
+// Abstract class that creates a QAbstractTableModel-interface for the selected
+// OutputParameter. This interface is used to display the results in table
+// format in the QML interface. Virtual methods data, headerData, rowCount and
+// columnCount need to be implemented in the subclass.
 class OutputModel: public QAbstractTableModel {
     Q_OBJECT
 
 public:
     OutputModel( QObject *parent = nullptr );
-    ~OutputModel();
+    virtual ~OutputModel() = default;
 
     int getOutputRow() const;
     void emitAllDataChanged();
     void emitModelAboutToBeReset();
     void emitModelReset();
     void setOutputParameterModel( ModelControl<OutputParameter *> *outputModel);
+
+    virtual int columnCount(
+        const QModelIndex &parent = QModelIndex()
+    ) const = 0;
+    virtual QVariant data( const QModelIndex &index, int role ) const = 0;
+    virtual QVariant headerData(
+        int section,
+        Qt::Orientation orientation,
+        int role = Qt::DisplayRole
+    ) const = 0;
+    virtual int rowCount(
+        const QModelIndex &parent = QModelIndex()
+    ) const = 0;
 
 public slots:
     void setOutputRow( const int &row = -1 );

@@ -62,8 +62,12 @@ public:
     QString toString() const;
     QStringList getMonteCarloResults( const bool &csvMode = false ) const;
     QStringList getResults( const bool &csvMode = false ) const;
-    QVariant get( const int &column, const bool &csvMode = false ) const;
+    QVariant get(
+        const int &column,
+        const bool &csvMode = false
+    ) const override;
     QVariant getResult( const int &column, const bool &csvMode = false ) const;
+    QVariant headerData( const int &column ) const override;
     UncertaintyComponent *getComponent( const int &row ) const;
     bool getMonteCarloValid() const;
     bool isInputParameterReferenced(
@@ -81,6 +85,7 @@ public:
     double getHistogramYMax() const;
     double getMonteCarloConvergenceFactor() const;
     double getTotalContribution( const int &row ) const;
+    int columnCount() const override;
     int getEffectiveDOF() const;
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
@@ -90,7 +95,7 @@ public:
     void clearComponents();
     void resetResults( const bool &resetMonteCarlo = true );
     void resetSymbolValues();
-    void set( const int &column, const QVariant &value );
+    void set( const int &column, const QVariant &value ) override;
     void setComponents( const QList<UncertaintyComponent> &components );
     void setError( const QString &error = "" );
     void setLocked( const bool &locked ) override;
@@ -124,6 +129,8 @@ public:
         const QString &name,
         const bool &checkCurrentSelection = false
     );
+    static QVariant staticHeaderData( const int &column );
+    static int staticColumnCount();
     static void parametersFromJson(
         const QJsonArray &jsonArray,
         QObject *parent = nullptr

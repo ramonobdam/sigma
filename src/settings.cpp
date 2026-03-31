@@ -20,9 +20,6 @@ int Settings::mMonteCarloMaxNumOfBatches = {};
 Settings::Settings() {}
 
 
-Settings::~Settings() {}
-
-
 Settings& Settings::operator= ( const Settings &settings ) {
     if ( this == &settings ) {
         return *this;

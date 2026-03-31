@@ -5,17 +5,29 @@
 #ifndef MODEL_H
 #define MODEL_H
 
+#include "record.hpp"
 #include <QAbstractTableModel>
 #include <QList>
 #include <QModelIndex>
+#include <QObject>
+#include <QtAssert>
+#include <type_traits>
 
-// Specialization of the QAbstractTableModel class for parameter type T. It is
-// used to store and display Parameter (derived) and Correlation objects.
+// Template implementation of the QAbstractTableModel class to store objects
+// derived from both Record and QObject
+
 template <typename T>
 class Model : public QAbstractTableModel {
 
 public:
     Model( QObject *parent = nullptr ) {
+        Q_ASSERT_X(
+            ( std::is_base_of_v<Record, T> ) &&
+            ( std::is_base_of_v<QObject, T> ),
+            "Model()",
+            "Type T must derive from both Record and QObject"
+        );
+
         setParent( parent );
     }
 
@@ -25,8 +37,7 @@ public:
 
     void clear() {
         beginResetModel();
-        for ( T* parameter : mParameters )
-        {
+        for ( T* parameter : mParameters ) {
             if ( parameter ) {
                 delete parameter;
             }
@@ -39,7 +50,7 @@ public:
     int columnCount(
         const QModelIndex &parent = QModelIndex()
     ) const override {
-        return T::headerLabels.size();
+        return T::staticColumnCount();
     }
 
 
@@ -92,7 +103,7 @@ public:
         int role = Qt::DisplayRole
     ) const override {
         if ( role == Qt::DisplayRole && orientation == Qt::Horizontal ) {
-            return T::headerLabels[ section ];
+            return T::staticHeaderData( section );
         }
         return QVariant();
     }

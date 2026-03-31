@@ -123,9 +123,15 @@ QJsonObject Correlation::toJson() const {
 }
 
 
+QString Correlation::getName( const bool csvMode ) const {
+    // A corralation does not have a name
+    return "";
+}
+
+
 QString Correlation::toString() const {
     QStringList resultList {};
-    for ( int i { 0 }; i < headerLabels.size(); ++i ) {
+    for ( int i { 0 }; i < staticColumnCount(); ++i ) {
         resultList.append( get( i, true ).toString() );
     }
     return resultList.join( mCSVSeparator );
@@ -143,6 +149,11 @@ QVariant Correlation::get( const int &column, const bool &csvMode ) const {
         default:
             return QVariant();
     }
+}
+
+
+QVariant Correlation::headerData( const int &column ) const {
+    return staticHeaderData( column );
 }
 
 
@@ -225,6 +236,11 @@ bool Correlation::getValid() const {
         return true;
     }
     return false;
+}
+
+
+int Correlation::columnCount() const {
+    return staticColumnCount();
 }
 
 
@@ -357,6 +373,14 @@ bool Correlation::correlationIsUnique(
 }
 
 
+QVariant Correlation::staticHeaderData( const int &column ) {
+    if ( column >= 0 && column < staticColumnCount() ) {
+        return headerLabels[ column ];
+    }
+    return QVariant();
+}
+
+
 bool Correlation::inputParameterCorrelated( InputParameter *inputParameter ) {
     // Is the InputParameter part of the correlations table?
     QList<Correlation *> correlations { mCorrelationModel.getAllRows() };
@@ -380,6 +404,11 @@ bool Correlation::removeSelectedModelRow() {
         return mCorrelationModel.removeSelectedRow();
     }
     return false;
+}
+
+
+int Correlation::staticColumnCount() {
+    return headerLabels.size();
 }
 
 

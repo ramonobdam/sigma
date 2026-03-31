@@ -5,16 +5,22 @@
 #ifndef PARAMETER_H
 #define PARAMETER_H
 
+#include "record.hpp"
 #include "settings.h"
 #include "utils.h"
 #include <QObject>
 #include <QString>
 #include <string>
 
-// Base Parameter class with the properties name, unit, nominal value, locked
-// and valid. Derives from QObject to enable the 'signals and slots' mechanism
-// and Q_INVOKABLE methods that can be invoked from QML.
-class Parameter : public QObject, protected Settings, protected Utils {
+// Abstract Parameter class with the attributes name, unit, nominal value,
+// locked and valid. Derives from QObject to enable the 'signals and slots'
+// mechanism and Q_INVOKABLE methods that can be invoked from QML.
+class Parameter :
+    public QObject,
+    public Record,
+    protected Settings,
+    protected Utils
+{
     Q_OBJECT
 
 public:
@@ -27,11 +33,11 @@ public:
         const bool &locked,
         const bool &valid
     );
-    ~Parameter();
+    virtual ~Parameter() = default;
 
-    bool virtual getLocked() const;
-    std::wstring virtual getNameStdWString() const;
-    void virtual setValid( const bool &valid );
+    virtual bool getLocked() const;
+    virtual std::wstring getNameStdWString() const;
+    virtual void setValid( const bool &valid );
 
     Q_INVOKABLE virtual QString getName( const bool csvMode = false ) const;
     Q_INVOKABLE virtual QString getUnit( const bool csvMode = false ) const;

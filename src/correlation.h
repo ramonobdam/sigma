@@ -6,6 +6,7 @@
 #define CORRELATION_H
 
 #include "modelcontrol.hpp"
+#include "record.hpp"
 #include "settings.h"
 #include "utils.h"
 #include <QJsonArray>
@@ -21,7 +22,12 @@
 class InputParameter;
 
 // Class that defines the correlation coefficient between 2 InputParameters.
-class Correlation : public QObject, protected Settings, protected Utils {
+class Correlation :
+    public QObject,
+    public Record,
+    protected Settings,
+    protected Utils
+{
     Q_OBJECT
     QML_ELEMENT
 
@@ -44,8 +50,13 @@ public:
     InputParameter *getInputParameterA() const;
     InputParameter *getInputParameterB() const;
     QJsonObject toJson() const;
+    QString getName( const bool csvMode = false ) const override;
     QString toString() const;
-    QVariant get( const int &column, const bool &csvMode = false ) const;
+    QVariant get(
+        const int &column,
+        const bool &csvMode = false
+    ) const override;
+    QVariant headerData( const int &column ) const override;
 
     Q_INVOKABLE QString getInputParameterNameA(
         const bool csvMode = false
@@ -62,9 +73,10 @@ public:
     Q_INVOKABLE void setCorrelation( const double &correlation = 0. );
     Q_INVOKABLE void setToSelected();
 
-    bool getValid() const;
+    bool getValid() const override;
+    int columnCount() const override;
     void reset();
-    void set( const int &column, const QVariant &value );
+    void set( const int &column, const QVariant &value ) override;
     void setInputParameterA( InputParameter *inputParameter = nullptr );
     void setInputParameterB( InputParameter *inputParameter = nullptr );
 
@@ -86,8 +98,10 @@ public:
         const Correlation *newCorrelation,
         const bool &checkCurrentSelection = false
     );
+    static QVariant staticHeaderData( const int &column );
     static bool inputParameterCorrelated( InputParameter *inputParameter );
     static bool removeSelectedModelRow();
+    static int staticColumnCount();
     static void removeCorrelatedInputParameter(
         InputParameter *inputParameter
     );

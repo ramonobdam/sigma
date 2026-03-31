@@ -12,9 +12,6 @@ OutputModel::OutputModel( QObject *parent )
 {}
 
 
-OutputModel::~OutputModel() {}
-
-
 int OutputModel::getOutputRow() const {
     return mOutputRow;
 }

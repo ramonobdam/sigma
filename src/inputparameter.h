@@ -43,11 +43,16 @@ public:
     QJsonObject toJson() const;
     QString getDOFAsString() const;
     QString toString() const;
-    QVariant get( const int &column, const bool &csvMode = false ) const;
+    QVariant get(
+        const int &column,
+        const bool &csvMode = false
+    ) const override;
+    QVariant headerData( const int &column ) const override;
     Distribution::InvCDF getInvCDF() const;
     double *getSymbolPtr() const;
+    int columnCount() const override;
     void resetSymbolValue();
-    void set( const int &column, const QVariant &value );
+    void set( const int &column, const QVariant &value ) override;
     void setDistribution( const Distribution::Type &distribution );
     void setSymbolPtr( double *symbolPtr );
     void setSymbolValue( const double &value );
@@ -71,6 +76,7 @@ public:
     static InputParameter *removeSelectedModelRow();
     static ModelControl<InputParameter *> *getInputModel();
     static QJsonArray parametersToJson();
+    static QVariant staticHeaderData( const int &column );
     static QString parametersToString();
 
     static QList<int> columnWidths;
@@ -82,6 +88,7 @@ public:
         const QString &name,
         const bool &checkCurrentSelection = false
     );
+    static int staticColumnCount();
     static symbol_table_t symbolTable;
     static void addConstantsToSymbolTable();
     static void clearSymbolTable();

@@ -10,8 +10,8 @@
 #include <QObject>
 #include <QVariant>
 
-// This class shows the combined uncertainty results of the selected
-// OutputParameter in QAbstractTableModel format
+// This class creates a QAbstractTableModel-interface for the selected
+// OutputParameter to show its combined uncertainty
 class ResultsModel: public OutputModel {
     Q_OBJECT
     QML_ELEMENT
@@ -24,7 +24,7 @@ public:
     QVariant headerData(
         int section,
         Qt::Orientation orientation,
-        int role
+        int role = Qt::DisplayRole
     ) const override;
     int columnCount( const QModelIndex &parent = QModelIndex() ) const override;
     int rowCount( const QModelIndex &parent = QModelIndex() ) const override;
