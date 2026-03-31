@@ -9,7 +9,7 @@
 #include <QString>
 #include <cmath>
 
-// Small class with utilities
+// Small mixin class with utilities
 class Utils {
 
 public:

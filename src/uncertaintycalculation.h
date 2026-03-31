@@ -22,7 +22,7 @@
 #include <QUrl>
 #include <QtQmlIntegration/qqmlintegration.h>
 
-// The UncertaintyCalculation class combines the different parts of the
+// The UncertaintyCalculation class orchestrates the different parts of the
 // uncertainty calculation and interfaces with the QML UI layer
 class UncertaintyCalculation : public QObject, private Settings, private Utils {
     Q_OBJECT
