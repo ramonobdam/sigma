@@ -41,15 +41,15 @@ public:
     virtual int getMonteCarloBatchSize() const;
     virtual int getMonteCarloDigits() const;
     virtual int getMonteCarloMaxNumOfBatches() const;
-    virtual void setAutoSaveProject( const bool &autoSaveProject );
-    virtual void setCSVPrecision( const int &csvPrecision );
-    virtual void setDisplayPrecision( const int &numberOfDigits );
-    virtual void setDisplayTheme ( const DisplayTheme &displayTheme );
+    virtual void setAutoSaveProject( bool autoSaveProject );
+    virtual void setCSVPrecision( int csvPrecision );
+    virtual void setDisplayPrecision( int numberOfDigits );
+    virtual void setDisplayTheme ( DisplayTheme displayTheme );
     virtual void setLastProjectFilePath( const QUrl &lastProjectFilePath );
-    virtual void setMonteCarloBatchSize( const int &batchSize );
-    virtual void setMonteCarloDigits( const int &numberOfDigits );
-    virtual void setMonteCarloMaxNumBatches ( const int &maxNumOfBatches );
-    virtual void setRestoreLastProject( const bool &restoreLastProject );
+    virtual void setMonteCarloBatchSize( int batchSize );
+    virtual void setMonteCarloDigits( int numberOfDigits );
+    virtual void setMonteCarloMaxOfNumBatches ( int maxNumOfBatches );
+    virtual void setRestoreLastProject( bool restoreLastProject );
     virtual void setToDefaults();
 
 private:
@@ -73,10 +73,7 @@ private:
     static int mMonteCarloMaxNumOfBatches;
 
 protected:
-    QString formatNumber(
-        const double &number,
-        const bool &csvMode = false
-    ) const;
+    QString formatNumber( double number, bool csvMode = false ) const;
     static QString mCSVSeparator;
 };
 

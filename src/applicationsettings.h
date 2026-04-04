@@ -6,6 +6,7 @@
 #define APPLICATIONSETTINGS_H
 
 #include "settings.h"
+#include <QLatin1StringView>
 #include <QObject>
 #include <QSettings>
 #include <QString>
@@ -19,26 +20,22 @@ public:
     ApplicationSettings( QObject *parent = nullptr );
     ~ApplicationSettings();
 
-    Q_INVOKABLE void emitAllSettingsChanged();
+    Q_INVOKABLE void notifyAllChanged();
     Q_INVOKABLE void load();
     Q_INVOKABLE void save();
-    Q_INVOKABLE void setAutoSaveProject(
-        const bool &autoSaveProject
-    ) override;
-    Q_INVOKABLE void setCSVPrecision( const int &csvPrecision ) override;
-    Q_INVOKABLE void setDisplayPrecision( const int &numberOfDigits ) override;
-    Q_INVOKABLE void setDisplayTheme( const DisplayTheme &theme ) override;
+    Q_INVOKABLE void setAutoSaveProject( bool autoSaveProject ) override;
+    Q_INVOKABLE void setCSVPrecision( int csvPrecision ) override;
+    Q_INVOKABLE void setDisplayPrecision( int numberOfDigits ) override;
+    Q_INVOKABLE void setDisplayTheme( DisplayTheme theme ) override;
     Q_INVOKABLE void setLastProjectFilePath(
         const QUrl &lastProjectFilePath
     ) override;
-    Q_INVOKABLE void setMonteCarloBatchSize( const int &batchSize ) override;
-    Q_INVOKABLE void setMonteCarloDigits( const int &numberOfDigits ) override;
-    Q_INVOKABLE void setMonteCarloMaxNumBatches(
-        const int &maxNumOfBatches
+    Q_INVOKABLE void setMonteCarloBatchSize( int batchSize ) override;
+    Q_INVOKABLE void setMonteCarloDigits( int numberOfDigits ) override;
+    Q_INVOKABLE void setMonteCarloMaxOfNumBatches(
+        int maxNumOfBatches
     ) override;
-    Q_INVOKABLE void setRestoreLastProject(
-        const bool &restoreLastProject
-    ) override;
+    Q_INVOKABLE void setRestoreLastProject( bool restoreLastProject ) override;
     Q_INVOKABLE void setToDefaults() override;
 
     Q_PROPERTY(
@@ -62,6 +59,11 @@ public:
         NOTIFY displayPrecisionChanged
     )
     Q_PROPERTY(
+        QUrl lastProjectFilePath
+        READ getLastProjectFilePath
+        NOTIFY lastProjectFilePathChanged
+    )
+    Q_PROPERTY(
         DisplayTheme displayTheme
         READ getDisplayTheme
         NOTIFY displayThemeChanged
@@ -79,7 +81,7 @@ public:
     Q_PROPERTY(
         int monteCarloMaxNumOfBatches
         READ getMonteCarloMaxNumOfBatches
-        NOTIFY monteCarloMaxNumBatchesChanged
+        NOTIFY monteCarloMaxNumOfBatchesChanged
     )
 
 signals:
@@ -90,21 +92,34 @@ signals:
     void lastProjectFilePathChanged();
     void monteCarloBatchSizeChanged();
     void monteCarloDigitsChanged();
-    void monteCarloMaxNumBatchesChanged();
+    void monteCarloMaxNumOfBatchesChanged();
     void restoreLastProjectChanged();
 
 private:
-    const QString mAutoSaveProjectString { "autoSaveProject" };
-    const QString mCSVPrecisionString { "csvPrecision" };
-    const QString mDisplayPrecisionString { "displayPrecision" };
-    const QString mDisplayThemeString { "displayTheme" };
-    const QString mLastProjectFilePathString { "lastProjectFilePath" };
-    const QString mMonteCarloBatchSizeString { "monteCarloBatchSize" };
-    const QString mMonteCarloDigitsString { "monteCarloDigits" };
-    const QString mMonteCarloMaxNumOfBatchesString {
+    static constexpr QLatin1StringView sAutoSaveProjectString {
+        "autoSaveProject"
+    };
+    static constexpr QLatin1StringView sCSVPrecisionString { "csvPrecision" };
+    static constexpr QLatin1StringView sDisplayPrecisionString {
+        "displayPrecision"
+    };
+    static constexpr QLatin1StringView sDisplayThemeString { "displayTheme" };
+    static constexpr QLatin1StringView sLastProjectFilePathString {
+        "lastProjectFilePath"
+    };
+    static constexpr QLatin1StringView sMonteCarloBatchSizeString {
+        "monteCarloBatchSize"
+    };
+    static constexpr QLatin1StringView sMonteCarloDigitsString {
+        "monteCarloDigits"
+    };
+    static constexpr QLatin1StringView sMonteCarloMaxNumOfBatchesString {
         "monteCarloMaxNumOfBatches"
     };
-    const QString mRestoreLastProjectString { "restoreLastProject" };
+    static constexpr QLatin1StringView sRestoreLastProjectString {
+        "restoreLastProject"
+    };
+
     QSettings mPersistentSettings;
 };
 

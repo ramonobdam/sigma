@@ -32,7 +32,7 @@ Settings& Settings::operator= ( const Settings &settings ) {
     setLastProjectFilePath( settings.getLastProjectFilePath() );
     setMonteCarloBatchSize( settings.getMonteCarloBatchSize() );
     setMonteCarloDigits( settings.getMonteCarloDigits() );
-    setMonteCarloMaxNumBatches( settings.getMonteCarloMaxNumOfBatches() );
+    setMonteCarloMaxOfNumBatches( settings.getMonteCarloMaxNumOfBatches() );
     setRestoreLastProject( settings.getRestoreLastProject() );
 
     return *this;
@@ -114,22 +114,22 @@ int Settings::getMonteCarloMaxNumOfBatches() const {
 }
 
 
-void Settings::setAutoSaveProject( const bool &autoSaveProject ) {
+void Settings::setAutoSaveProject( bool autoSaveProject ) {
     mAutoSaveProject = autoSaveProject;
 }
 
 
-void Settings::setCSVPrecision( const int &csvPrecision ) {
+void Settings::setCSVPrecision( int csvPrecision ) {
     mCSVPrecision = csvPrecision;
 }
 
 
-void Settings::setDisplayPrecision( const int &numberOfDigits ) {
+void Settings::setDisplayPrecision( int numberOfDigits ) {
     mDisplayPrecision = numberOfDigits;
 }
 
 
-void Settings::setDisplayTheme( const DisplayTheme &displayTheme ) {
+void Settings::setDisplayTheme( DisplayTheme displayTheme ) {
     mDisplayTheme = displayTheme;
 }
 
@@ -139,22 +139,22 @@ void Settings::setLastProjectFilePath( const QUrl &lastProjectFilePath ) {
 }
 
 
-void Settings::setMonteCarloBatchSize( const int &batchSize ) {
+void Settings::setMonteCarloBatchSize( int batchSize ) {
     mMonteCarloBatchSize = batchSize;
 }
 
 
-void Settings::setMonteCarloDigits( const int &numberOfDigits ) {
+void Settings::setMonteCarloDigits( int numberOfDigits ) {
     mMonteCarloDigits = numberOfDigits;
 }
 
 
-void Settings::setMonteCarloMaxNumBatches( const int &maxNumOfBatches ) {
+void Settings::setMonteCarloMaxOfNumBatches( int maxNumOfBatches ) {
     mMonteCarloMaxNumOfBatches = maxNumOfBatches;
 }
 
 
-void Settings::setRestoreLastProject( const bool &restoreLastProject ) {
+void Settings::setRestoreLastProject( bool restoreLastProject ) {
     mRestoreLastProject = restoreLastProject;
 }
 
@@ -166,15 +166,12 @@ void Settings::setToDefaults() {
     setDisplayTheme( mDefaultDisplayTheme );
     setMonteCarloBatchSize( mDefaultMonteCarloBatchSize );
     setMonteCarloDigits( mDefaultMonteCarloDigits );
-    setMonteCarloMaxNumBatches( mDefaultMonteCarloMaxNumOfBatches );
+    setMonteCarloMaxOfNumBatches( mDefaultMonteCarloMaxNumOfBatches );
     setRestoreLastProject( mDefaultRestoreLastProject );
 }
 
 
-QString Settings::formatNumber(
-    const double &number,
-    const bool &csvMode
-) const {
+QString Settings::formatNumber( double number, bool csvMode ) const {
     int precision { csvMode ? mCSVPrecision : mDisplayPrecision };
     return QString::number( number, 'g', precision );
 }

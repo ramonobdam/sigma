@@ -79,7 +79,7 @@ BaseWindow {
     onVisibleChanged: {
         if ( control.visible ) {
             // Make sure all input field have the currently stores values
-            appSettings.emitAllSettingsChanged()
+            appSettings.notifyAllChanged()
             control.storeInitialValues()
             control.formActive = true
             saveButton.forceActiveFocus()
@@ -492,7 +492,7 @@ BaseWindow {
                 initial = number
             }
             function restoreInitial() {
-                appSettings.setMonteCarloMaxNumBatches( initial )
+                appSettings.setMonteCarloMaxOfNumBatches( initial )
             }
 
             anchors {
@@ -506,7 +506,7 @@ BaseWindow {
             value: numberToValue( appSettings.monteCarloMaxNumOfBatches )
             onValueModified: {
                 if ( control.formActive ) {
-                    appSettings.setMonteCarloMaxNumBatches( number )
+                    appSettings.setMonteCarloMaxOfNumBatches( number )
                 }
             }
 
