@@ -484,7 +484,7 @@ void MonteCarlo::run() {
                         " = " +
                         StringUtils::doubleToString(
                             component.getSymbolValue(),
-                            6
+                            Settings::getDisplayPrecision()
                         )
                     };
                     inputValues.append( var );
