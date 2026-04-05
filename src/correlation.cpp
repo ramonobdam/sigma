@@ -4,6 +4,7 @@
 
 #include "correlation.h"
 #include "inputparameter.h"
+#include "settings.h"
 
 
 QStringList Correlation::headerLabels = {
@@ -36,10 +37,12 @@ Correlation::Correlation(
 
 
 Correlation::Correlation( const Correlation &cor )
-    :   QObject { cor.parent() },
-        mInputParameterA { cor.getInputParameterA() },
-        mInputParameterB { cor.getInputParameterB() },
-        mCorrelation { cor.getCorrelation() }
+    :   Correlation {
+            cor.parent(),
+            cor.getInputParameterA(),
+            cor.getInputParameterB(),
+            cor.getCorrelation()
+        }
 {}
 
 
@@ -134,18 +137,24 @@ QString Correlation::toString() const {
     for ( int i { 0 }; i < staticColumnCount(); ++i ) {
         resultList.append( get( i, true ).toString() );
     }
-    return resultList.join( mCSVSeparator );
+    return resultList.join( StringUtils::csvSeparator );
 }
 
 
 QVariant Correlation::get( const int &column, const bool &csvMode ) const {
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
     switch ( column ) {
         case 0:
             return getInputParameterNameA( csvMode );
         case 1:
             return getInputParameterNameB( csvMode );
         case 2:
-            return QVariant( formatNumber( getCorrelation(), csvMode ) );
+            return QVariant(
+                StringUtils::doubleToString( getCorrelation(), precision )
+            );
         default:
             return QVariant();
     }
@@ -342,7 +351,7 @@ QJsonArray Correlation::correlationsToJson() {
 
 QString Correlation::correlationsToString() {
     QString result { mCorrelationsHeaderString + endl };
-    result += headerLabels.join( mCSVSeparator ) + endl;
+    result += headerLabels.join( StringUtils::csvSeparator ) + endl;
     for ( Correlation * &correlation : mCorrelationModel.getAllRows() ) {
         result += correlation->toString() + endl;
     }

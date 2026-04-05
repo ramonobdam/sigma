@@ -5,6 +5,8 @@
 #include "third_party/exprtk/exprtk.hpp"
 #include "montecarlo.h"
 #include "outputparameter.h"
+#include "settings.h"
+#include "stringutils.h"
 #include <QJsonArray>
 #include <QJsonValue>
 #include <cmath>
@@ -156,27 +158,34 @@ QList<double> MonteCarlo::getHistogramValues() const {
 QString MonteCarlo::getExpandedUncertaintyAsString(
     const bool &csvMode
 ) const {
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
     double lower { getLowerBound() - getMean() };
     double higher { getHigherBound() - getMean() };
     QString result {
-        formatNumber( lower, csvMode ) +
-        ", +"
-        + formatNumber( higher, csvMode )
+        StringUtils::doubleToString( lower, precision ) +
+        ", +" +
+        StringUtils::doubleToString( higher, precision )
     };
     return csvMode ? addQuotes( result ) : result;
 }
 
 
 QString MonteCarlo::getMeanAsString( const bool &csvMode ) const {
-    return formatNumber( getMean(), csvMode );
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
+    return StringUtils::doubleToString( getMean(), precision );
 }
 
 
 QString MonteCarlo::getNumericalToleranceAsString() const {
-    return QString::number(
+    return StringUtils::doubleToString(
         getNumericalTolerance(),
-        'g',
-        getMonteCarloDigits()
+        Settings::getMonteCarloDigits()
     );
 }
 
@@ -187,7 +196,11 @@ QString MonteCarlo::getStatus( const bool &csvMode ) const {
 
 
 QString MonteCarlo::getStdDeviationAsString( const bool &csvMode ) const {
-    return formatNumber( getStdDeviation(), csvMode );
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
+    return StringUtils::doubleToString( getStdDeviation(), precision );
 }
 
 
@@ -200,9 +213,11 @@ QString MonteCarlo::histogramToString() const {
                 "Histogram " + outputParameter->getName() + ":"
             );
             result += endl;
-            result += "Bins:" + mCSVSeparator + getHistogramBinsAsString();
+            result += "Bins:" +
+                      StringUtils::csvSeparator +
+                      getHistogramBinsAsString();
             result += endl;
-            result += "Probabilities:" + mCSVSeparator;
+            result += "Probabilities:" + StringUtils::csvSeparator;
             result += getHistogramValuesAsString();
             result += endl;
         }
@@ -314,9 +329,9 @@ void MonteCarlo::run() {
 
             // Settings are stored localy to make sure they don't change during
             // the simulation
-            int hMax { getMonteCarloMaxNumOfBatches() };
-            int maxBatchSize { getMonteCarloBatchSize() };
-            int monteCarloDigits { getMonteCarloDigits() };
+            int hMax { Settings::getMonteCarloMaxNumOfBatches() };
+            int maxBatchSize { Settings::getMonteCarloBatchSize() };
+            int monteCarloDigits { Settings::getMonteCarloDigits() };
 
             // Reset the status, results and the random value generator
             resetResults();
@@ -467,7 +482,10 @@ void MonteCarlo::run() {
                     QString var {
                         component.getName() +
                         " = " +
-                        formatNumber( component.getSymbolValue() )
+                        StringUtils::doubleToString(
+                            component.getSymbolValue(),
+                            6
+                        )
                     };
                     inputValues.append( var );
                 }
@@ -634,6 +652,8 @@ MonteCarlo MonteCarlo::fromJson( const QJsonObject &json ) {
 
 
 QString MonteCarlo::getHistogramBinsAsString() const {
+    const int precision { Settings::getCSVPrecision() };
+
     qsizetype numOfBins { mHistogramValues.size() };
     QStringList formattedValues {};
     double binSize {
@@ -641,18 +661,24 @@ QString MonteCarlo::getHistogramBinsAsString() const {
     };
     for ( int i { 0 }; i < numOfBins; ++i ) {
         double value { mHistogramXMin + binSize * i };
-        formattedValues.append( formatNumber ( value, true ) );
+        formattedValues.append(
+            StringUtils::doubleToString( value, precision )
+        );
     }
-    return formattedValues.join( mCSVSeparator );
+    return formattedValues.join( StringUtils::csvSeparator );
 }
 
 
 QString MonteCarlo::getHistogramValuesAsString() const {
+    const int precision { Settings::getCSVPrecision() };
+
     QStringList formattedValues {};
     for ( const double &value : mHistogramValues ) {
-        formattedValues.append( formatNumber( value, true ) );
+        formattedValues.append(
+            StringUtils::doubleToString( value, precision )
+        );
     }
-    return formattedValues.join( mCSVSeparator );
+    return formattedValues.join( StringUtils::csvSeparator );
 }
 
 

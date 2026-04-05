@@ -24,7 +24,7 @@
 
 // The UncertaintyCalculation class orchestrates the different parts of the
 // uncertainty calculation and interfaces with the QML UI layer
-class UncertaintyCalculation : public QObject, private Settings, private Utils {
+class UncertaintyCalculation : public QObject, private Utils {
     Q_OBJECT
     QML_ELEMENT
 

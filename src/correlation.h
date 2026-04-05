@@ -7,7 +7,7 @@
 
 #include "modelcontrol.hpp"
 #include "record.hpp"
-#include "settings.h"
+#include "stringutils.h"
 #include "utils.h"
 #include <QJsonArray>
 #include <QJsonObject>
@@ -25,7 +25,6 @@ class InputParameter;
 class Correlation :
     public QObject,
     public Record,
-    protected Settings,
     protected Utils
 {
     Q_OBJECT

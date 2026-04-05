@@ -7,7 +7,6 @@
 
 #include "distribution.h"
 #include "inputparameter.h"
-#include "settings.h"
 #include <QList>
 #include <QString>
 #include <QStringList>
@@ -17,7 +16,7 @@
 // InputParameters detected in the measurement formula of an OutputParameter. It
 // also provides methods used to calculate the sensitivity of the
 // OutputParameter with respect to this component.
-class UncertaintyComponent : private Settings {
+class UncertaintyComponent {
 
 public:
     UncertaintyComponent();

@@ -4,6 +4,8 @@
 
 #include "third_party/alglib/specialfunctions.h"
 #include "outputparameter.h"
+#include "settings.h"
+#include "stringutils.h"
 #include <third_party/Eigen/Dense>
 #include <QRegularExpression>
 #include <cmath>
@@ -70,7 +72,6 @@ OutputParameter::OutputParameter( QObject *parent )
         mMixedCopulaSampler { MixedCopulaSampler( this ) }
 {
     setNominalValue( mDoubleNaN );
-    createConnections();
 }
 
 
@@ -183,7 +184,10 @@ QString OutputParameter::componentsToString() const {
     };
     QString result {};
     result += addQuotes( componentsString ) + endl;
-    result += UncertaintyComponent::headerLabels.join( mCSVSeparator ) + endl;
+    result += UncertaintyComponent::headerLabels.join(
+                  StringUtils::csvSeparator
+              ) +
+              endl;
 
     // Add a data row for each component
     qsizetype rows { mComponents.size() };
@@ -195,7 +199,7 @@ QString OutputParameter::componentsToString() const {
             // The first columns contain component data
             for ( int column { 0 }; column < columns - 3; ++column ) {
                 QVariant var { component->get( column, true ) };
-                result += var.toString() + mCSVSeparator;
+                result += var.toString() + StringUtils::csvSeparator;
             }
 
             // The last 3 columns with contribution percentages depend on the
@@ -203,7 +207,7 @@ QString OutputParameter::componentsToString() const {
             for ( int column { columns - 3 }; column < columns; ++column ) {
                 result += getContributionAsString( row, column );
                 if ( column < columns ) {
-                    result += mCSVSeparator;
+                    result += StringUtils::csvSeparator;
                 }
             }
             result += endl;
@@ -252,7 +256,7 @@ QString OutputParameter::histogramToString() const {
 
 QString OutputParameter::resultsToString() const {
     QStringList results { getResults( true ) };
-    return results.join( mCSVSeparator );
+    return results.join( StringUtils::csvSeparator );
 }
 
 
@@ -261,7 +265,7 @@ QString OutputParameter::toString() const {
     for ( int column { 0 }; column < staticColumnCount(); ++column ) {
         results.append( get( column, true ).toString() );
     }
-    return results.join( mCSVSeparator );
+    return results.join( StringUtils::csvSeparator );
 }
 
 
@@ -670,10 +674,14 @@ QString OutputParameter::getFormula( const bool &csvMode ) const {
 
 QString OutputParameter::getNominalValueAsString( const bool &csvMode ) const {
     // Convert possible inf and nan using conversion to std::string
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
     std::string stdStringVersion { std::to_string( mNominalValue ) };
     QString ret { QString::fromStdString( stdStringVersion ) };
-    if ( std::isfinite( mNominalValue ) ) {
-        ret = formatNumber( mNominalValue, csvMode );
+    if ( std::isfinite( getNominalValue() ) ) {
+        ret = StringUtils::doubleToString( getNominalValue(), precision );
     }
     return ret;
 }
@@ -899,7 +907,7 @@ QString OutputParameter::parametersToString() {
     QString result {};
     // Add title, header labels and output parameter data.
     result += mOutputParametersHeaderString + endl;
-    result += headerLabels.join( mCSVSeparator ) + endl;
+    result += headerLabels.join( StringUtils::csvSeparator ) + endl;
     for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
         if ( parameter) {
             result += parameter->toString() + endl;
@@ -910,7 +918,7 @@ QString OutputParameter::parametersToString() {
     // Add title, header labels and combined uncertainty for each valid output
     // parameter.
     result += mCombinedUncertaintyHeaderString + endl;
-    result += resultLabels.join( mCSVSeparator ) + endl;
+    result += resultLabels.join( StringUtils::csvSeparator ) + endl;
     for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
         if ( parameter && parameter->getValid() ) {
             result += parameter->resultsToString() + endl;
@@ -929,11 +937,11 @@ QString OutputParameter::parametersToString() {
     // Add title, header labels and Monte Carlo simulation results for each
     // valid output parameter.
     result += mMonteCarloHeaderString + endl;
-    result += MonteCarlo::headerLabels.join( mCSVSeparator ) + endl;
+    result += MonteCarlo::headerLabels.join( StringUtils::csvSeparator ) + endl;
     for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
         if ( parameter && parameter->getValid() ) {
             QStringList mcResults { parameter->getMonteCarloResults( true ) };
-            result += mcResults.join( mCSVSeparator ) + endl;
+            result += mcResults.join( StringUtils::csvSeparator ) + endl;
         }
     }
     result += endl;
@@ -995,14 +1003,25 @@ void OutputParameter::setCollectVariables( const bool &collect ) {
 QString OutputParameter::getCombinedStdUncertaintyAsString(
     const bool &csvMode
 ) const {
-    return formatNumber( getCombinedStdUncertainty(), csvMode );
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
+    return StringUtils::doubleToString(
+        getCombinedStdUncertainty(),
+        precision
+    );
 }
 
 
 QString OutputParameter::getCoverageFactorAsString(
     const bool &csvMode
 ) const {
-    return formatNumber( getCoverageFactor(), csvMode );
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
+    return StringUtils::doubleToString( getCoverageFactor(), precision );
 }
 
 
@@ -1018,7 +1037,12 @@ QString OutputParameter::getEffectiveDOFAsString() const {
 QString OutputParameter::getExpandedUncertaintyAsString(
     const bool &csvMode
 ) const {
-    return QString( "±" ) + formatNumber( getExpandedUncertainty(), csvMode );
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
+    return QString( "±" ) +
+           StringUtils::doubleToString( getExpandedUncertainty(), precision );
 }
 
 

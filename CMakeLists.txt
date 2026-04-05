@@ -146,6 +146,8 @@ qt_add_qml_module( Sigma
         src/settings.h
         src/statistics.cpp
         src/statistics.h
+        src/stringutils.cpp
+        src/stringutils.h
         src/uncertaintycalculation.cpp
         src/uncertaintycalculation.h
         src/uncertaintycomponent.cpp

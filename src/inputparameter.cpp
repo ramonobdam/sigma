@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "inputparameter.h"
+#include "settings.h"
+#include "stringutils.h"
 #include <QJsonValue>
 
 
@@ -159,20 +161,28 @@ QString InputParameter::toString() const {
     for ( int i { 0 }; i < staticColumnCount(); ++i ) {
         resultList.append( get( i, true ).toString() );
     }
-    return resultList.join( mCSVSeparator );
+    return resultList.join( StringUtils::csvSeparator );
 }
 
 
 QVariant InputParameter::get( const int &column, const bool &csvMode ) const {
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
     switch ( column ) {
         case 0:
             return QVariant( getName( csvMode ) );
         case 1:
             return QVariant( getUnit( csvMode ) );
         case 2:
-            return QVariant( formatNumber( getNominalValue(), csvMode ) );
+            return QVariant(
+                StringUtils::doubleToString( getNominalValue(), precision )
+            );
         case 3:
-            return QVariant( formatNumber( getStdUncertainty(), csvMode ) );
+            return QVariant(
+                StringUtils::doubleToString( getStdUncertainty(), precision )
+            );
         case 4:
             return QVariant( getDistributionAsString() );
         case 5:
@@ -401,7 +411,7 @@ QVariant InputParameter::staticHeaderData( const int &column ) {
 
 QString InputParameter::parametersToString() {
     QString result { mInputParametersHeaderString + endl };
-    result += headerLabels.join( mCSVSeparator ) + endl;
+    result += headerLabels.join( StringUtils::csvSeparator ) + endl;
     for ( InputParameter * &parameter : mInputModel.getAllRows() ) {
         result += parameter->toString() + endl;
     }

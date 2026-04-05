@@ -38,7 +38,7 @@ class OutputParameter: public Parameter {
     typedef typename parser_t::dependent_entity_collector::symbol_t symbol_t;
 
 public:
-    OutputParameter( QObject* parent = nullptr );
+    OutputParameter( QObject *parent = nullptr );
     OutputParameter( const OutputParameter &op );
     ~OutputParameter();
 

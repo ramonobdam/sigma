@@ -9,8 +9,8 @@
 #include <QUrl>
 #include <QtQmlIntegration/qqmlintegration.h>
 
-// Base class to get/set program and calculation settings. The formatNumber()
-// method formats a double based on the current displayPrecision setting.
+// Settings class to get/set global program and calculation settings. Inherited
+// by ApplicationSettings, which handles persistence and QML integration.
 class Settings {
     Q_GADGET
 
@@ -22,59 +22,53 @@ public:
     Q_ENUM( DisplayTheme )
 
     Settings();
-    virtual ~Settings() = default;
-
     Settings& operator= ( const Settings &settings );
 
-    virtual DisplayTheme getDisplayTheme() const;
-    virtual DisplayTheme getDefaultDisplayTheme() const;
-    virtual QUrl getLastProjectFilePath() const;
-    virtual bool getAutoSaveProject() const;
-    virtual bool getRestoreLastProject() const;
-    virtual int getCSVPrecision() const;
-    virtual int getDefaultCSVPrecision() const;
-    virtual int getDefaultDisplayPrecision() const;
-    virtual int getDefaultMonteCarloBatchSize() const;
-    virtual int getDefaultMonteCarloDigits() const;
-    virtual int getDefaultMonteCarloMaxNumOfBatches() const;
-    virtual int getDisplayPrecision() const;
-    virtual int getMonteCarloBatchSize() const;
-    virtual int getMonteCarloDigits() const;
-    virtual int getMonteCarloMaxNumOfBatches() const;
-    virtual void setAutoSaveProject( bool autoSaveProject );
-    virtual void setCSVPrecision( int csvPrecision );
-    virtual void setDisplayPrecision( int numberOfDigits );
-    virtual void setDisplayTheme ( DisplayTheme displayTheme );
-    virtual void setLastProjectFilePath( const QUrl &lastProjectFilePath );
-    virtual void setMonteCarloBatchSize( int batchSize );
-    virtual void setMonteCarloDigits( int numberOfDigits );
-    virtual void setMonteCarloMaxOfNumBatches ( int maxNumOfBatches );
-    virtual void setRestoreLastProject( bool restoreLastProject );
-    virtual void setToDefaults();
+    static DisplayTheme getDisplayTheme();
+    static DisplayTheme getDefaultDisplayTheme();
+    static QUrl getLastProjectFilePath();
+    static bool getAutoSaveProject();
+    static bool getRestoreLastProject();
+    static int getCSVPrecision();
+    static int getDefaultCSVPrecision();
+    static int getDefaultDisplayPrecision();
+    static int getDefaultMonteCarloBatchSize();
+    static int getDefaultMonteCarloDigits();
+    static int getDefaultMonteCarloMaxNumOfBatches();
+    static int getDisplayPrecision();
+    static int getMonteCarloBatchSize();
+    static int getMonteCarloDigits();
+    static int getMonteCarloMaxNumOfBatches();
+    static void setAutoSaveProject( bool autoSaveProject );
+    static void setCSVPrecision( int csvPrecision );
+    static void setDisplayPrecision( int numberOfDigits );
+    static void setDisplayTheme ( DisplayTheme displayTheme );
+    static void setLastProjectFilePath( const QUrl &lastProjectFilePath );
+    static void setMonteCarloBatchSize( int batchSize );
+    static void setMonteCarloDigits( int numberOfDigits );
+    static void setMonteCarloMaxOfNumBatches ( int maxNumOfBatches );
+    static void setRestoreLastProject( bool restoreLastProject );
+    static void setToDefaults();
 
 private:
-    const DisplayTheme mDefaultDisplayTheme { System };
-    const bool mDefaultAutoSaveProject { false };
-    const bool mDefaultRestoreLastProject { false };
-    const int mDefaultCSVPrecision { 10 };
-    const int mDefaultDisplayPrecision { 6 };
-    const int mDefaultMonteCarloBatchSize { 100000 };
-    const int mDefaultMonteCarloDigits { 2 };
-    const int mDefaultMonteCarloMaxNumOfBatches { 1000 };
+    static constexpr DisplayTheme sDefaultDisplayTheme { System };
+    static constexpr bool sDefaultAutoSaveProject { false };
+    static constexpr bool sDefaultRestoreLastProject { false };
+    static constexpr int sDefaultCSVPrecision { 10 };
+    static constexpr int sDefaultDisplayPrecision { 6 };
+    static constexpr int sDefaultMonteCarloBatchSize { 100000 };
+    static constexpr int sDefaultMonteCarloDigits { 2 };
+    static constexpr int sDefaultMonteCarloMaxNumOfBatches { 1000 };
 
-    static QUrl mLastProjectFilePath;
-    static DisplayTheme mDisplayTheme;
-    static bool mAutoSaveProject;
-    static bool mRestoreLastProject;
-    static int mCSVPrecision;
-    static int mDisplayPrecision;
-    static int mMonteCarloBatchSize;
-    static int mMonteCarloDigits;
-    static int mMonteCarloMaxNumOfBatches;
-
-protected:
-    QString formatNumber( double number, bool csvMode = false ) const;
-    static QString mCSVSeparator;
+    static QUrl sLastProjectFilePath;
+    static DisplayTheme sDisplayTheme;
+    static bool sAutoSaveProject;
+    static bool sRestoreLastProject;
+    static int sCSVPrecision;
+    static int sDisplayPrecision;
+    static int sMonteCarloBatchSize;
+    static int sMonteCarloDigits;
+    static int sMonteCarloMaxNumOfBatches;
 };
 
 // Create a foreign namespace to make the Settings::DisplayTheme enum availble

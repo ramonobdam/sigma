@@ -5,16 +5,15 @@
 #include "settings.h"
 
 
-QString Settings::mCSVSeparator { "," };
-QUrl Settings::mLastProjectFilePath {};
-Settings::DisplayTheme Settings::mDisplayTheme {};
-bool Settings::mAutoSaveProject {};
-bool Settings::mRestoreLastProject {};
-int Settings::mCSVPrecision = {};
-int Settings::mDisplayPrecision = {};
-int Settings::mMonteCarloBatchSize = {};
-int Settings::mMonteCarloDigits = {};
-int Settings::mMonteCarloMaxNumOfBatches = {};
+QUrl Settings::sLastProjectFilePath {};
+Settings::DisplayTheme Settings::sDisplayTheme {};
+bool Settings::sAutoSaveProject {};
+bool Settings::sRestoreLastProject {};
+int Settings::sCSVPrecision = {};
+int Settings::sDisplayPrecision = {};
+int Settings::sMonteCarloBatchSize = {};
+int Settings::sMonteCarloDigits = {};
+int Settings::sMonteCarloMaxNumOfBatches = {};
 
 
 Settings::Settings() {}
@@ -39,139 +38,133 @@ Settings& Settings::operator= ( const Settings &settings ) {
 }
 
 
-Settings::DisplayTheme Settings::getDisplayTheme() const {
-    return mDisplayTheme;
+Settings::DisplayTheme Settings::getDisplayTheme() {
+    return sDisplayTheme;
 }
 
 
-Settings::DisplayTheme Settings::getDefaultDisplayTheme() const {
-    return mDefaultDisplayTheme;
+Settings::DisplayTheme Settings::getDefaultDisplayTheme() {
+    return sDefaultDisplayTheme;
 }
 
 
-QUrl Settings::getLastProjectFilePath() const {
-    return mLastProjectFilePath;
+QUrl Settings::getLastProjectFilePath() {
+    return sLastProjectFilePath;
 }
 
 
-bool Settings::getAutoSaveProject() const {
-    return mAutoSaveProject;
+bool Settings::getAutoSaveProject() {
+    return sAutoSaveProject;
 }
 
 
-bool Settings::getRestoreLastProject() const {
-    return mRestoreLastProject;
+bool Settings::getRestoreLastProject() {
+    return sRestoreLastProject;
 }
 
 
-int Settings::getCSVPrecision() const {
-    return mCSVPrecision;
+int Settings::getCSVPrecision() {
+    return sCSVPrecision;
 }
 
 
-int Settings::getDefaultCSVPrecision() const {
-    return mDefaultCSVPrecision;
+int Settings::getDefaultCSVPrecision() {
+    return sDefaultCSVPrecision;
 }
 
 
-int Settings::getDefaultDisplayPrecision() const {
-    return mDefaultDisplayPrecision;
+int Settings::getDefaultDisplayPrecision() {
+    return sDefaultDisplayPrecision;
 }
 
 
-int Settings::getDefaultMonteCarloBatchSize() const {
-    return mDefaultMonteCarloBatchSize;
+int Settings::getDefaultMonteCarloBatchSize() {
+    return sDefaultMonteCarloBatchSize;
 }
 
 
-int Settings::getDefaultMonteCarloDigits() const {
-    return mDefaultMonteCarloDigits;
+int Settings::getDefaultMonteCarloDigits() {
+    return sDefaultMonteCarloDigits;
 }
 
 
-int Settings::getDefaultMonteCarloMaxNumOfBatches() const {
-    return mDefaultMonteCarloMaxNumOfBatches;
+int Settings::getDefaultMonteCarloMaxNumOfBatches() {
+    return sDefaultMonteCarloMaxNumOfBatches;
 }
 
 
-int Settings::getDisplayPrecision() const {
-    return mDisplayPrecision;
+int Settings::getDisplayPrecision() {
+    return sDisplayPrecision;
 }
 
 
-int Settings::getMonteCarloBatchSize() const {
-    return mMonteCarloBatchSize;
+int Settings::getMonteCarloBatchSize() {
+    return sMonteCarloBatchSize;
 }
 
 
-int Settings::getMonteCarloDigits() const {
-    return mMonteCarloDigits;
+int Settings::getMonteCarloDigits() {
+    return sMonteCarloDigits;
 }
 
 
-int Settings::getMonteCarloMaxNumOfBatches() const {
-    return mMonteCarloMaxNumOfBatches;
+int Settings::getMonteCarloMaxNumOfBatches() {
+    return sMonteCarloMaxNumOfBatches;
 }
 
 
 void Settings::setAutoSaveProject( bool autoSaveProject ) {
-    mAutoSaveProject = autoSaveProject;
+    sAutoSaveProject = autoSaveProject;
 }
 
 
 void Settings::setCSVPrecision( int csvPrecision ) {
-    mCSVPrecision = csvPrecision;
+    sCSVPrecision = csvPrecision;
 }
 
 
 void Settings::setDisplayPrecision( int numberOfDigits ) {
-    mDisplayPrecision = numberOfDigits;
+    sDisplayPrecision = numberOfDigits;
 }
 
 
 void Settings::setDisplayTheme( DisplayTheme displayTheme ) {
-    mDisplayTheme = displayTheme;
+    sDisplayTheme = displayTheme;
 }
 
 
 void Settings::setLastProjectFilePath( const QUrl &lastProjectFilePath ) {
-    mLastProjectFilePath = lastProjectFilePath;
+    sLastProjectFilePath = lastProjectFilePath;
 }
 
 
 void Settings::setMonteCarloBatchSize( int batchSize ) {
-    mMonteCarloBatchSize = batchSize;
+    sMonteCarloBatchSize = batchSize;
 }
 
 
 void Settings::setMonteCarloDigits( int numberOfDigits ) {
-    mMonteCarloDigits = numberOfDigits;
+    sMonteCarloDigits = numberOfDigits;
 }
 
 
 void Settings::setMonteCarloMaxOfNumBatches( int maxNumOfBatches ) {
-    mMonteCarloMaxNumOfBatches = maxNumOfBatches;
+    sMonteCarloMaxNumOfBatches = maxNumOfBatches;
 }
 
 
 void Settings::setRestoreLastProject( bool restoreLastProject ) {
-    mRestoreLastProject = restoreLastProject;
+    sRestoreLastProject = restoreLastProject;
 }
 
 
 void Settings::setToDefaults() {
-    setAutoSaveProject( mDefaultAutoSaveProject );
-    setCSVPrecision( mDefaultCSVPrecision );
-    setDisplayPrecision( mDefaultDisplayPrecision );
-    setDisplayTheme( mDefaultDisplayTheme );
-    setMonteCarloBatchSize( mDefaultMonteCarloBatchSize );
-    setMonteCarloDigits( mDefaultMonteCarloDigits );
-    setMonteCarloMaxOfNumBatches( mDefaultMonteCarloMaxNumOfBatches );
-    setRestoreLastProject( mDefaultRestoreLastProject );
-}
-
-
-QString Settings::formatNumber( double number, bool csvMode ) const {
-    int precision { csvMode ? mCSVPrecision : mDisplayPrecision };
-    return QString::number( number, 'g', precision );
+    setAutoSaveProject( sDefaultAutoSaveProject );
+    setCSVPrecision( sDefaultCSVPrecision );
+    setDisplayPrecision( sDefaultDisplayPrecision );
+    setDisplayTheme( sDefaultDisplayTheme );
+    setMonteCarloBatchSize( sDefaultMonteCarloBatchSize );
+    setMonteCarloDigits( sDefaultMonteCarloDigits );
+    setMonteCarloMaxOfNumBatches( sDefaultMonteCarloMaxNumOfBatches );
+    setRestoreLastProject( sDefaultRestoreLastProject );
 }

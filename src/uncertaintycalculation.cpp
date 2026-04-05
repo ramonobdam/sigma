@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "montecarlo.h"
+#include "settings.h"
 #include "uncertaintycalculation.h"
 #include <QByteArray>
 #include <QCoreApplication>
@@ -920,19 +921,19 @@ void UncertaintyCalculation::recompileExpressions(
 void UncertaintyCalculation::resetProjectFilePath() {
     mProjectFilePath.clear();
     emit projectFilePathChanged();
-    setLastProjectFilePath( mProjectFilePath );
+    Settings::setLastProjectFilePath( mProjectFilePath );
 }
 
 
 void UncertaintyCalculation::setProjectFilePath( const QUrl &projectFilePath ) {
     mProjectFilePath = projectFilePath;
     emit projectFilePathChanged();
-    setLastProjectFilePath( mProjectFilePath );
+    Settings::setLastProjectFilePath( mProjectFilePath );
 }
 
 
 void UncertaintyCalculation::setUnsavedChanges( const bool &unsavedChanges ) {
-    if ( unsavedChanges && getAutoSaveProject() ) {
+    if ( unsavedChanges && Settings::getAutoSaveProject() ) {
         // Auto Save the changes.
         saveProject();
         return;

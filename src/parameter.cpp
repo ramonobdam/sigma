@@ -12,12 +12,14 @@ QString Parameter::mValidString = "valid";
 
 
 Parameter::Parameter( QObject *parent )
-    :   QObject { parent },
-        mName {},
-        mUnit {},
-        mNominalValue {},
-        mLocked {},
-        mValid {}
+    :   Parameter {
+            parent,
+            {},
+            {},
+            {},
+            {},
+            {}
+        }
 {}
 
 

@@ -6,7 +6,6 @@
 #define PARAMETER_H
 
 #include "record.hpp"
-#include "settings.h"
 #include "utils.h"
 #include <QObject>
 #include <QString>
@@ -18,7 +17,6 @@
 class Parameter :
     public QObject,
     public Record,
-    protected Settings,
     protected Utils
 {
     Q_OBJECT

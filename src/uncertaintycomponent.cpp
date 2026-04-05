@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "correlation.h"
+#include "settings.h"
+#include "stringutils.h"
 #include "uncertaintycomponent.h"
 #include <cmath>
 
@@ -149,23 +151,35 @@ QVariant UncertaintyComponent::get(
     const int &column,
     const bool &csvMode
 ) const {
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
     switch ( column ) {
         case 0:
             return QVariant( getName( csvMode ) );
         case 1:
             return QVariant( getUnit( csvMode ) );
         case 2:
-            return QVariant( formatNumber( getNominalValue(), csvMode ) );
+            return QVariant(
+                StringUtils::doubleToString( getNominalValue(), precision )
+            );
         case 3:
-            return QVariant( formatNumber( getStdUncertainty(), csvMode ) );
+            return QVariant(
+                StringUtils::doubleToString( getStdUncertainty(), precision )
+            );
         case 4:
             return QVariant( getDistributionAsString() );
         case 5:
             return QVariant( getDOFAsString() );
         case 6:
-            return QVariant( formatNumber( getSensitivity(), csvMode ) );
+            return QVariant(
+                StringUtils::doubleToString( getSensitivity(), precision )
+            );
         case 7:
-            return QVariant( formatNumber( getComponentValue(), csvMode ) );
+            return QVariant(
+                StringUtils::doubleToString( getComponentValue(), precision )
+            );
         default:
             return QVariant();
     }
