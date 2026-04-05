@@ -194,7 +194,9 @@ QString OutputParameter::componentsToString() const {
     for ( int row { 0 }; row < rows; ++row ) {
         UncertaintyComponent *component { getComponent( row ) };
         if ( component ) {
-            int columns { staticColumnCount() };
+            int columns {
+                static_cast<int>( UncertaintyComponent::headerLabels.size() )
+            };
 
             // The first columns contain component data
             for ( int column { 0 }; column < columns - 3; ++column ) {
