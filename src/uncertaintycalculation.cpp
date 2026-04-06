@@ -4,6 +4,7 @@
 
 #include "montecarlo.h"
 #include "settings.h"
+#include "stringutils.h"
 #include "uncertaintycalculation.h"
 #include <QByteArray>
 #include <QCoreApplication>
@@ -635,19 +636,22 @@ QString UncertaintyCalculation::outputParameterReferencesToString(
 QString UncertaintyCalculation::projectToString() const {
     QString result {};
     // Add version number
-    result += "Sigma version: " + QCoreApplication::applicationVersion() + endl;
+    result += "Sigma version: " +
+              QCoreApplication::applicationVersion() +
+              StringUtils::endl;
 
     // Add project title
     QString project { getProjectFileName() };
     if ( project.size() > 0 ) {
-        result += addQuotes( "Project: " + project ) + endl;
+        result += StringUtils::addQuotes( "Project: " + project ) +
+                  StringUtils::endl;
     }
 
     // Add input, correlation and output parameter data
-    result += endl;
-    result += InputParameter::parametersToString() + endl;
+    result += StringUtils::endl;
+    result += InputParameter::parametersToString() + StringUtils::endl;
     if ( mCorrelationModel->rowCount() > 0 ) {
-        result += Correlation::correlationsToString() + endl;
+        result += Correlation::correlationsToString() + StringUtils::endl;
     }
     result += OutputParameter::parametersToString();
 

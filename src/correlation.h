@@ -7,8 +7,6 @@
 
 #include "modelcontrol.hpp"
 #include "record.hpp"
-#include "stringutils.h"
-#include "utils.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
@@ -22,11 +20,7 @@
 class InputParameter;
 
 // Class that defines the correlation coefficient between 2 InputParameters.
-class Correlation :
-    public QObject,
-    public Record,
-    protected Utils
-{
+class Correlation : public QObject, public Record {
     Q_OBJECT
     QML_ELEMENT
 

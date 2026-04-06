@@ -69,3 +69,16 @@ int BudgetModel::rowCount( const QModelIndex &parent ) const {
     }
     return 0;
 }
+
+
+int BudgetModel::getContributionColorIndex( double contri ) {
+    if ( std::isfinite( contri ) ) {
+        int i {
+            static_cast<int> (
+                std::floor( std::abs( contri * sNumScaleColors ) )
+            )
+        };
+        return i > sNumScaleColors - 1 ? sNumScaleColors - 1 : i;
+    }
+    return 0;
+}

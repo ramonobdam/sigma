@@ -169,7 +169,7 @@ QString MonteCarlo::getExpandedUncertaintyAsString(
         ", +" +
         StringUtils::doubleToString( higher, precision )
     };
-    return csvMode ? addQuotes( result ) : result;
+    return csvMode ? StringUtils::addQuotes( result ) : result;
 }
 
 
@@ -191,7 +191,7 @@ QString MonteCarlo::getNumericalToleranceAsString() const {
 
 
 QString MonteCarlo::getStatus( const bool &csvMode ) const {
-    return csvMode ? addQuotes ( mStatus ) : mStatus;
+    return csvMode ? StringUtils::addQuotes ( mStatus ) : mStatus;
 }
 
 
@@ -209,17 +209,17 @@ QString MonteCarlo::histogramToString() const {
     if ( mHistogramValues.size() > 0 ) {
         OutputParameter *outputParameter { getOutputParameter() };
         if ( outputParameter ) {
-            result += addQuotes(
+            result += StringUtils::addQuotes(
                 "Histogram " + outputParameter->getName() + ":"
             );
-            result += endl;
+            result += StringUtils::endl;
             result += "Bins:" +
                       StringUtils::csvSeparator +
                       getHistogramBinsAsString();
-            result += endl;
+            result += StringUtils::endl;
             result += "Probabilities:" + StringUtils::csvSeparator;
             result += getHistogramValuesAsString();
-            result += endl;
+            result += StringUtils::endl;
         }
     }
     return result;

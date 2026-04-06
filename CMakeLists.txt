@@ -129,6 +129,7 @@ qt_add_qml_module( Sigma
         src/lockableitemselectionmodel.h
         src/mixedcopulasampler.cpp
         src/mixedcopulasampler.h
+        src/mathconstants.h
         src/model.hpp
         src/modelcontrol.hpp
         src/montecarlo.cpp
@@ -152,8 +153,6 @@ qt_add_qml_module( Sigma
         src/uncertaintycalculation.h
         src/uncertaintycomponent.cpp
         src/uncertaintycomponent.h
-        src/utils.cpp
-        src/utils.h
         src/windowscaptionhelper.cpp
         src/windowscaptionhelper.h
     RESOURCES

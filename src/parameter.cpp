@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "parameter.h"
+#include "stringutils.h"
 
 
 QString Parameter::mNameString = "name";
@@ -56,12 +57,12 @@ void Parameter::setValid( const bool &valid ) {
 
 
 QString Parameter::getName( const bool csvMode ) const {
-    return csvMode ? addQuotes( mName ) : mName;
+    return csvMode ? StringUtils::addQuotes( mName ) : mName;
 }
 
 
 QString Parameter::getUnit( const bool csvMode ) const {
-    return csvMode ? addQuotes( mUnit ) : mUnit;
+    return csvMode ? StringUtils::addQuotes( mUnit ) : mUnit;
 }
 
 

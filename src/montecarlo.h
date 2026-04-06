@@ -6,7 +6,6 @@
 #define MONTECARLO_H
 
 #include "statistics.h"
-#include "utils.h"
 #include <QJsonObject>
 #include <QList>
 #include <QMutex>
@@ -20,7 +19,7 @@ class OutputParameter;
 
 // Class that performs the Monte Carlo simulation and stores the results. The
 // calculations are performed in a separate thread using QThread.
-class MonteCarlo: public QThread, private Utils {
+class MonteCarlo: public QThread {
     Q_OBJECT
 
 public:

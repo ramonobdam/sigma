@@ -11,7 +11,6 @@
 #include "modelcontrol.hpp"
 #include "outputparameter.h"
 #include "resultsmodel.h"
-#include "utils.h"
 #include <QAbstractItemModel>
 #include <QItemSelectionModel>
 #include <QJsonObject>
@@ -24,7 +23,7 @@
 
 // The UncertaintyCalculation class orchestrates the different parts of the
 // uncertainty calculation and interfaces with the QML UI layer
-class UncertaintyCalculation : public QObject, private Utils {
+class UncertaintyCalculation : public QObject {
     Q_OBJECT
     QML_ELEMENT
 

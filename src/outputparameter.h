@@ -168,9 +168,7 @@ private:
     const QString mRegExErrorReplace { "!" };
     const QString mValidExpressionString { "Input parameters detected: " };
     const QString variableSeparator { ", " };
-    const double mDoubleNaN { std::numeric_limits<double>::quiet_NaN() };
     const int mErrorCodeLength { 9 };
-    const int mMaxInt { std::numeric_limits<int>::max() };
     MixedCopulaSampler mMixedCopulaSampler;
     MonteCarlo mMonteCarlo;
     QList<UncertaintyComponent> mComponents;

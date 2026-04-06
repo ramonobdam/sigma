@@ -5,7 +5,6 @@
 #ifndef DISTRIBUTION_H
 #define DISTRIBUTION_H
 
-#include "utils.h"
 #include <QList>
 #include <QString>
 #include <functional>

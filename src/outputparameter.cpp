@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "third_party/alglib/specialfunctions.h"
+#include "mathconstants.h"
 #include "outputparameter.h"
 #include "settings.h"
 #include "stringutils.h"
@@ -71,7 +72,7 @@ OutputParameter::OutputParameter( QObject *parent )
         mMonteCarlo { MonteCarlo( this ) },
         mMixedCopulaSampler { MixedCopulaSampler( this ) }
 {
-    setNominalValue( mDoubleNaN );
+    setNominalValue( MathConstants::nan );
 }
 
 
@@ -183,11 +184,11 @@ QString OutputParameter::componentsToString() const {
         mUncertaintyComponentsHeaderString + getName() + ":"
     };
     QString result {};
-    result += addQuotes( componentsString ) + endl;
+    result += StringUtils::addQuotes( componentsString ) + StringUtils::endl;
     result += UncertaintyComponent::headerLabels.join(
                   StringUtils::csvSeparator
               ) +
-              endl;
+              StringUtils::endl;
 
     // Add a data row for each component
     qsizetype rows { mComponents.size() };
@@ -212,7 +213,7 @@ QString OutputParameter::componentsToString() const {
                     result += StringUtils::csvSeparator;
                 }
             }
-            result += endl;
+            result += StringUtils::endl;
         }
     }
 
@@ -224,7 +225,7 @@ QString OutputParameter::getComponentContributionAsString(
     const int &row
 ) const {
     double contri { getComponentContribution( row ) };
-    return contributionToPercentageString( contri );
+    return StringUtils::contributionToPercentageString( contri );
 }
 
 
@@ -233,7 +234,7 @@ QString OutputParameter::getContributionAsString(
     const int &column
 ) const {
     double contri { getContribution( row, column )};
-    return contributionToPercentageString( contri );
+    return StringUtils::contributionToPercentageString( contri );
 }
 
 
@@ -241,13 +242,13 @@ QString OutputParameter::getCorrelationContributionAsString(
     const int &row
 ) const {
     double contri { getCorrelationContribution( row ) };
-    return contributionToPercentageString( contri );
+    return StringUtils::contributionToPercentageString( contri );
 }
 
 
 QString OutputParameter::getTotalContributionAsString( const int &row ) const {
     double contri { getTotalContribution( row ) };
-    return contributionToPercentageString( contri );;
+    return StringUtils::contributionToPercentageString( contri );;
 }
 
 
@@ -543,7 +544,7 @@ int OutputParameter::getEffectiveDOF() const {
     }
 
     // Infinite DOF
-    return mMaxInt;
+    return MathConstants::maxInt;
 }
 
 
@@ -580,7 +581,7 @@ void OutputParameter::clearComponents() {
 
 
 void OutputParameter::resetResults( const bool &resetMonteCarlo ) {
-    setNominalValue( mDoubleNaN );
+    setNominalValue( MathConstants::nan );
     setError();
     clearComponents();
     if ( resetMonteCarlo ) {
@@ -665,12 +666,12 @@ QString OutputParameter::getConfidenceAsString() const {
 
 
 QString OutputParameter::getError( const bool &csvMode ) const {
-    return csvMode ? addQuotes( mError ) : mError;
+    return csvMode ? StringUtils::addQuotes( mError ) : mError;
 }
 
 
 QString OutputParameter::getFormula( const bool &csvMode ) const {
-    return csvMode ? addQuotes( mFormula ) : mFormula;
+    return csvMode ? StringUtils::addQuotes( mFormula ) : mFormula;
 }
 
 
@@ -820,7 +821,7 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
                             // Pearson = 2 * sin( pi * Spearman / 6 )
 
                             if ( !allNormal ) {
-                                c = 2. * std::sin( pi * c / 6. );
+                                c = 2. * std::sin( MathConstants::pi * c / 6. );
                             }
 
                             // Set latent correlation matrix
@@ -908,45 +909,48 @@ QJsonArray OutputParameter::parametersToJson() {
 QString OutputParameter::parametersToString() {
     QString result {};
     // Add title, header labels and output parameter data.
-    result += mOutputParametersHeaderString + endl;
-    result += headerLabels.join( StringUtils::csvSeparator ) + endl;
+    result += mOutputParametersHeaderString + StringUtils::endl;
+    result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
     for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
         if ( parameter) {
-            result += parameter->toString() + endl;
+            result += parameter->toString() + StringUtils::endl;
         }
     }
-    result += endl;
+    result += StringUtils::endl;
 
     // Add title, header labels and combined uncertainty for each valid output
     // parameter.
-    result += mCombinedUncertaintyHeaderString + endl;
-    result += resultLabels.join( StringUtils::csvSeparator ) + endl;
+    result += mCombinedUncertaintyHeaderString + StringUtils::endl;
+    result += resultLabels.join( StringUtils::csvSeparator ) +
+              StringUtils::endl;
     for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
         if ( parameter && parameter->getValid() ) {
-            result += parameter->resultsToString() + endl;
+            result += parameter->resultsToString() + StringUtils::endl;
         }
     }
-    result += endl;
+    result += StringUtils::endl;
 
     // Add the components for each valid output parameter. This already includes
     // a title and header labels.
     for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
         if ( parameter && parameter->getValid() ) {
-            result += parameter->componentsToString() + endl;
+            result += parameter->componentsToString() + StringUtils::endl;
         }
     }
 
     // Add title, header labels and Monte Carlo simulation results for each
     // valid output parameter.
-    result += mMonteCarloHeaderString + endl;
-    result += MonteCarlo::headerLabels.join( StringUtils::csvSeparator ) + endl;
+    result += mMonteCarloHeaderString + StringUtils::endl;
+    result += MonteCarlo::headerLabels.join( StringUtils::csvSeparator ) +
+              StringUtils::endl;
     for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
         if ( parameter && parameter->getValid() ) {
             QStringList mcResults { parameter->getMonteCarloResults( true ) };
-            result += mcResults.join( StringUtils::csvSeparator ) + endl;
+            result += mcResults.join( StringUtils::csvSeparator ) +
+                      StringUtils::endl;
         }
     }
-    result += endl;
+    result += StringUtils::endl;
 
     // Add title, header labels and histogram data for each valid output
     // parameter.
@@ -954,7 +958,7 @@ QString OutputParameter::parametersToString() {
         if ( parameter && parameter->getValid() ) {
             QString histogramString { parameter->histogramToString() };
             if ( histogramString.size() > 0 ) {
-                result += histogramString + endl;
+                result += histogramString + StringUtils::endl;
             }
         }
     }
@@ -1029,7 +1033,7 @@ QString OutputParameter::getCoverageFactorAsString(
 
 QString OutputParameter::getEffectiveDOFAsString() const {
     int DOF { getEffectiveDOF() };
-    if ( DOF < mMaxInt ) {
+    if ( DOF < MathConstants::maxInt ) {
         return QString::number( DOF, 'f', 0 );
     }
     return InputParameter::infiniteString;

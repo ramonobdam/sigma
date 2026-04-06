@@ -410,10 +410,10 @@ QVariant InputParameter::staticHeaderData( const int &column ) {
 
 
 QString InputParameter::parametersToString() {
-    QString result { mInputParametersHeaderString + endl };
-    result += headerLabels.join( StringUtils::csvSeparator ) + endl;
+    QString result { mInputParametersHeaderString + StringUtils::endl };
+    result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
     for ( InputParameter * &parameter : mInputModel.getAllRows() ) {
-        result += parameter->toString() + endl;
+        result += parameter->toString() + StringUtils::endl;
     }
     return result;
 }

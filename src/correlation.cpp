@@ -5,6 +5,7 @@
 #include "correlation.h"
 #include "inputparameter.h"
 #include "settings.h"
+#include "stringutils.h"
 
 
 QStringList Correlation::headerLabels = {
@@ -350,10 +351,10 @@ QJsonArray Correlation::correlationsToJson() {
 
 
 QString Correlation::correlationsToString() {
-    QString result { mCorrelationsHeaderString + endl };
-    result += headerLabels.join( StringUtils::csvSeparator ) + endl;
+    QString result { mCorrelationsHeaderString + StringUtils::endl };
+    result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
     for ( Correlation * &correlation : mCorrelationModel.getAllRows() ) {
-        result += correlation->toString() + endl;
+        result += correlation->toString() + StringUtils::endl;
     }
     return result;
 }

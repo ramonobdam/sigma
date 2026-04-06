@@ -4,6 +4,7 @@
 
 #include "distribution.h"
 #include "inputparameter.h"
+#include "mathconstants.h"
 #include "third_party/alglib/specialfunctions.h"
 #include <QMap>
 #include <array>
@@ -61,7 +62,7 @@ namespace Distribution {
                 return mean + halfWidth;
             }
 
-            double s { std::sin( 0.5 * Utils::pi * u ) };
+            double s { std::sin( 0.5 * MathConstants::pi * u ) };
             return mean - halfWidth + 2. * halfWidth * s * s;
         };
     }
