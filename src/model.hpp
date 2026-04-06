@@ -5,7 +5,7 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "record.hpp"
+#include "record.h"
 #include <QAbstractTableModel>
 #include <QList>
 #include <QModelIndex>

@@ -62,12 +62,9 @@ public:
     QString toString() const;
     QStringList getMonteCarloResults( const bool &csvMode = false ) const;
     QStringList getResults( const bool &csvMode = false ) const;
-    QVariant get(
-        const int &column,
-        const bool &csvMode = false
-    ) const override;
+    QVariant get( int column, bool csvMode = false ) const override;
     QVariant getResult( const int &column, const bool &csvMode = false ) const;
-    QVariant headerData( const int &column ) const override;
+    QVariant headerData( int column ) const override;
     UncertaintyComponent *getComponent( const int &row ) const;
     bool getMonteCarloValid() const;
     bool isInputParameterReferenced(
@@ -95,7 +92,7 @@ public:
     void clearComponents();
     void resetResults( const bool &resetMonteCarlo = true );
     void resetSymbolValues();
-    void set( const int &column, const QVariant &value ) override;
+    void set( int column, const QVariant &value ) override;
     void setComponents( const QList<UncertaintyComponent> &components );
     void setError( const QString &error = "" );
     void setLocked( const bool &locked ) override;

@@ -127,7 +127,7 @@ QJsonObject Correlation::toJson() const {
 }
 
 
-QString Correlation::getName( const bool csvMode ) const {
+QString Correlation::getName( bool csvMode ) const {
     // A corralation does not have a name
     return "";
 }
@@ -142,7 +142,7 @@ QString Correlation::toString() const {
 }
 
 
-QVariant Correlation::get( const int &column, const bool &csvMode ) const {
+QVariant Correlation::get( int column, bool csvMode ) const {
     const int precision = {
         csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
     };
@@ -162,7 +162,7 @@ QVariant Correlation::get( const int &column, const bool &csvMode ) const {
 }
 
 
-QVariant Correlation::headerData( const int &column ) const {
+QVariant Correlation::headerData( int column ) const {
     return staticHeaderData( column );
 }
 
@@ -261,7 +261,7 @@ void Correlation::reset() {
 }
 
 
-void Correlation::set( const int &column, const QVariant &value ) {
+void Correlation::set( int column, const QVariant &value ) {
     switch ( column ) {
         case 0:
             setInputParameterA( value.toString() );

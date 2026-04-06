@@ -140,7 +140,7 @@ qt_add_qml_module( Sigma
         src/outputparameter.h
         src/parameter.cpp
         src/parameter.h
-        src/record.hpp
+        src/record.h
         src/resultsmodel.cpp
         src/resultsmodel.h
         src/settings.cpp

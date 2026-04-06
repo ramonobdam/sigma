@@ -310,7 +310,7 @@ QStringList OutputParameter::getResults(const bool &csvMode ) const {
 }
 
 
-QVariant OutputParameter::get( const int &column, const bool &csvMode ) const {
+QVariant OutputParameter::get( int column, bool csvMode ) const {
     switch( column ) {
         case 0:
             return QVariant( getName( csvMode ) );
@@ -357,7 +357,7 @@ QVariant OutputParameter::getResult(
 }
 
 
-QVariant OutputParameter::headerData( const int &column ) const {
+QVariant OutputParameter::headerData( int column ) const {
     return staticHeaderData( column );
 }
 
@@ -597,7 +597,7 @@ void OutputParameter::resetSymbolValues() {
 }
 
 
-void OutputParameter::set( const int &column, const QVariant &value ) {
+void OutputParameter::set( int column, const QVariant &value ) {
     switch ( column ) {
         case 0:
             setName( value.toString() );

@@ -6,7 +6,7 @@
 #define CORRELATION_H
 
 #include "modelcontrol.hpp"
-#include "record.hpp"
+#include "record.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
@@ -43,13 +43,10 @@ public:
     InputParameter *getInputParameterA() const;
     InputParameter *getInputParameterB() const;
     QJsonObject toJson() const;
-    QString getName( const bool csvMode = false ) const override;
+    QString getName( bool csvMode = false ) const override;
     QString toString() const;
-    QVariant get(
-        const int &column,
-        const bool &csvMode = false
-    ) const override;
-    QVariant headerData( const int &column ) const override;
+    QVariant get( int column, bool csvMode = false ) const override;
+    QVariant headerData( int column ) const override;
 
     Q_INVOKABLE QString getInputParameterNameA(
         const bool csvMode = false
@@ -69,7 +66,7 @@ public:
     bool getValid() const override;
     int columnCount() const override;
     void reset();
-    void set( const int &column, const QVariant &value ) override;
+    void set( int column, const QVariant &value ) override;
     void setInputParameterA( InputParameter *inputParameter = nullptr );
     void setInputParameterB( InputParameter *inputParameter = nullptr );
 

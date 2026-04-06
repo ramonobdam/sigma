@@ -5,7 +5,7 @@
 #ifndef PARAMETER_H
 #define PARAMETER_H
 
-#include "record.hpp"
+#include "record.h"
 #include <QObject>
 #include <QString>
 #include <string>
@@ -32,7 +32,7 @@ public:
     virtual std::wstring getNameStdWString() const;
     virtual void setValid( const bool &valid );
 
-    Q_INVOKABLE virtual QString getName( const bool csvMode = false ) const;
+    Q_INVOKABLE virtual QString getName( bool csvMode = false ) const;
     Q_INVOKABLE virtual QString getUnit( const bool csvMode = false ) const;
     Q_INVOKABLE virtual bool getValid() const;
     Q_INVOKABLE virtual double getNominalValue() const;

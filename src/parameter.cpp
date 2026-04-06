@@ -56,7 +56,7 @@ void Parameter::setValid( const bool &valid ) {
 }
 
 
-QString Parameter::getName( const bool csvMode ) const {
+QString Parameter::getName( bool csvMode ) const {
     return csvMode ? StringUtils::addQuotes( mName ) : mName;
 }
 

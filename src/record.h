@@ -14,18 +14,15 @@ class Record {
 public:
     virtual ~Record() = default;
 
-    virtual QVariant get(
-        const int &column,
-        const bool &csvMode = false
-    ) const = 0;
-    virtual QVariant headerData( const int &column ) const = 0;
-    virtual QString getName( const bool csvMode = false ) const = 0;
+    virtual QVariant get( int column, bool csvMode = false ) const = 0;
+    virtual QVariant headerData( int column ) const = 0;
+    virtual QString getName( bool csvMode = false ) const = 0;
     virtual bool getValid() const = 0;
     virtual int columnCount() const = 0;
-    virtual void set( const int &column, const QVariant &value ) = 0;
+    virtual void set( int column, const QVariant &value ) = 0;
 
     // Derived class should also implement:
-    static QVariant staticHeaderData( const int &column ) { return QVariant(); }
+    static QVariant staticHeaderData( int column ) { return QVariant(); }
     static int staticColumnCount() { return 0; }
 };
 

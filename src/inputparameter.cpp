@@ -165,7 +165,7 @@ QString InputParameter::toString() const {
 }
 
 
-QVariant InputParameter::get( const int &column, const bool &csvMode ) const {
+QVariant InputParameter::get( int column, bool csvMode ) const {
     const int precision = {
         csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
     };
@@ -193,7 +193,7 @@ QVariant InputParameter::get( const int &column, const bool &csvMode ) const {
 }
 
 
-QVariant InputParameter::headerData( const int &column ) const {
+QVariant InputParameter::headerData( int column ) const {
     return staticHeaderData( column );
 }
 
@@ -226,7 +226,7 @@ void InputParameter::resetSymbolValue() {
 }
 
 
-void InputParameter::set( const int &column, const QVariant &value ) {
+void InputParameter::set( int column, const QVariant &value ) {
     switch ( column ) {
         case 0:
             setName( value.toString() );
