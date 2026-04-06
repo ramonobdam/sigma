@@ -5,6 +5,7 @@
 #include "budgetmodel.h"
 #include "outputparameter.h"
 #include "uncertaintycomponent.h"
+#include <cmath>
 
 
 BudgetModel::BudgetModel( QObject *parent ) : OutputModel { parent } {}
@@ -16,8 +17,8 @@ BudgetModel::~BudgetModel() {}
 QVariant BudgetModel::data( const QModelIndex &index, int role ) const {
     int row { index.row() };
     int column { index.column() };
-    if ( !index.isValid() || row >= rowCount( QModelIndex() ) ||
-        column >= columnCount( QModelIndex() ) ) {
+    if ( !index.isValid() || row >= rowCount() ||
+        column >= columnCount() ) {
         return QVariant();
     }
 
@@ -47,10 +48,16 @@ QVariant BudgetModel::data( const QModelIndex &index, int role ) const {
 
 
 QVariant BudgetModel::headerData(
-    int section, Qt::Orientation orientation,
+    int section,
+    Qt::Orientation orientation,
     int role
 ) const {
-    if ( role == Qt::DisplayRole && orientation == Qt::Horizontal ) {
+    if (
+        role == Qt::DisplayRole &&
+        orientation == Qt::Horizontal &&
+        section >= 0 &&
+        section < columnCount()
+    ) {
         return UncertaintyComponent::headerLabels[ section ];
     }
     return QVariant();
@@ -72,6 +79,8 @@ int BudgetModel::rowCount( const QModelIndex &parent ) const {
 
 
 int BudgetModel::getContributionColorIndex( double contri ) {
+    // Get the index of a color scale using 'sNumScaleColors' number of colors
+    // for a contribution (fraction; [0,1])
     if ( std::isfinite( contri ) ) {
         int i {
             static_cast<int> (
