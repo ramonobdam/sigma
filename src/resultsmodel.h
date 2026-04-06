@@ -9,6 +9,7 @@
 #include <QModelIndex>
 #include <QObject>
 #include <QVariant>
+#include <QtQmlIntegration/qqmlintegration.h>
 
 // This class creates a QAbstractTableModel-interface for the selected
 // OutputParameter to show its combined uncertainty
