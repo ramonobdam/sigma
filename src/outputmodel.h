@@ -8,7 +8,9 @@
 #include "modelcontrol.hpp"
 #include "outputparameter.h"
 #include <QAbstractTableModel>
+#include <QModelIndex>
 #include <QObject>
+#include <QVariant>
 
 // Abstract class that creates a QAbstractTableModel-interface for the selected
 // OutputParameter. This interface is used to display the results in table
@@ -21,6 +23,7 @@ public:
     OutputModel( QObject *parent = nullptr );
     virtual ~OutputModel() = default;
 
+    ModelControl<OutputParameter *> *getOutputParameterModel() const;
     int getOutputRow() const;
     void emitAllDataChanged();
     void emitModelAboutToBeReset();
@@ -36,12 +39,10 @@ public:
         Qt::Orientation orientation,
         int role = Qt::DisplayRole
     ) const = 0;
-    virtual int rowCount(
-        const QModelIndex &parent = QModelIndex()
-    ) const = 0;
+    virtual int rowCount( const QModelIndex &parent = QModelIndex() ) const = 0;
 
 public slots:
-    void setOutputRow( const int &row = -1 );
+    void setOutputRow( int row = -1 );
 
 protected:
     OutputParameter *getOutputParameter() const;

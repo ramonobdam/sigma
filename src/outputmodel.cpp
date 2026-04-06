@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "outputmodel.h"
-#include <QList>
+
 
 OutputModel::OutputModel( QObject *parent )
     :   QAbstractTableModel { parent },
@@ -12,18 +12,22 @@ OutputModel::OutputModel( QObject *parent )
 {}
 
 
+ModelControl<OutputParameter *> * OutputModel::getOutputParameterModel() const {
+    return mOutputParameterModel;
+}
+
+
 int OutputModel::getOutputRow() const {
     return mOutputRow;
 }
 
 
 void OutputModel::emitAllDataChanged() {
-    QList<int> roles { Qt::DisplayRole, Qt::DecorationRole };
     emit dataChanged(
         index( 0, 0 ),
         index( rowCount() - 1, columnCount() - 1 ),
-        roles
-        );
+        { Qt::DisplayRole, Qt::DecorationRole }
+    );
 }
 
 
@@ -39,13 +43,13 @@ void OutputModel::emitModelReset() {
 
 void OutputModel::setOutputParameterModel(
     ModelControl<OutputParameter *> *outputModel
-    ) {
+) {
     mOutputParameterModel = outputModel;
 }
 
 
-void OutputModel::setOutputRow( const int &row ) {
-    if ( row != mOutputRow ) {
+void OutputModel::setOutputRow( int row ) {
+    if ( row != getOutputRow() ) {
         beginResetModel();
         mOutputRow = row;
         endResetModel();
@@ -54,8 +58,8 @@ void OutputModel::setOutputRow( const int &row ) {
 
 
 OutputParameter * OutputModel::getOutputParameter() const {
-    if ( mOutputParameterModel ) {
-        return mOutputParameterModel->getRow( mOutputRow );
+    if ( getOutputParameterModel() ) {
+        return getOutputParameterModel()->getRow( getOutputRow() );
     }
     return nullptr;
 }
