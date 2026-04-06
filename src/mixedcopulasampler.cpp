@@ -8,16 +8,17 @@
 
 #include <QList>
 #include <cmath>
+#include <utility>
 
 
 std::mt19937 MixedCopulaSampler::mGenerator = std::mt19937();
 
 
 MixedCopulaSampler::MixedCopulaSampler( OutputParameter *parameter )
-    :   mOutputParameter { parameter },
+    :   mVariables {},
         mL {},
-        mReady { false },
-        mVariables {}
+        mOutputParameter { parameter },
+        mReady { false }
 {}
 
 
@@ -26,7 +27,7 @@ OutputParameter * MixedCopulaSampler::getOutputParameter() const {
 }
 
 
-void MixedCopulaSampler::addVariable( const Distribution::InvCDF &invCDF ) {
+void MixedCopulaSampler::addVariable( Distribution::InvCDF invCDF ) {
     mVariables.emplace_back( std::move( invCDF ) );
 }
 
@@ -37,9 +38,7 @@ void MixedCopulaSampler::clear(){
 }
 
 
-void MixedCopulaSampler::setLatentCorrelation(
-    const Eigen::MatrixXd &rho
-) {
+void MixedCopulaSampler::setLatentCorrelation( const Eigen::MatrixXd &rho ) {
     Eigen::LLT<Eigen::MatrixXd> llt( rho );
     if ( llt.info() != Eigen::Success ) {
         // Latent correlation matrix not positive definite
@@ -54,7 +53,7 @@ void MixedCopulaSampler::setLatentCorrelation(
 void MixedCopulaSampler::setRandomSymbolValues() const {
     int n { static_cast<int>( mVariables.size() ) };
 
-    if ( n > 0 && mOutputParameter && mReady ) {
+    if ( n > 0 && mL.rows() == n && mOutputParameter && mReady ) {
         static std::normal_distribution<> N01( 0., 1. );
 
         // Step 1: latent correlated normal
@@ -84,5 +83,6 @@ void MixedCopulaSampler::setOutputParameter(
 
 
 void MixedCopulaSampler::resetGenerator() {
+    // Go back to the start of the deterministic list of random values
     mGenerator.seed();
 }

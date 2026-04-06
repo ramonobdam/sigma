@@ -23,7 +23,7 @@ public:
     MixedCopulaSampler( OutputParameter *parameter );
 
     OutputParameter *getOutputParameter() const;
-    void addVariable( const Distribution::InvCDF &invCDF );
+    void addVariable( Distribution::InvCDF invCDF );
     void clear();
     void setLatentCorrelation( const Eigen::MatrixXd &rho );
     void setRandomSymbolValues() const;
