@@ -971,7 +971,7 @@ bool OutputParameter::validName(
     const QString &name,
     const bool &checkCurrentSelection
 ) {
-    if ( checkCurrentSelection && mOutputModel.nameIsCurrent( name ) ) {
+    if ( checkCurrentSelection && mOutputModel.nameIsSelected( name ) ) {
         return true;
     }
     return !mOutputModel.nameIsPresent( name ) && name.size() > 0;

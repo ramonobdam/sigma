@@ -2,8 +2,8 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
-#ifndef MODELCONTROL_H
-#define MODELCONTROL_H
+#ifndef MODELCONTROL_HPP
+#define MODELCONTROL_HPP
 
 #include "lockableitemselectionmodel.h"
 #include "model.hpp"
@@ -16,7 +16,7 @@
 // Class that combines a Model and LockableItemSelectionModel for type T
 template <typename pT>
 class ModelControl : public QObject {
-    typedef typename std::remove_pointer<pT>::type T;
+    using T = typename std::remove_pointer_t<pT>;
 
 public:
     ModelControl( QObject *parent = nullptr )
@@ -27,11 +27,8 @@ public:
     }
 
 
-    ~ModelControl() {}
-
-
     QObject *itemModel() {
-        return dynamic_cast<QObject *> ( &mModel );
+        return static_cast<QObject *> ( &mModel );
     }
 
 
@@ -57,21 +54,21 @@ public:
 
     T *appendRow( const T &parameter ) {
         mModel.appendRow( parameter );
-        int row { rowCount() - 1 };
+        const int row { rowCount() - 1 };
         selectRow( row );
         return getRow( row );
     }
 
 
     void updateSelectedRow( const T &parameter ) {
-        int row { selectedRow() };
+        const int row { selectedRow() };
         if ( row >= 0 ) {
             updateRow( row, parameter );
         }
     }
 
 
-    void emitRowChanged( const int &row ) {
+    void emitRowChanged( int row ) {
         mModel.emitRowChanged( row );
     }
 
@@ -81,12 +78,12 @@ public:
     }
 
 
-    void updateRow( const int &row, const T &parameter ) {
+    void updateRow( int row, const T &parameter ) {
         mModel.updateRow( row, parameter );
     }
 
 
-    T *getRow( const int &row ) const {
+    T *getRow( int row ) const {
         return mModel.getRow( row );
     }
 
@@ -97,7 +94,7 @@ public:
 
 
     T *getSelectedRow() const {
-        int row = { selectedRow() };
+        const int row = { selectedRow() };
         if ( row >= 0 ) {
             return getRow( row );
         }
@@ -105,7 +102,7 @@ public:
     }
 
 
-    QVariant getSelectedItem( const int &column = 0 ) const {
+    QVariant getSelectedItem( int column = 0 ) const {
         T *parameter { getSelectedRow() };
         if ( parameter ) {
             return parameter->get( column );
@@ -114,9 +111,22 @@ public:
     }
 
 
-    bool removeRow( const int &row ) {
+    bool removeRow( int row ) {
         if ( row >= 0 && row < rowCount() ) {
             mModel.removeRow( row );
+            // Update the selected row when the table is not empty, else clear
+            // the selection
+            if ( rowCount() > 0 ) {
+                if ( row - 1 >= 0 ) {
+                    selectRow( row - 1 );
+                }
+                else {
+                    selectRow( row );
+                }
+            }
+            else {
+                clearSelection();
+            }
             return true;
         }
         return false;
@@ -124,12 +134,7 @@ public:
 
 
     bool removeSelectedRow() {
-        int row { selectedRow() };
-        if ( row >= 0 ) {
-            mModel.removeRow( row );
-            return true;
-        }
-        return false;
+        return removeRow( selectedRow() );
     }
 
 
@@ -138,7 +143,7 @@ public:
     }
 
 
-    bool nameIsCurrent( const QString &name ) const {
+    bool nameIsSelected( const QString &name ) const {
         T *parameter { getSelectedRow() };
         if ( parameter ) {
             return parameter->getName().toLower() == name.toLower();
@@ -149,11 +154,13 @@ public:
 
     void clear() {
         mModel.clear();
+        clearSelection();
     }
 
 
     void clearSelection() {
         mSelection.clearSelection();
+        mSelection.clearCurrentIndex();
     }
 
 
@@ -187,8 +194,8 @@ public:
     }
 
 
-    void setSelectionLocked( const bool &locked ) {
-        mSelection.setSelectionLocked(locked);
+    void setSelectionLocked( bool locked ) {
+        mSelection.setSelectionLocked( locked );
     }
 
 
@@ -197,4 +204,4 @@ private:
     LockableItemSelectionModel mSelection;
 };
 
-#endif // MODELCONTROL_H
+#endif // MODELCONTROL_HPP

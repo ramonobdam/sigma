@@ -435,7 +435,7 @@ bool InputParameter::validName(
     const QString &name,
     const bool &checkCurrentSelection
 ) {
-    if ( checkCurrentSelection && mInputModel.nameIsCurrent(name) ) {
+    if ( checkCurrentSelection && mInputModel.nameIsSelected( name) ) {
         return true;
     }
     return ( !symbolExists( name ) && validSymbol( name ) );
