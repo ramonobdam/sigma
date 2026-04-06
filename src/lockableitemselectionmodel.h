@@ -9,6 +9,7 @@
 #include <QItemSelection>
 #include <QItemSelectionModel>
 #include <QModelIndex>
+#include <QObject>
 
 // LockableItemSelectionModel adds the ability to lock the selection and current
 // index to QItemSelectionModel. When the selection model is not locked, the
@@ -19,9 +20,8 @@ class LockableItemSelectionModel : public QItemSelectionModel {
 
 public:
     LockableItemSelectionModel( QAbstractItemModel *model, QObject *parent );
-    ~LockableItemSelectionModel();
 
-    void setSelectionLocked( const bool &locked );
+    void setSelectionLocked( bool locked );
     bool getSelectionLocked() const;
 
 public slots:

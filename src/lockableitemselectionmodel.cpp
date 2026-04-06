@@ -9,14 +9,12 @@ LockableItemSelectionModel::LockableItemSelectionModel(
     QAbstractItemModel *model,
     QObject *parent
 )
-    :   QItemSelectionModel { model, parent }
+    :   QItemSelectionModel { model, parent },
+        mSelectionLocked { false }
 {}
 
 
-LockableItemSelectionModel::~LockableItemSelectionModel() {}
-
-
-void LockableItemSelectionModel::setSelectionLocked( const bool &locked ) {
+void LockableItemSelectionModel::setSelectionLocked( bool locked ) {
     mSelectionLocked = locked;
 }
 
