@@ -46,7 +46,7 @@ bool WindowsCaptionHelper::nativeEventFilter(
         return false;
     }
 
-    WindowData &data { mWindows[ hwnd ] };
+    const WindowData &data { mWindows[ hwnd ] };
     QWindow *window { data.window.data() };
     if ( !window ) {
         return false;
@@ -165,7 +165,8 @@ bool WindowsCaptionHelper::nativeEventFilter(
         // Double click to maximize
         case WM_NCLBUTTONDBLCLK:
         {
-            if ( !effectiveResizable ) {
+            bool canResize = data.userResizable && !isFixedSize( window );
+            if ( !canResize ) {
                 return false;
             }
 
@@ -220,7 +221,7 @@ int WindowsCaptionHelper::getCaptionHeight() const {
 }
 
 
-void WindowsCaptionHelper::setCaptionHeight( const int &height ) {
+void WindowsCaptionHelper::setCaptionHeight( int height ) {
     if ( mCaptionHeight == height ) {
         return;
     }
@@ -362,7 +363,7 @@ void WindowsCaptionHelper::setExclusionRects(
 }
 
 
-void WindowsCaptionHelper::setResizable( QWindow *window, const bool &value ) {
+void WindowsCaptionHelper::setResizable( QWindow *window, bool value ) {
 #ifdef Q_OS_WINDOWS
     if ( !window ) {
         return;
@@ -434,7 +435,7 @@ void WindowsCaptionHelper::toggleFullScreen( QWindow *window ) {
         window->showFullScreen();
 
         // Remove resize border and shadow when fullscreen
-        LONG style = GetWindowLongPtr( hwnd, GWL_STYLE );
+        LONG style { static_cast<LONG>( GetWindowLongPtr( hwnd, GWL_STYLE ) ) };
         style &= ~WS_THICKFRAME;
         SetWindowLongPtr( hwnd, GWL_STYLE, style );
 
@@ -496,7 +497,7 @@ void WindowsCaptionHelper::applyStyle( HWND hwnd ) {
         return;
     }
 
-    WindowData data { mWindows.value( hwnd ) };
+    const WindowData &data { mWindows.[ hwnd ] };
     QWindow *window { data.window.data() };
     if ( !window ) {
         return;
@@ -558,10 +559,6 @@ bool WindowsCaptionHelper::isFixedSize( QWindow *window ) {
 
 
 double WindowsCaptionHelper::dpiScale( HWND hwnd ) {
-    if ( QWindow *w = QGuiApplication::focusWindow() ) {
-        return w->devicePixelRatio();
-    }
-
-    return GetDpiForWindow( hwnd ) / defaultDPI;
+    return GetDpiForWindow( hwnd ) / sDefaultDPI;
 }
 #endif

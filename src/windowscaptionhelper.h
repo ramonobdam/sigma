@@ -45,7 +45,7 @@ public:
         qintptr *result
     ) override;
     int getCaptionHeight() const;
-    void setCaptionHeight( const int &height );
+    void setCaptionHeight( int height );
 
     Q_INVOKABLE void attachTo( QWindow *window );
     Q_INVOKABLE void detachFrom( QWindow *window );
@@ -55,7 +55,7 @@ public:
         QWindow *window,
         const QList<QRect> &rects
     );
-    Q_INVOKABLE void setResizable( QWindow *window, const bool &value );
+    Q_INVOKABLE void setResizable( QWindow *window, bool value );
     Q_INVOKABLE void showFullScreen( QWindow *window );
     Q_INVOKABLE void toggleFullScreen( QWindow *window );
     Q_INVOKABLE void toggleMaximize( QWindow *window );
@@ -68,7 +68,6 @@ private:
     void applyStyle( HWND hwnd );
     void updateShadow( HWND hwnd );
     static bool isFixedSize( QWindow *window );
-    static constexpr double defaultDPI { 96. };     // 96 DPI = scale 1.0
     static double dpiScale( HWND hwnd );
 
     struct WindowData {
@@ -77,7 +76,9 @@ private:
         QList<QRect> exclusions;
     };
 
-    QHash<HWND, WindowData> mWindows;
+    static constexpr double sDefaultDPI { 96. };     // 96 DPI = scale 1.0
+
+    QHash<HWND, WindowData> mWindows {};
 #endif
 
     int mCaptionHeight;
