@@ -3,11 +3,12 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "distribution.h"
-#include "inputparameter.h"
 #include "mathconstants.h"
 #include "third_party/alglib/specialfunctions.h"
+#include <QtAssert>
 #include <QMap>
 #include <array>
+#include <cmath>
 
 
 namespace Distribution {
@@ -21,7 +22,7 @@ namespace Distribution {
     };
 
 
-    QString distributionToString( const Type &distribution ) {
+    QString distributionToString( Type distribution ) {
         return map.value( distribution, "" );
     }
 
@@ -62,6 +63,8 @@ namespace Distribution {
                 return mean + halfWidth;
             }
 
+            // Arcsine distribution for a = mean - halfWidth and
+            // b - a = 2 * halfWidth
             double s { std::sin( 0.5 * MathConstants::pi * u ) };
             return mean - halfWidth + 2. * halfWidth * s * s;
         };
@@ -86,11 +89,11 @@ namespace Distribution {
 
 
     InvCDF getInvCDF(
-        const Type &distribution,
-        const double &mean,
-        const double &stdDev,
-        const int &dof,
-        const bool &dofInfinite
+        Type distribution,
+        double mean,
+        double stdDev,
+        int dof,
+        bool dofInfinite
     ) {
         double halfWidth {};
 
@@ -120,7 +123,15 @@ namespace Distribution {
                     return invCDFStudentsT( mean, stdDev, dof );
                 }
             }
+            case Type::none: {
+                return invCDFConstant( mean );
+            }
             default: {
+                Q_ASSERT_X(
+                    false,
+                    "Distribution::getInvCDF()",
+                    "InvCDF not defined for Distribution::Type"
+                );
                 return invCDFConstant( mean );
             }
         }
@@ -145,10 +156,11 @@ namespace Distribution {
         // interpreted as the experimental standard deviation s of the mean
         // (GUM Type A).
 
-        // Student's t doesn't exist for dof < 1
-        if ( dof < 1 ) {
-            return invCDFConstant( mean );
-        }
+        Q_ASSERT_X(
+            dof >= 1,
+            "Distribution::invCDFStudentsT",
+            "Student's t doesn't exist for dof < 1"
+        );
 
         return [ = ]( double u ) {
             return mean + stdDev * alglib::invstudenttdistribution( dof, u );
@@ -157,10 +169,13 @@ namespace Distribution {
     }
 
 
-    double invCDFStandardNormal( const double &p ) {
+    double invCDFStandardNormal( double p ) {
         // Inverse standard normal CDF (Acklam approximation)
-        if ( p <= 0. || p >= 1. ) {
-            return 0.;
+        if ( p <= 0. ) {
+            return MathConstants::minInfinity;
+        }
+        if ( p >= 1. ) {
+            return MathConstants::maxInfinity;
         }
 
         static const double a1 { -3.969683028665376e+01 };
@@ -194,13 +209,13 @@ namespace Distribution {
         double q {};
         double r {};
 
-        if (p < plow) {
+        if ( p < plow ) {
             q = std::sqrt(-2. * std::log(p));
             return (((((c1*q + c2)*q + c3)*q + c4)*q + c5)*q + c6) /
                    ((((d1*q + d2)*q + d3)*q + d4)*q + 1.);
         }
 
-        if (p > phigh) {
+        if ( p > phigh ) {
             q = std::sqrt(-2. * std::log(1. - p));
             return -(((((c1*q + c2)*q + c3)*q + c4)*q + c5)*q + c6) /
                    ((((d1*q + d2)*q + d3)*q + d4)*q + 1.);
