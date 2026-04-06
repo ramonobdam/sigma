@@ -497,7 +497,7 @@ void WindowsCaptionHelper::applyStyle( HWND hwnd ) {
         return;
     }
 
-    const WindowData &data { mWindows.[ hwnd ] };
+    const WindowData &data { mWindows[ hwnd ] };
     QWindow *window { data.window.data() };
     if ( !window ) {
         return;
