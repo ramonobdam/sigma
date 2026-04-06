@@ -2,8 +2,8 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
-#ifndef MODEL_H
-#define MODEL_H
+#ifndef MODEL_HPP
+#define MODEL_HPP
 
 #include "record.h"
 #include <QAbstractTableModel>
@@ -19,28 +19,21 @@
 template <typename T>
 class Model : public QAbstractTableModel {
 
+    static_assert(
+        std::is_base_of_v<Record, T> && std::is_base_of_v<QObject, T>,
+        "Model class: Type T must derive from both Record and QObject"
+    );
+
 public:
     Model( QObject *parent = nullptr ) {
-        Q_ASSERT_X(
-            ( std::is_base_of_v<Record, T> ) &&
-            ( std::is_base_of_v<QObject, T> ),
-            "Model()",
-            "Type T must derive from both Record and QObject"
-        );
-
         setParent( parent );
     }
 
 
-    ~Model() {}
-
-
     void clear() {
         beginResetModel();
-        for ( T* parameter : mParameters ) {
-            if ( parameter ) {
-                delete parameter;
-            }
+        for ( T *parameter : mParameters ) {
+            delete parameter;
         }
         mParameters.clear();
         endResetModel();
@@ -50,11 +43,19 @@ public:
     int columnCount(
         const QModelIndex &parent = QModelIndex()
     ) const override {
+        // This item has no children because this is a flat table
+        if ( parent.isValid() ) return 0;
+
+        // Root of the tree (parent = invalid)
         return T::staticColumnCount();
     }
 
 
     int rowCount( const QModelIndex &parent = QModelIndex() ) const override {
+        // This item has no children because this is a flat table
+        if ( parent.isValid() ) return 0;
+
+        // Root of the tree (parent = invalid)
         return mParameters.size();
     }
 
@@ -80,7 +81,7 @@ public:
     }
 
 
-    T *getRow( const int &row ) const {
+    T *getRow( int row ) const {
         if ( row >= 0 && row < rowCount() ) {
             return mParameters.at( row );
         }
@@ -89,11 +90,7 @@ public:
 
 
     QList<T *> getAllRows() const {
-        QList<T *> rows {};
-        for ( int row { 0 }; row < rowCount(); ++row ) {
-            rows.append( getRow( row ) );
-        }
-        return rows;
+        return mParameters;
     }
 
 
@@ -121,7 +118,7 @@ public:
     }
 
 
-    void updateRow( const int &row, const T &parameter ) {
+    void updateRow( int row, const T &parameter ) {
         if ( row >= 0 && row < rowCount() ) {
             *mParameters.at( row ) = parameter;
             emitRowChanged( row );
@@ -129,13 +126,23 @@ public:
     }
 
 
-    void removeRow( const int &row ) {
-        if ( row >= 0 && row < rowCount() ) {
-            beginRemoveRows( QModelIndex(), row, row );
-            delete mParameters.at( row );
-            mParameters.remove( row );
-            endRemoveRows();
+    bool removeRows(
+        int row,
+        int count,
+        const QModelIndex &parent = QModelIndex()
+    ) override {
+        if ( parent.isValid() ) return false;     // Flat table, no children
+
+        const int last { row + count - 1 };
+        if ( row < 0 || last >= rowCount() ) return false;
+
+        beginRemoveRows( QModelIndex(), row, last );
+        for ( int i { last }; i >= row; --i ) {
+            delete mParameters.at( i );
+            mParameters.remove( i );
         }
+        endRemoveRows();
+        return true;
     }
 
 
@@ -182,7 +189,7 @@ public:
     }
 
 
-    void emitRowChanged( const int &row ) {
+    void emitRowChanged( int row ) {
         emit dataChanged(
             index( row, 0 ),
             index( row, columnCount() -1 ),
@@ -204,4 +211,4 @@ private:
     QList<T *> mParameters;
 };
 
-#endif // MODEL_H
+#endif // MODEL_HPP
