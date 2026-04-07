@@ -52,14 +52,14 @@ public:
     QJsonObject toJson() const;
     QList<UncertaintyComponent> getComponents() const;
     QList<double> getHistogramValues();
-    QString componentsToString() const;
+    QString componentsToCSVString() const;
     QString getComponentContributionAsString( const int &row ) const;
     QString getContributionAsString( const int &row, const int &column ) const;
     QString getCorrelationContributionAsString( const int &row ) const;
     QString getTotalContributionAsString( const int &row ) const;
-    QString histogramToString() const;
-    QString resultsToString() const;
-    QString toString() const;
+    QString histogramToCSVString() const;
+    QString resultsToCSVString() const;
+    QString toCSVString() const;
     QStringList getMonteCarloResults( const bool &csvMode = false ) const;
     QStringList getResults( const bool &csvMode = false ) const;
     QVariant get( int column, bool csvMode = false ) const override;
