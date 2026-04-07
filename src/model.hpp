@@ -210,7 +210,7 @@ private:
 
     // sHeaderRecord is used to determine the number of columns and the header
     // labels
-    inline static T sHeaderRecord {};
+    inline static const T sHeaderRecord {};
 };
 
 #endif // MODEL_HPP
