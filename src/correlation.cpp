@@ -133,7 +133,7 @@ QString Correlation::getName( bool csvMode ) const {
 }
 
 
-QString Correlation::toString() const {
+QString Correlation::toCSVString() const {
     QStringList resultList {};
     for ( int i { 0 }; i < columnCount(); ++i ) {
         resultList.append( get( i, true ).toString() );
@@ -353,11 +353,11 @@ QJsonArray Correlation::correlationsToJson() {
 }
 
 
-QString Correlation::correlationsToString() {
+QString Correlation::correlationsToCSVString() {
     QString result { mCorrelationsHeaderString + StringUtils::endl };
     result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
     for ( Correlation * &correlation : mCorrelationModel.getAllRows() ) {
-        result += correlation->toString() + StringUtils::endl;
+        result += correlation->toCSVString() + StringUtils::endl;
     }
     return result;
 }

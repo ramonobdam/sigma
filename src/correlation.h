@@ -44,7 +44,7 @@ public:
     InputParameter *getInputParameterB() const;
     QJsonObject toJson() const;
     QString getName( bool csvMode = false ) const override;
-    QString toString() const;
+    QString toCSVString() const;
     QVariant get( int column, bool csvMode = false ) const override;
     QVariant headerData( int column ) const override;
 
@@ -82,7 +82,7 @@ public:
     static ModelControl<Correlation *> *getCorrelationModel();
     static QJsonArray correlationsToJson();
     static QList<int> columnWidths;
-    static QString correlationsToString();
+    static QString correlationsToCSVString();
     static QStringList headerLabels;
     static bool correlationIsUnique(
         const Correlation *newCorrelation,

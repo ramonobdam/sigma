@@ -651,7 +651,7 @@ QString UncertaintyCalculation::projectToCSVString() const {
     result += StringUtils::endl;
     result += InputParameter::parametersToCSVString() + StringUtils::endl;
     if ( mCorrelationModel->rowCount() > 0 ) {
-        result += Correlation::correlationsToString() + StringUtils::endl;
+        result += Correlation::correlationsToCSVString() + StringUtils::endl;
     }
     result += OutputParameter::parametersToCSVString();
 
