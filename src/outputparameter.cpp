@@ -253,7 +253,7 @@ QString OutputParameter::getTotalContributionAsString( const int &row ) const {
 
 
 QString OutputParameter::histogramToCSVString() const {
-    return mMonteCarlo.histogramToString();
+    return mMonteCarlo.histogramToCSVString();
 }
 
 

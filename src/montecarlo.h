@@ -40,7 +40,7 @@ public:
     QString getNumericalToleranceAsString() const;
     QString getStatus( const bool &csvMode = false ) const;
     QString getStdDeviationAsString( const bool &csvMode = false ) const;
-    QString histogramToString() const;
+    QString histogramToCSVString() const;
     Statistics getOutputStatistics() const;
     bool getRequestStop() const;
     bool getValid() const;

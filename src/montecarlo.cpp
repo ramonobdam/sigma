@@ -204,7 +204,7 @@ QString MonteCarlo::getStdDeviationAsString( const bool &csvMode ) const {
 }
 
 
-QString MonteCarlo::histogramToString() const {
+QString MonteCarlo::histogramToCSVString() const {
     QString result {};
     if ( mHistogramValues.size() > 0 ) {
         OutputParameter *outputParameter { getOutputParameter() };
