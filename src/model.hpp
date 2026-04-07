@@ -25,17 +25,15 @@ class Model : public QAbstractTableModel {
     );
 
 public:
-    Model( QObject *parent = nullptr ) {
-        setParent( parent );
-    }
+    Model( QObject *parent = nullptr ) : QAbstractTableModel { parent } {}
 
 
     void clear() {
         beginResetModel();
-        for ( T *parameter : mParameters ) {
-            delete parameter;
+        for ( T *record : mRecords ) {
+            delete record;
         }
-        mParameters.clear();
+        mRecords.clear();
         endResetModel();
     }
 
@@ -47,7 +45,7 @@ public:
         if ( parent.isValid() ) return 0;
 
         // Root of the tree (parent = invalid)
-        return T::staticColumnCount();
+        return sHeaderRecord.columnCount();
     }
 
 
@@ -56,7 +54,7 @@ public:
         if ( parent.isValid() ) return 0;
 
         // Root of the tree (parent = invalid)
-        return mParameters.size();
+        return mRecords.size();
     }
 
 
@@ -70,12 +68,12 @@ public:
         ) {
             return QVariant();
         }
-        T *parameter { mParameters.at( row ) };
+        T *record { mRecords.at( row ) };
         if ( role == Qt::DisplayRole ) {
-            return parameter->get( index.column() );
+            return record->get( index.column() );
         }
         if ( role == Qt::DecorationRole ) {
-            return parameter->getValid();
+            return record->getValid();
         }
         return QVariant();
     }
@@ -83,14 +81,14 @@ public:
 
     T *getRow( int row ) const {
         if ( row >= 0 && row < rowCount() ) {
-            return mParameters.at( row );
+            return mRecords.at( row );
         }
         return nullptr;
     }
 
 
     QList<T *> getAllRows() const {
-        return mParameters;
+        return mRecords;
     }
 
 
@@ -100,27 +98,27 @@ public:
         int role = Qt::DisplayRole
     ) const override {
         if ( role == Qt::DisplayRole && orientation == Qt::Horizontal ) {
-            return T::staticHeaderData( section );
+            return sHeaderRecord.headerData( section );
         }
         return QVariant();
     }
 
 
-    void appendRow( const T &parameter ) {
+    void appendRow( const T &record ) {
         beginInsertRows( QModelIndex(), rowCount(), rowCount() );
-        T *newParameter { new T { parameter } };
-        if ( !newParameter->parent() ) {
-            // Parameter has no parent, set its parent to this
-            newParameter->setParent ( this );
+        T *newRecord { new T { record } };
+        if ( !newRecord->parent() ) {
+            // Record has no parent, set its parent to this
+            newRecord->setParent ( this );
         }
-        mParameters.append( newParameter );
+        mRecords.append( newRecord );
         endInsertRows();
     }
 
 
-    void updateRow( int row, const T &parameter ) {
+    void updateRow( int row, const T &record ) {
         if ( row >= 0 && row < rowCount() ) {
-            *mParameters.at( row ) = parameter;
+            *mRecords.at( row ) = record;
             emitRowChanged( row );
         }
     }
@@ -138,8 +136,8 @@ public:
 
         beginRemoveRows( QModelIndex(), row, last );
         for ( int i { last }; i >= row; --i ) {
-            delete mParameters.at( i );
-            mParameters.remove( i );
+            delete mRecords.at( i );
+            mRecords.remove( i );
         }
         endRemoveRows();
         return true;
@@ -147,8 +145,8 @@ public:
 
 
     bool nameIsPresent( const QString &name ) const {
-        for ( const T *parameter : getAllRows()) {
-            if ( parameter->getName().toLower() == name.toLower() ) {
+        for ( const T *record : getAllRows()) {
+            if ( record->getName().toLower() == name.toLower() ) {
                 return true;
             }
         }
@@ -178,8 +176,8 @@ public:
         ) {
             return false;
         }
-        T *parameter { getRow( row ) };
-        parameter->set( column, value );
+        T *record { getRow( row ) };
+        record->set( column, value );
         emit dataChanged(
             index,
             index,
@@ -208,7 +206,11 @@ public:
 
 
 private:
-    QList<T *> mParameters;
+    QList<T *> mRecords;
+
+    // sHeaderRecord is used to determine the number of columns and the header
+    // labels
+    inline static T sHeaderRecord {};
 };
 
 #endif // MODEL_HPP

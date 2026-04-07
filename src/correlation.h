@@ -88,10 +88,8 @@ public:
         const Correlation *newCorrelation,
         const bool &checkCurrentSelection = false
     );
-    static QVariant staticHeaderData( const int &column );
     static bool inputParameterCorrelated( InputParameter *inputParameter );
     static bool removeSelectedModelRow();
-    static int staticColumnCount();
     static void removeCorrelatedInputParameter(
         InputParameter *inputParameter
     );

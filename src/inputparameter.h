@@ -73,7 +73,6 @@ public:
     static InputParameter *removeSelectedModelRow();
     static ModelControl<InputParameter *> *getInputModel();
     static QJsonArray parametersToJson();
-    static QVariant staticHeaderData( const int &column );
     static QString parametersToString();
 
     static QList<int> columnWidths;
@@ -85,7 +84,6 @@ public:
         const QString &name,
         const bool &checkCurrentSelection = false
     );
-    static int staticColumnCount();
     static symbol_table_t symbolTable;
     static void addConstantsToSymbolTable();
     static void clearSymbolTable();

@@ -126,8 +126,6 @@ public:
         const QString &name,
         const bool &checkCurrentSelection = false
     );
-    static QVariant staticHeaderData( const int &column );
-    static int staticColumnCount();
     static void parametersFromJson(
         const QJsonArray &jsonArray,
         QObject *parent = nullptr

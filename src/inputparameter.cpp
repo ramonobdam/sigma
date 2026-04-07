@@ -158,7 +158,7 @@ QString InputParameter::getDOFAsString() const {
 
 QString InputParameter::toString() const {
     QStringList resultList {};
-    for ( int i { 0 }; i < staticColumnCount(); ++i ) {
+    for ( int i { 0 }; i < columnCount(); ++i ) {
         resultList.append( get( i, true ).toString() );
     }
     return resultList.join( StringUtils::csvSeparator );
@@ -194,7 +194,10 @@ QVariant InputParameter::get( int column, bool csvMode ) const {
 
 
 QVariant InputParameter::headerData( int column ) const {
-    return staticHeaderData( column );
+    if ( column >= 0 && column < headerLabels.size() ) {
+        return headerLabels[ column ];
+    }
+    return QVariant();
 }
 
 
@@ -215,7 +218,7 @@ double * InputParameter::getSymbolPtr() const {
 
 
 int InputParameter::columnCount() const {
-    return staticColumnCount();
+    return headerLabels.size();
 }
 
 
@@ -401,14 +404,6 @@ QJsonArray InputParameter::parametersToJson() {
 }
 
 
-QVariant InputParameter::staticHeaderData( const int &column ) {
-    if ( column >= 0 && column < staticColumnCount() ) {
-        return headerLabels[ column ];
-    }
-    return QVariant();
-}
-
-
 QString InputParameter::parametersToString() {
     QString result { mInputParametersHeaderString + StringUtils::endl };
     result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
@@ -439,11 +434,6 @@ bool InputParameter::validName(
         return true;
     }
     return ( !symbolExists( name ) && validSymbol( name ) );
-}
-
-
-int InputParameter::staticColumnCount() {
-    return headerLabels.size();
 }
 
 

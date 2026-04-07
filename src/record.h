@@ -20,10 +20,6 @@ public:
     virtual bool getValid() const = 0;
     virtual int columnCount() const = 0;
     virtual void set( int column, const QVariant &value ) = 0;
-
-    // Derived class should also implement:
-    static QVariant staticHeaderData( int column ) { return QVariant(); }
-    static int staticColumnCount() { return 0; }
 };
 
 #endif // RECORD_H

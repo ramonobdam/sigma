@@ -265,7 +265,7 @@ QString OutputParameter::resultsToString() const {
 
 QString OutputParameter::toString() const {
     QStringList results {};
-    for ( int column { 0 }; column < staticColumnCount(); ++column ) {
+    for ( int column { 0 }; column < columnCount(); ++column ) {
         results.append( get( column, true ).toString() );
     }
     return results.join( StringUtils::csvSeparator );
@@ -358,7 +358,10 @@ QVariant OutputParameter::getResult(
 
 
 QVariant OutputParameter::headerData( int column ) const {
-    return staticHeaderData( column );
+    if ( column >= 0 && column < headerLabels.size() ) {
+        return headerLabels[ column ];
+    }
+    return QVariant();
 }
 
 
@@ -522,7 +525,7 @@ double OutputParameter::getTotalContribution( const int &row ) const {
 
 
 int OutputParameter::columnCount() const {
-    return staticColumnCount();
+    return headerLabels.size();
 }
 
 
@@ -975,19 +978,6 @@ bool OutputParameter::validName(
         return true;
     }
     return !mOutputModel.nameIsPresent( name ) && name.size() > 0;
-}
-
-
-QVariant OutputParameter::staticHeaderData( const int &column ) {
-    if ( column >= 0 && column < staticColumnCount() ) {
-        return headerLabels[ column ];
-    }
-    return QVariant();
-}
-
-
-int OutputParameter::staticColumnCount() {
-    return headerLabels.size();
 }
 
 

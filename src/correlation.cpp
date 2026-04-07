@@ -135,7 +135,7 @@ QString Correlation::getName( bool csvMode ) const {
 
 QString Correlation::toString() const {
     QStringList resultList {};
-    for ( int i { 0 }; i < staticColumnCount(); ++i ) {
+    for ( int i { 0 }; i < columnCount(); ++i ) {
         resultList.append( get( i, true ).toString() );
     }
     return resultList.join( StringUtils::csvSeparator );
@@ -163,7 +163,10 @@ QVariant Correlation::get( int column, bool csvMode ) const {
 
 
 QVariant Correlation::headerData( int column ) const {
-    return staticHeaderData( column );
+    if ( column >= 0 && column < headerLabels.size() ) {
+        return headerLabels[ column ];
+    }
+    return QVariant();
 }
 
 
@@ -250,7 +253,7 @@ bool Correlation::getValid() const {
 
 
 int Correlation::columnCount() const {
-    return staticColumnCount();
+    return headerLabels.size();
 }
 
 
@@ -383,14 +386,6 @@ bool Correlation::correlationIsUnique(
 }
 
 
-QVariant Correlation::staticHeaderData( const int &column ) {
-    if ( column >= 0 && column < staticColumnCount() ) {
-        return headerLabels[ column ];
-    }
-    return QVariant();
-}
-
-
 bool Correlation::inputParameterCorrelated( InputParameter *inputParameter ) {
     // Is the InputParameter part of the correlations table?
     QList<Correlation *> correlations { mCorrelationModel.getAllRows() };
@@ -414,11 +409,6 @@ bool Correlation::removeSelectedModelRow() {
         return mCorrelationModel.removeSelectedRow();
     }
     return false;
-}
-
-
-int Correlation::staticColumnCount() {
-    return headerLabels.size();
 }
 
 
