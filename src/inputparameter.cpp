@@ -404,7 +404,7 @@ QJsonArray InputParameter::parametersToJson() {
 }
 
 
-QString InputParameter::parametersToString() {
+QString InputParameter::parametersToCSVString() {
     QString result { mInputParametersHeaderString + StringUtils::endl };
     result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
     for ( InputParameter * &parameter : mInputModel.getAllRows() ) {

@@ -909,7 +909,7 @@ QJsonArray OutputParameter::parametersToJson() {
 }
 
 
-QString OutputParameter::parametersToString() {
+QString OutputParameter::parametersToCSVString() {
     QString result {};
     // Add title, header labels and output parameter data.
     result += mOutputParametersHeaderString + StringUtils::endl;

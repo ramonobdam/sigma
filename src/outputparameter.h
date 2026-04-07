@@ -121,7 +121,7 @@ public:
         QObject *parent = nullptr
     );
     static QJsonArray parametersToJson();
-    static QString parametersToString();
+    static QString parametersToCSVString();
     static bool validName(
         const QString &name,
         const bool &checkCurrentSelection = false

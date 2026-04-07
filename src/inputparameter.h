@@ -73,7 +73,7 @@ public:
     static InputParameter *removeSelectedModelRow();
     static ModelControl<InputParameter *> *getInputModel();
     static QJsonArray parametersToJson();
-    static QString parametersToString();
+    static QString parametersToCSVString();
 
     static QList<int> columnWidths;
     static QString defaultName;

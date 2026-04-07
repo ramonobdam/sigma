@@ -233,7 +233,7 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
         return false;
     }
     QTextStream out( &csvFile );
-    out << projectToString();
+    out << projectToCSVString();
     csvFile.commit();
     return true;
 }
@@ -633,7 +633,7 @@ QString UncertaintyCalculation::outputParameterReferencesToString(
 }
 
 
-QString UncertaintyCalculation::projectToString() const {
+QString UncertaintyCalculation::projectToCSVString() const {
     QString result {};
     // Add version number
     result += "Sigma version: " +
@@ -649,11 +649,11 @@ QString UncertaintyCalculation::projectToString() const {
 
     // Add input, correlation and output parameter data
     result += StringUtils::endl;
-    result += InputParameter::parametersToString() + StringUtils::endl;
+    result += InputParameter::parametersToCSVString() + StringUtils::endl;
     if ( mCorrelationModel->rowCount() > 0 ) {
         result += Correlation::correlationsToString() + StringUtils::endl;
     }
-    result += OutputParameter::parametersToString();
+    result += OutputParameter::parametersToCSVString();
 
     return result;
 }

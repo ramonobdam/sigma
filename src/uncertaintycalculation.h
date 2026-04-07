@@ -198,7 +198,7 @@ private:
     QString outputParameterReferencesToString(
         const QStringList &references
     ) const;
-    QString projectToString() const;
+    QString projectToCSVString() const;
     QStringList getInputParameterReferences(
         InputParameter * const &inputParameter
     ) const;
