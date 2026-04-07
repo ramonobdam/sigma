@@ -259,7 +259,7 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
         resetProjectFilePath();
         return false;
     }
-    QJsonObject project { parametersToJson() };
+    QJsonObject project { projectToJson() };
     saveFile.write( QJsonDocument( project ).toJson() );
     saveFile.commit();
     setProjectFilePath( url );
@@ -557,7 +557,7 @@ void UncertaintyCalculation::unsavedChanges() {
 }
 
 
-QJsonObject UncertaintyCalculation::parametersToJson() const {
+QJsonObject UncertaintyCalculation::projectToJson() const {
     QJsonObject json {};
     json[ mVersionString ] = QCoreApplication::applicationVersion();
     json[ mInputParametersString ] = InputParameter::parametersToJson();

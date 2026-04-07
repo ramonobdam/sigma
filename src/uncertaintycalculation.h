@@ -189,7 +189,7 @@ signals:
     void unsavedChangesChanged();
 
 private:
-    QJsonObject parametersToJson() const;
+    QJsonObject projectToJson() const;
     QList<double> getHistogramValues() const;
     QString getInputName() const;
     QString getOutputName() const;
