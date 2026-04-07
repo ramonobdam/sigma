@@ -156,7 +156,7 @@ QString InputParameter::getDOFAsString() const {
 }
 
 
-QString InputParameter::toString() const {
+QString InputParameter::toCSVString() const {
     QStringList resultList {};
     for ( int i { 0 }; i < columnCount(); ++i ) {
         resultList.append( get( i, true ).toString() );
@@ -408,7 +408,7 @@ QString InputParameter::parametersToCSVString() {
     QString result { mInputParametersHeaderString + StringUtils::endl };
     result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
     for ( InputParameter * &parameter : mInputModel.getAllRows() ) {
-        result += parameter->toString() + StringUtils::endl;
+        result += parameter->toCSVString() + StringUtils::endl;
     }
     return result;
 }

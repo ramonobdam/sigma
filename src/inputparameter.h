@@ -42,7 +42,7 @@ public:
     InputParameter *updateSelectedModelRow();
     QJsonObject toJson() const;
     QString getDOFAsString() const;
-    QString toString() const;
+    QString toCSVString() const;
     QVariant get( int column, bool csvMode = false ) const override;
     QVariant headerData( int column ) const override;
     Distribution::InvCDF getInvCDF() const;
