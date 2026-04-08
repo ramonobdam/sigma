@@ -382,12 +382,10 @@ void UncertaintyCalculation::addUnit( const QString &name ) {
 
 void UncertaintyCalculation::clearProject( const bool &unsavedChanges ) {
     emitOutputModelsAboutToBeReset();
-    mOutputParametersModel->clear();
-    mCorrelationModel->clear();
-    mInputParametersModel->clear();
+    OutputParameter::clearModel();
+    Correlation::clearModel();
+    InputParameter::clearModel();
     emit inputParameterChanged();
-    InputParameter::clearSymbolTable();
-    InputParameter::addConstantsToSymbolTable();
     emitOutputModelsReset();
     setOutputRow();
     setUnsavedChanges( unsavedChanges );
@@ -913,8 +911,13 @@ void UncertaintyCalculation::recompileExpressions(
             )
         ) {
             emitOutputModelsAboutToBeReset();
-            outputParameter->compile();
-            mOutputParametersModel->emitRowChanged( row );
+
+            // The OutputParameter is not compiled in-place but updated via the
+            // model interface to make sure it is captured in the transaction
+            OutputParameter recompiledOutputParameter { *outputParameter };
+            recompiledOutputParameter.compile();
+            mOutputParametersModel->updateRow( row, recompiledOutputParameter );
+
             emitOutputModelsReset();
             emitAllResultsChanged();
         }
