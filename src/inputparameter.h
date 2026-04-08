@@ -6,6 +6,7 @@
 #define INPUTPARAMETER_H
 
 #include "correlation.h"
+#include "datatype.h"
 #include "distribution.h"
 #include "third_party/exprtk/exprtk.hpp"
 #include "modelcontrol.hpp"
@@ -37,10 +38,11 @@ public:
     bool operator== ( const InputParameter &ip ) const;
     bool operator!= ( const InputParameter &ip ) const;
 
+    DataType dataType() const override;
     Distribution::Type getDistribution() const;
     InputParameter *addToModel();
     InputParameter *updateSelectedModelRow();
-    QJsonObject toJson() const;
+    QJsonObject toJson() const override;
     QString getDOFAsString() const;
     QString toCSVString() const;
     QVariant get( int column, bool csvMode = false ) const override;
@@ -53,6 +55,7 @@ public:
     void setDistribution( const Distribution::Type &distribution );
     void setSymbolPtr( double *symbolPtr );
     void setSymbolValue( const double &value );
+    void updateFromJson( const QJsonObject &json ) override;
 
     Q_INVOKABLE QString getDistributionAsString() const;
     Q_INVOKABLE bool getDOFInfinite() const;

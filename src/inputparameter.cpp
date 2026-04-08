@@ -107,6 +107,11 @@ bool InputParameter::operator!= ( const InputParameter &ip ) const {
 }
 
 
+DataType InputParameter::InputParameter::dataType() const {
+    return DataType::InputParameter;
+}
+
+
 
 Distribution::Type InputParameter::getDistribution() const {
     return mDistribution;
@@ -276,6 +281,31 @@ void InputParameter::setSymbolValue( const double &value ) {
 }
 
 
+void InputParameter::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
+        setName( v.toString() );
+    }
+    if ( const QJsonValue v = json[ mUnitString ]; v.isString() ) {
+        setUnit( v.toString() );
+    }
+    if ( const QJsonValue v = json[ mNominalValueString ]; v.isDouble() ) {
+        setNominalValue( v.toDouble() );
+    }
+    if ( const QJsonValue v = json[ mStdUncertaintyString ]; v.isDouble() ) {
+        setStdUncertainty( v.toDouble() );
+    }
+    if ( const QJsonValue v = json[ mDOFInfiniteString ]; v.isBool() ) {
+        setDOFInfinite( v.toBool() );
+    }
+    if ( const QJsonValue v = json[ mDOFString ]; v.isDouble() ) {
+        setDOF( v.toInt() );
+    }
+    if ( const QJsonValue v = json[ mDistributionString ]; v.isString() ) {
+        setDistribution( v.toString() );
+    }
+}
+
+
 QString InputParameter::getDistributionAsString() const {
     return Distribution::distributionToString( mDistribution );
 }
@@ -330,28 +360,7 @@ InputParameter InputParameter::fromJson(
     QObject *parent
 ) {
     InputParameter parameter { InputParameter( parent ) };
-
-    if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
-        parameter.setName( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mUnitString ]; v.isString() ) {
-        parameter.setUnit( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mNominalValueString ]; v.isDouble() ) {
-        parameter.setNominalValue( v.toDouble() );
-    }
-    if ( const QJsonValue v = json[ mStdUncertaintyString ]; v.isDouble() ) {
-        parameter.setStdUncertainty( v.toDouble() );
-    }
-    if ( const QJsonValue v = json[ mDOFInfiniteString ]; v.isBool() ) {
-        parameter.setDOFInfinite( v.toBool() );
-    }
-    if ( const QJsonValue v = json[ mDOFString ]; v.isDouble() ) {
-        parameter.setDOF( v.toInt() );
-    }
-    if ( const QJsonValue v = json[ mDistributionString ]; v.isString() ) {
-        parameter.setDistribution( v.toString() );
-    }
+    parameter.updateFromJson( json );
 
     if ( addToModel ) {
         parameter.addToModel();
