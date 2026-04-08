@@ -128,8 +128,11 @@ QJsonObject Correlation::toJson() const {
 
 
 QString Correlation::getName( bool csvMode ) const {
-    // A corralation does not have a name
-    return "";
+    // A corralation does not have a name, return the name of the two
+    // InputParameters as unique identifier
+    return getInputParameterNameA( csvMode ) +
+           "_" +
+           getInputParameterNameB( csvMode);
 }
 
 
