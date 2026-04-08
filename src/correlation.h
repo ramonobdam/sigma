@@ -5,6 +5,7 @@
 #ifndef CORRELATION_H
 #define CORRELATION_H
 
+#include "datatype.h"
 #include "modelcontrol.hpp"
 #include "record.h"
 #include <QJsonArray>
@@ -40,13 +41,15 @@ public:
 
     Correlation *addToModel();
     Correlation *updateSelectedModelRow();
+    DataType dataType() const override;
     InputParameter *getInputParameterA() const;
     InputParameter *getInputParameterB() const;
-    QJsonObject toJson() const;
+    QJsonObject toJson() const override;
     QString getName( bool csvMode = false ) const override;
     QString toCSVString() const;
     QVariant get( int column, bool csvMode = false ) const override;
     QVariant headerData( int column ) const override;
+    void updateFromJson( const QJsonObject &json ) override;
 
     Q_INVOKABLE QString getInputParameterNameA(
         const bool csvMode = false
@@ -78,7 +81,7 @@ public:
         const QJsonObject &json,
         const bool &addToModel = true,
         QObject *parent = nullptr
-        );
+    );
     static ModelControl<Correlation *> *getCorrelationModel();
     static QJsonArray correlationsToJson();
     static QList<int> columnWidths;

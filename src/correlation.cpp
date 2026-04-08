@@ -108,6 +108,11 @@ Correlation * Correlation::updateSelectedModelRow() {
 }
 
 
+DataType Correlation::dataType() const {
+    return DataType::Correlation;
+}
+
+
 InputParameter * Correlation::getInputParameterA() const {
     return mInputParameterA;
 }
@@ -170,6 +175,19 @@ QVariant Correlation::headerData( int column ) const {
         return headerLabels[ column ];
     }
     return QVariant();
+}
+
+
+void Correlation::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ mNameInputAString ]; v.isString() ) {
+        setInputParameterA( v.toString() );
+    }
+    if ( const QJsonValue v = json[ mNameInputBString ]; v.isString() ) {
+        setInputParameterB( v.toString() );
+    }
+    if ( const QJsonValue v = json[ mCorrelationString ]; v.isDouble() ) {
+        setCorrelation( v.toDouble() );
+    }
 }
 
 
@@ -323,16 +341,7 @@ Correlation Correlation::fromJson(
     QObject *parent
 ) {
     Correlation correlation { Correlation( parent ) };
-
-    if ( const QJsonValue v = json[ mNameInputAString ]; v.isString() ) {
-        correlation.setInputParameterA( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mNameInputBString ]; v.isString() ) {
-        correlation.setInputParameterB( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mCorrelationString ]; v.isDouble() ) {
-        correlation.setCorrelation( v.toDouble() );
-    }
+    correlation.updateFromJson( json );
 
     if ( addToModel ) {
         correlation.addToModel();
