@@ -981,6 +981,11 @@ bool OutputParameter::validName(
 }
 
 
+void OutputParameter::clearModel() {
+    mOutputModel.clear();
+}
+
+
 void OutputParameter::parametersFromJson(
     const QJsonArray &jsonArray,
     QObject *parent

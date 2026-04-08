@@ -93,6 +93,7 @@ public:
     static void removeCorrelatedInputParameter(
         InputParameter *inputParameter
     );
+    static void clearModel();
     static void correlationsFromJson(
         const QJsonArray &jsonArray,
         QObject *parent = nullptr

@@ -434,6 +434,11 @@ void Correlation::removeCorrelatedInputParameter(
 }
 
 
+void Correlation::clearModel() {
+    mCorrelationModel.clear();
+}
+
+
 void Correlation::correlationsFromJson(
     const QJsonArray &jsonArray,
     QObject *parent

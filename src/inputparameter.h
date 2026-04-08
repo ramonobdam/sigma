@@ -86,6 +86,7 @@ public:
     );
     static symbol_table_t symbolTable;
     static void addConstantsToSymbolTable();
+    static void clearModel();
     static void clearSymbolTable();
     static void parametersFromJson(
         const QJsonArray &jsonArray,

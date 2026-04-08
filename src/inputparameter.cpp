@@ -442,6 +442,13 @@ void InputParameter::addConstantsToSymbolTable() {
 }
 
 
+void InputParameter::clearModel() {
+    mInputModel.clear();
+    clearSymbolTable();
+    addConstantsToSymbolTable();
+}
+
+
 void InputParameter::clearSymbolTable() {
     symbolTable.clear();
 }

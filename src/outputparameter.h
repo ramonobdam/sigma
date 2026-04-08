@@ -126,6 +126,7 @@ public:
         const QString &name,
         const bool &checkCurrentSelection = false
     );
+    static void clearModel();
     static void parametersFromJson(
         const QJsonArray &jsonArray,
         QObject *parent = nullptr
