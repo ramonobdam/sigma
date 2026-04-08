@@ -121,15 +121,17 @@ qt_add_qml_module( Sigma
         src/budgetmodel.h
         src/correlation.cpp
         src/correlation.h
+        src/datatype.h
         src/distribution.cpp
         src/distribution.h
         src/inputparameter.cpp
         src/inputparameter.h
+        src/jsondiff.h
         src/lockableitemselectionmodel.cpp
         src/lockableitemselectionmodel.h
+        src/mathconstants.h
         src/mixedcopulasampler.cpp
         src/mixedcopulasampler.h
-        src/mathconstants.h
         src/model.hpp
         src/modelcontrol.hpp
         src/montecarlo.cpp
@@ -149,10 +151,12 @@ qt_add_qml_module( Sigma
         src/statistics.h
         src/stringutils.cpp
         src/stringutils.h
+        src/transaction.h src/transaction.cpp
         src/uncertaintycalculation.cpp
         src/uncertaintycalculation.h
         src/uncertaintycomponent.cpp
         src/uncertaintycomponent.h
+        src/undostack.h src/undostack.cpp
         src/windowscaptionhelper.cpp
         src/windowscaptionhelper.h
     RESOURCES
