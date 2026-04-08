@@ -497,6 +497,13 @@ void MonteCarlo::run() {
             mOutputParameter->resetSymbolValues();
             setRequestStop( false );
             mOutputParameter->setLocked( false );
+
+            // Notify the model that the results have changed
+            ModelControl<OutputParameter *> *outputModel {
+                OutputParameter::getOutputModel()
+            };
+            outputModel->recordWasUpdated( mOutputParameter );
+
             mMutex.unlock();
         }
     }
