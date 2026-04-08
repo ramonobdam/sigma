@@ -46,10 +46,11 @@ public:
     bool operator== ( const OutputParameter &op ) const;
     bool operator!= ( const OutputParameter &op ) const;
 
+    DataType dataType() const override;
     MixedCopulaSampler getMixedCopulaSampler() const;
     MonteCarlo getMonteCarlo() const;
     OutputParameter *addToModel( const bool &resetMonteCarlo = true );
-    QJsonObject toJson() const;
+    QJsonObject toJson() const override;
     QList<UncertaintyComponent> getComponents() const;
     QList<double> getHistogramValues();
     QString componentsToCSVString() const;
@@ -101,6 +102,7 @@ public:
     void setRandomSymbolValues();
     void startMonteCarlo();
     void stopMonteCarlo();
+    void updateFromJson( const QJsonObject &json ) override;
 
     Q_INVOKABLE QString getConfidenceAsString() const;
     Q_INVOKABLE QString getError( const bool &csvMode = false ) const;

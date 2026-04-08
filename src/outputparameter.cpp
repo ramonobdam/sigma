@@ -138,6 +138,11 @@ bool OutputParameter::operator!= ( const OutputParameter &op ) const {
 }
 
 
+DataType OutputParameter::OutputParameter::dataType() const {
+    return DataType::OutputParameter;
+}
+
+
 MixedCopulaSampler OutputParameter::getMixedCopulaSampler() const {
     return mMixedCopulaSampler;
 }
@@ -662,6 +667,25 @@ void OutputParameter::stopMonteCarlo() {
     mMonteCarlo.stop();
 }
 
+void OutputParameter::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
+        setName( v.toString() );
+    }
+    if ( const QJsonValue v = json[ mUnitString ]; v.isString() ) {
+        setUnit( v.toString() );
+    }
+    if ( const QJsonValue v = json[ mFormulaString ]; v.isString() ) {
+        setFormula( v.toString() );
+    }
+    if ( const QJsonValue v = json[ mConfidenceString ]; v.isDouble() ) {
+        setConfidence( v.toDouble() );
+    }
+    if ( const QJsonValue v = json[ mMonteCarloString ]; v.isObject() ) {
+        MonteCarlo monteCarlo { MonteCarlo::fromJson( v.toObject() ) };
+        setMonteCarlo( monteCarlo );
+    }
+}
+
 
 QString OutputParameter::getConfidenceAsString() const {
     return QString::number( mConfidence * 100., 'f', 1 ) + "%";
@@ -875,22 +899,7 @@ OutputParameter OutputParameter::fromJson(
     QObject *parent
 ) {
     OutputParameter parameter { OutputParameter( parent ) };
-    if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
-        parameter.setName( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mUnitString ]; v.isString() ) {
-        parameter.setUnit( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mFormulaString ]; v.isString() ) {
-        parameter.setFormula( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mConfidenceString ]; v.isDouble() ) {
-        parameter.setConfidence( v.toDouble() );
-    }
-    if ( const QJsonValue v = json[ mMonteCarloString ]; v.isObject() ) {
-        MonteCarlo monteCarlo { MonteCarlo::fromJson( v.toObject() ) };
-        parameter.setMonteCarlo( monteCarlo );
-    }
+    parameter.updateFromJson( json );
 
     if ( addToModel ) {
         parameter.addToModel( false );
