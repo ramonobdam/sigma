@@ -15,7 +15,4 @@ enum class DataType {
     Correlation
 };
 
-template <typename T>
-DataType dataTypeFor() = delete;
-
 #endif // DATATYPE_H
