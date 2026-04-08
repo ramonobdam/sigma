@@ -1,3 +1,4 @@
+#include "diffutil.h"
 #include "undostack.h"
 
 
@@ -35,13 +36,22 @@ void UndoStack::beginTransaction( const QString &label ) {
 
 
 void UndoStack::commitTransaction() {
-    if ( sActiveTransaction.isEmpty() ) return;
+    if ( sActiveTransaction.isEmpty() ) {
+        return;
+    }
 
     // Capture after state for all snapshots
     for ( JsonDiff &diff : sActiveTransaction.getDiffs() ) {
         UndoableModel *model = sRegistry.value( diff.objectType );
         if ( model ) {
-            diff.after = model->currentJson( diff.objectId );
+            QJsonObject after { model->currentJson( diff.objectId ) };
+            if ( DiffUtil::isUnchanged( diff.before, after ) ) {
+                continue;
+            }
+
+            // Keep only the changed keys
+            diff.before = DiffUtil::diff( after, diff.before );
+            diff.after  = DiffUtil::diff( diff.before, after );
         }
     }
 
@@ -55,7 +65,9 @@ void UndoStack::commitTransaction() {
 
 
 void UndoStack::redo() {
-    if (!canRedo()) return;
+    if ( !canRedo() ) {
+        return;
+    }
 
     applyTransaction( sStack[ sCursor ], Direction::Redo );
     ++sCursor;
@@ -78,7 +90,9 @@ void UndoStack::snapshot(
     // Only snapshot before the first change to an object within a transaction
     const QList<JsonDiff> &diffs { sActiveTransaction.getDiffs() };
     for ( const JsonDiff &diff : diffs ) {
-        if ( diff.objectId == objectId && diff.objectType == type ) return;
+        if ( diff.objectId == objectId && diff.objectType == type ) {
+            return;
+        }
     }
 
     sActiveTransaction.addDiff( JsonDiff { objectId, type, before, {} } );
@@ -86,7 +100,9 @@ void UndoStack::snapshot(
 
 
 void UndoStack::undo() {
-    if ( !canUndo() ) return;
+    if ( !canUndo() ) {
+        return;
+    }
 
     --sCursor;
     applyTransaction( sStack[ sCursor ], Direction::Undo );

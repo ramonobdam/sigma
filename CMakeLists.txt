@@ -122,6 +122,8 @@ qt_add_qml_module( Sigma
         src/correlation.cpp
         src/correlation.h
         src/datatype.h
+        src/diffutil.cpp
+        src/diffutil.h
         src/distribution.cpp
         src/distribution.h
         src/inputparameter.cpp
