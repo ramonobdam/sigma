@@ -911,13 +911,10 @@ void UncertaintyCalculation::recompileExpressions(
             )
         ) {
             emitOutputModelsAboutToBeReset();
-
-            // The OutputParameter is not compiled in-place but updated via the
-            // model interface to make sure it is captured in the transaction
-            OutputParameter recompiledOutputParameter { *outputParameter };
-            recompiledOutputParameter.compile();
-            mOutputParametersModel->updateRow( row, recompiledOutputParameter );
-
+            outputParameter->compile();
+            // Notify the model that the OutputParameter was updated outside of
+            // its interface
+            mOutputParametersModel->recordWasUpdated( outputParameter );
             emitOutputModelsReset();
             emitAllResultsChanged();
         }

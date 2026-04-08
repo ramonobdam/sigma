@@ -6,6 +6,7 @@
 #define MODEL_HPP
 
 #include "record.h"
+#include "undostack.h"
 #include <QAbstractTableModel>
 #include <QList>
 #include <QModelIndex>
@@ -17,7 +18,7 @@
 // derived from both Record and QObject
 
 template <typename T>
-class Model : public QAbstractTableModel {
+class Model : public QAbstractTableModel, public UndoableModel {
 
     static_assert(
         std::is_base_of_v<Record, T> && std::is_base_of_v<QObject, T>,
@@ -28,13 +29,50 @@ public:
     Model( QObject *parent = nullptr ) : QAbstractTableModel { parent } {}
 
 
-    void clear() {
-        beginResetModel();
-        for ( T *record : mRecords ) {
-            delete record;
+    QJsonObject currentJson( const QString &objectId ) const override {
+        T *record { getRowById( objectId ) };
+        if ( record ) {
+            return record->toJson();
         }
-        mRecords.clear();
-        endResetModel();
+        return QJsonObject {};
+    }
+
+
+    void applyDiff( const JsonDiff &diff ) override {
+        if ( diff.after.isEmpty() ) {
+            // Remove object that was added before
+            removeRowById( diff.objectId );
+        } else if ( diff.before.isEmpty() ) {
+            // Re-add object that was deleted before
+            T record { T::fromJson( diff.after ) };
+            appendRow( record );
+        } else {
+            // Object was modified — restore state
+            T *record { getRowById( diff.objectId ) };
+            if ( record ) {
+                record->updateFromJson( diff.after );
+                emitRowChanged( getRowIndex( record ) );
+            }
+        }
+    }
+
+
+    void recordWasUpdated( T *record ) {
+        // Used when a record is updated outside of the Model interface (i.e.
+        // in-place)
+        if ( record ) {
+            UndoStack::instance().snapshot(
+                record->getName(),
+                record->dataType(),
+                record->toJson()
+            );
+            emitRowChanged( getRowIndex( record ) );
+        }
+    }
+
+
+    void clear() {
+        removeRows( 0, rowCount() );
     }
 
 
@@ -87,6 +125,21 @@ public:
     }
 
 
+    T *getRowById( const QString &id ) const {
+        for ( T *record : mRecords ) {
+            if ( record->getName() == id ) {
+                return record;
+            }
+        }
+        return nullptr;
+    }
+
+
+    int getRowIndex( T *record ) const {
+        return mRecords.indexOf( record );
+    }
+
+
     QList<T *> getAllRows() const {
         return mRecords;
     }
@@ -105,6 +158,12 @@ public:
 
 
     void appendRow( const T &record ) {
+        UndoStack::instance().snapshot(
+            record.getName(),
+            record.dataType(),
+            QJsonObject {}    // empty = did not exist yet
+        );
+
         beginInsertRows( QModelIndex(), rowCount(), rowCount() );
         T *newRecord { new T { record } };
         if ( !newRecord->parent() ) {
@@ -118,7 +177,15 @@ public:
 
     void updateRow( int row, const T &record ) {
         if ( row >= 0 && row < rowCount() ) {
-            *mRecords.at( row ) = record;
+            T *existing { mRecords.at( row ) };
+
+            UndoStack::instance().snapshot(
+                existing->getName(),
+                existing->dataType(),
+                existing->toJson()
+            );
+
+            *existing = record;
             emitRowChanged( row );
         }
     }
@@ -136,11 +203,25 @@ public:
 
         beginRemoveRows( QModelIndex(), row, last );
         for ( int i { last }; i >= row; --i ) {
-            delete mRecords.at( i );
+            T *record { mRecords.at( i ) };
+
+            UndoStack::instance().snapshot(
+                record->getName(),
+                record->dataType(),
+                record->toJson()
+            );
+
+            delete record;
             mRecords.remove( i );
         }
         endRemoveRows();
         return true;
+    }
+
+
+    void removeRowById( const QString &id ) {
+        int row { getRowIndex( getRowById( id ) ) };
+        if ( row >= 0 ) removeRows( row, 1 );
     }
 
 
@@ -177,6 +258,13 @@ public:
             return false;
         }
         T *record { getRow( row ) };
+
+        UndoStack::instance().snapshot(
+            record->getName(),
+            record->dataType(),
+            record->toJson()
+        );
+
         record->set( column, value );
         emit dataChanged(
             index,

@@ -199,6 +199,13 @@ public:
     }
 
 
+    void recordWasUpdated( T *record ) {
+        // Used when a record is updated outside of the Model interface (i.e.
+        // in-place)
+        mModel.recordWasUpdated( record );
+    }
+
+
 private:
     Model<T> mModel;
     LockableItemSelectionModel mSelection;
