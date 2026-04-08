@@ -51,8 +51,6 @@ void UndoStack::commitTransaction() {
     ++sCursor;
 
     sActiveTransaction = {};
-    emit canUndoChanged();
-    emit canRedoChanged();
 }
 
 
@@ -61,9 +59,6 @@ void UndoStack::redo() {
 
     applyTransaction( sStack[ sCursor ], Direction::Redo );
     ++sCursor;
-
-    emit canUndoChanged();
-    emit canRedoChanged();
 }
 
 
@@ -78,7 +73,7 @@ void UndoStack::snapshot(
     const QJsonObject &before
 ) {
     // Called by Model before mutating a record
-    if ( !isTransactionActive() ) return;
+    if ( sApplying || !isTransactionActive() ) return;
 
     // Only snapshot before the first change to an object within a transaction
     const QList<JsonDiff> &diffs { sActiveTransaction.getDiffs() };
@@ -101,6 +96,12 @@ void UndoStack::undo() {
 }
 
 
+UndoStack & UndoStack::instance() {
+    static UndoStack stack;
+    return stack;
+}
+
+
 void UndoStack::applyDiff( const JsonDiff &diff, const QJsonObject &state ) {
     // Get the data model for the objectType
     UndoableModel *model = sRegistry.value( diff.objectType );
@@ -117,6 +118,8 @@ void UndoStack::applyTransaction(
     const Transaction &transaction,
     Direction direction
 ) {
+    sApplying = true;   // Guard against taking snapshots
+
     const QList<JsonDiff> &diffs = transaction.getDiffs();
 
     if ( direction == Direction::Undo ) {
@@ -130,4 +133,8 @@ void UndoStack::applyTransaction(
             applyDiff( diff, diff.after );
         }
     }
+
+    sApplying = false;
+    emit canUndoChanged();
+    emit canRedoChanged();
 }

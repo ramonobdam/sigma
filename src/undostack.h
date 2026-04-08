@@ -45,6 +45,8 @@ public:
     );
     void undo();
 
+    static UndoStack &instance();
+
 signals:
     void canUndoChanged();
     void canRedoChanged();
@@ -63,6 +65,7 @@ private:
     inline static QList<Transaction> sStack {};
     inline static QMap<DataType, UndoableModel*> sRegistry {};
     inline static Transaction sActiveTransaction {};
+    inline static bool sApplying { false };
     inline static int sCursor { 0 };
 };
 
