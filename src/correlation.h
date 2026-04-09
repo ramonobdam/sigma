@@ -49,6 +49,9 @@ public:
     QVariant headerData( int column ) const override;
     QUuid getInputParameterAId() const;
     QUuid getInputParameterBId() const;
+    void setInputParameterAId( const QUuid &id );
+    void setInputParameterBId( const QUuid &id );
+
     void updateFromJson( const QJsonObject &json ) override;
 
     Q_INVOKABLE QString getInputParameterNameA(
@@ -109,6 +112,8 @@ public:
 private:
     InputParameter *mInputParameterA;
     InputParameter *mInputParameterB;
+    QUuid mInputParameterAId;
+    QUuid mInputParameterBId;
     double mCorrelation;
 
     static ModelControl<Correlation *> mCorrelationModel;
