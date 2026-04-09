@@ -5,7 +5,6 @@
 #ifndef INPUTPARAMETER_H
 #define INPUTPARAMETER_H
 
-#include "correlation.h"
 #include "datatype.h"
 #include "distribution.h"
 #include "third_party/exprtk/exprtk.hpp"

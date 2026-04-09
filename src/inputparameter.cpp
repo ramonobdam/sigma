@@ -392,7 +392,6 @@ InputParameter * InputParameter::removeSelectedModelRow() {
         removeSymbol( parameter->getName() ) &&
         mInputModel.removeSelectedRow()
     ) {
-        Correlation::removeCorrelatedInputParameter( parameter );
         return parameter;
     }
     return nullptr;
