@@ -16,6 +16,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QUuid>
 #include <QVariant>
 #include <QtQmlIntegration/qqmlintegration.h>
 
@@ -71,7 +72,8 @@ public:
         const bool &addToModel = true,
         QObject *parent = nullptr
     );
-    static InputParameter *getInputParameter( const QString &name );
+    static InputParameter *getInputParameterByName( const QString &name );
+    static InputParameter *getInputParameterById( const QUuid &id );
     static InputParameter *removeSelectedModelRow();
     static ModelControl<InputParameter *> *getInputModel();
     static QJsonArray parametersToJson();

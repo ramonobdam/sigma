@@ -121,6 +121,8 @@ qt_add_qml_module( Sigma
         src/budgetmodel.h
         src/correlation.cpp
         src/correlation.h
+        src/data.cpp
+        src/data.h
         src/datatype.h
         src/diffutil.cpp
         src/diffutil.h

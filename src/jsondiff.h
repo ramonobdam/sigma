@@ -7,13 +7,13 @@
 
 #include "datatype.h"
 #include <QJsonObject>
-#include <QString>
+#include <QUuid>
 
 // Stores the before and after state of a single object change. An empty before
 // means the object did not exist yet. An empty after means the object was
 // deleted.
 struct JsonDiff {
-    QString objectId;
+    QUuid objectId;
     DataType objectType;
     QJsonObject before; // empty = object did not exist yet
     QJsonObject after;  // empty = object was deleted

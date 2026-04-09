@@ -6,8 +6,10 @@
 #define RECORD_H
 
 #include "datatype.h"
-#include <QVariant>
+#include <QJsonObject>
 #include <QString>
+#include <QUuid>
+#include <QVariant>
 
 // Abstract class that defines the interface for data model records
 class Record {
@@ -18,6 +20,7 @@ public:
     virtual DataType dataType() const = 0;
     virtual QJsonObject toJson() const = 0;
     virtual QString getName( bool csvMode = false ) const = 0;
+    virtual QUuid getId() const = 0;
     virtual QVariant get( int column, bool csvMode = false ) const = 0;
     virtual QVariant headerData( int column ) const = 0;
     virtual bool getValid() const = 0;

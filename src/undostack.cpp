@@ -14,8 +14,10 @@ bool UndoStack::canUndo() const {
 
 void UndoStack::clear() {
     abortTransaction();
-    sStack.empty();
+    sStack.clear();
     sCursor = 0;
+    emit canUndoChanged();
+    emit canRedoChanged();
 }
 
 
@@ -80,7 +82,7 @@ void UndoStack::registerModel( DataType type, UndoableModel *model ) {
 
 
 void UndoStack::snapshot(
-    const QString &objectId,
+    QUuid objectId,
     DataType type,
     const QJsonObject &before
 ) {

@@ -29,8 +29,8 @@ public:
     Model( QObject *parent = nullptr ) : QAbstractTableModel { parent } {}
 
 
-    QJsonObject currentJson( const QString &objectId ) const override {
-        T *record { getRowById( objectId ) };
+    QJsonObject currentJson( const QUuid &id ) const override {
+        T *record { getRowById( id ) };
         if ( record ) {
             return record->toJson();
         }
@@ -62,7 +62,7 @@ public:
         // in-place)
         if ( record ) {
             UndoStack::instance().snapshot(
-                record->getName(),
+                record->getId(),
                 record->dataType(),
                 record->toJson()
             );
@@ -125,9 +125,9 @@ public:
     }
 
 
-    T *getRowById( const QString &id ) const {
+    T *getRowById( const QUuid &id ) const {
         for ( T *record : mRecords ) {
-            if ( record->getName() == id ) {
+            if ( record->getId() == id ) {
                 return record;
             }
         }
@@ -159,7 +159,7 @@ public:
 
     void appendRow( const T &record ) {
         UndoStack::instance().snapshot(
-            record.getName(),
+            record.getId(),
             record.dataType(),
             QJsonObject {}    // empty = did not exist yet
         );
@@ -180,7 +180,7 @@ public:
             T *existing { mRecords.at( row ) };
 
             UndoStack::instance().snapshot(
-                existing->getName(),
+                existing->getId(),
                 existing->dataType(),
                 existing->toJson()
             );
@@ -206,7 +206,7 @@ public:
             T *record { mRecords.at( i ) };
 
             UndoStack::instance().snapshot(
-                record->getName(),
+                record->getId(),
                 record->dataType(),
                 record->toJson()
             );
@@ -219,7 +219,7 @@ public:
     }
 
 
-    void removeRowById( const QString &id ) {
+    void removeRowById( const QUuid &id ) {
         int row { getRowIndex( getRowById( id ) ) };
         if ( row >= 0 ) removeRows( row, 1 );
     }
@@ -260,7 +260,7 @@ public:
         T *record { getRow( row ) };
 
         UndoStack::instance().snapshot(
-            record->getName(),
+            record->getId(),
             record->dataType(),
             record->toJson()
         );

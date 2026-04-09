@@ -142,6 +142,7 @@ InputParameter * InputParameter::updateSelectedModelRow() {
 
 QJsonObject InputParameter::toJson() const {
     QJsonObject json {};
+    json[ mIdString ] = getId().toString();
     json[ mNameString ] = getName();
     json[ mUnitString ] = getUnit();
     json[ mNominalValueString ] = getNominalValue();
@@ -282,6 +283,9 @@ void InputParameter::setSymbolValue( const double &value ) {
 
 
 void InputParameter::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ mIdString ]; v.isString() ) {
+        setId( QUuid::fromString( v.toString() ) );
+    }
     if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
         setName( v.toString() );
     }
@@ -370,7 +374,9 @@ InputParameter InputParameter::fromJson(
 }
 
 
-InputParameter * InputParameter::getInputParameter( const QString &name ) {
+InputParameter * InputParameter::getInputParameterByName(
+    const QString &name
+) {
     int rows { mInputModel.rowCount() };
     for ( int row {0}; row < rows; ++row ) {
         InputParameter *parameter { mInputModel.getRow( row ) };
@@ -379,6 +385,20 @@ InputParameter * InputParameter::getInputParameter( const QString &name ) {
             ( parameter->getName().toLower() == name.toLower() )
         ) {
             return parameter;
+        }
+    }
+    return nullptr;
+}
+
+
+InputParameter * InputParameter::getInputParameterById( const QUuid &id ) {
+    if ( !id.isNull() ) {
+        int rows { mInputModel.rowCount() };
+        for ( int row {0}; row < rows; ++row ) {
+            InputParameter *parameter { mInputModel.getRow( row ) };
+            if ( parameter && ( parameter->getId() == id ) ) {
+                return parameter;
+            }
         }
     }
     return nullptr;
@@ -423,7 +443,7 @@ QString InputParameter::parametersToCSVString() {
 
 
 bool InputParameter::inputParameterIsConstant( const QString &name ) {
-    InputParameter *inputParameter { getInputParameter( name ) };
+    InputParameter *inputParameter { getInputParameterByName( name ) };
     if (
         inputParameter &&
         inputParameter->getDistribution() == Distribution::Type::none

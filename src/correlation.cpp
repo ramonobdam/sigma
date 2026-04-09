@@ -21,8 +21,8 @@ ModelControl<Correlation *> Correlation::mCorrelationModel = \
 
 QString Correlation::mCorrelationsHeaderString = "Correlations:";
 QString Correlation::mCorrelationString = "correlation";
-QString Correlation::mNameInputAString = "inputParameterA";
-QString Correlation::mNameInputBString = "inputParameterB";
+QString Correlation::mIdInputAString = "IdInputParameterA";
+QString Correlation::mIdInputBString = "IdInputParameterB";
 
 
 Correlation::Correlation(
@@ -122,8 +122,9 @@ InputParameter * Correlation::getInputParameterB() const {
 
 QJsonObject Correlation::toJson() const {
     QJsonObject json {};
-    json[ mNameInputAString ] = getInputParameterNameA();
-    json[ mNameInputBString ] = getInputParameterNameB();
+    json[ mIdString ] = getId().toString();
+    json[ mIdInputAString ] = getInputParameterAId().toString();
+    json[ mIdInputBString ] = getInputParameterBId().toString();
     json[ mCorrelationString ] = getCorrelation();
     return json;
 }
@@ -175,12 +176,35 @@ QVariant Correlation::headerData( int column ) const {
 }
 
 
-void Correlation::updateFromJson( const QJsonObject &json ) {
-    if ( const QJsonValue v = json[ mNameInputAString ]; v.isString() ) {
-        setInputParameterA( v.toString() );
+QUuid Correlation::getInputParameterAId() const {
+    if ( mInputParameterA ) {
+        return mInputParameterA->getId();
     }
-    if ( const QJsonValue v = json[ mNameInputBString ]; v.isString() ) {
-        setInputParameterB( v.toString() );
+    else {
+        return QUuid();
+    }
+}
+
+
+QUuid Correlation::getInputParameterBId() const {
+    if ( mInputParameterB ) {
+        return mInputParameterB->getId();
+    }
+    else {
+        return QUuid();
+    }
+}
+
+
+void Correlation::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ mIdString ]; v.isString() ) {
+        setId( QUuid::fromString( v.toString() ) );
+    }
+    if ( const QJsonValue v = json[ mIdInputAString ]; v.isString() ) {
+        setInputParameterAById( QUuid::fromString( v.toString() ) );
+    }
+    if ( const QJsonValue v = json[ mIdInputBString ]; v.isString() ) {
+        setInputParameterBById( QUuid::fromString( v.toString() ) );
     }
     if ( const QJsonValue v = json[ mCorrelationString ]; v.isDouble() ) {
         setCorrelation( v.toDouble() );
@@ -213,8 +237,10 @@ bool Correlation::isUnique( const bool &checkCurrentSelection ) const {
 }
 
 
-bool Correlation::setInputParameterA( const QString &name ) {
-    InputParameter *parameter { InputParameter::getInputParameter( name ) };
+bool Correlation::setInputParameterAByName( const QString &name ) {
+    InputParameter *parameter {
+        InputParameter::getInputParameterByName( name )
+    };
     if ( parameter ) {
         setInputParameterA( parameter );
         return true;
@@ -223,8 +249,10 @@ bool Correlation::setInputParameterA( const QString &name ) {
 }
 
 
-bool Correlation::setInputParameterB( const QString &name ) {
-    InputParameter *parameter { InputParameter::getInputParameter( name ) };
+bool Correlation::setInputParameterBByName( const QString &name ) {
+    InputParameter *parameter {
+        InputParameter::getInputParameterByName( name )
+    };
     if ( parameter ) {
         setInputParameterB( parameter );
         return true;
@@ -285,10 +313,10 @@ void Correlation::reset() {
 void Correlation::set( int column, const QVariant &value ) {
     switch ( column ) {
         case 0:
-            setInputParameterA( value.toString() );
+            setInputParameterAByName( value.toString() );
             break;
         case 1:
-            setInputParameterB( value.toString() );
+            setInputParameterAByName( value.toString() );
             break;
         case 2:
             setCorrelation( value.toDouble() );
@@ -306,7 +334,27 @@ void Correlation::setInputParameterB( InputParameter *inputParameter ) {
     mInputParameterB = inputParameter;
 }
 
-Correlation *Correlation::getCorrelation(
+void Correlation::setInputParameterAById( const QUuid &id ) {
+    if ( !id.isNull( ) ) {
+        InputParameter *parameter { InputParameter::getInputParameterById( id ) };
+        if ( parameter ) {
+            setInputParameterA( parameter );
+        }
+    }
+}
+
+
+void Correlation::setInputParameterBById( const QUuid &id ) {
+    if ( !id.isNull( ) ) {
+        InputParameter *parameter { InputParameter::getInputParameterById( id ) };
+        if ( parameter ) {
+            setInputParameterB( parameter );
+        }
+    }
+}
+
+
+Correlation * Correlation::getCorrelation(
     InputParameter *inputParamA,
     InputParameter *inputParamB
 ) {
@@ -423,7 +471,7 @@ bool Correlation::removeSelectedModelRow() {
 
 void Correlation::removeCorrelatedInputParameter(
     InputParameter *inputParameter
-    ) {
+) {
     // Remove all correlations that contain the InputParameter
     if ( inputParameter ) {
         for ( int row { mCorrelationModel.rowCount() - 1 }; row >= 0; --row ) {

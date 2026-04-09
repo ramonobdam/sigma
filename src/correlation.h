@@ -5,10 +5,10 @@
 #ifndef CORRELATION_H
 #define CORRELATION_H
 
+#include "data.h"
 #include "datatype.h"
 #include "inputparameter.h"
 #include "modelcontrol.hpp"
-#include "record.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
@@ -16,10 +16,11 @@
 #include <QVariant>
 #include <QString>
 #include <QStringList>
+#include <QUuid>
 #include <QtQmlIntegration/qqmlintegration.h>
 
 // Class that defines the correlation coefficient between 2 InputParameters.
-class Correlation : public QObject, public Record {
+class Correlation : public QObject, public Data {
     Q_OBJECT
     QML_ELEMENT
 
@@ -46,6 +47,8 @@ public:
     QString toCSVString() const;
     QVariant get( int column, bool csvMode = false ) const override;
     QVariant headerData( int column ) const override;
+    QUuid getInputParameterAId() const;
+    QUuid getInputParameterBId() const;
     void updateFromJson( const QJsonObject &json ) override;
 
     Q_INVOKABLE QString getInputParameterNameA(
@@ -57,8 +60,8 @@ public:
     Q_INVOKABLE bool isUnique(
         const bool &checkCurrentSelection = false
     ) const;
-    Q_INVOKABLE bool setInputParameterA( const QString &name );
-    Q_INVOKABLE bool setInputParameterB( const QString &name );
+    Q_INVOKABLE bool setInputParameterAByName( const QString &name );
+    Q_INVOKABLE bool setInputParameterBByName( const QString &name );
     Q_INVOKABLE double getCorrelation() const;
     Q_INVOKABLE void setCorrelation( const double &correlation = 0. );
     Q_INVOKABLE void setToSelected();
@@ -69,6 +72,8 @@ public:
     void set( int column, const QVariant &value ) override;
     void setInputParameterA( InputParameter *inputParameter = nullptr );
     void setInputParameterB( InputParameter *inputParameter = nullptr );
+    void setInputParameterAById( const QUuid &id );
+    void setInputParameterBById( const QUuid &id );
 
     static Correlation *getCorrelation(
         InputParameter *inputParamA,
@@ -107,8 +112,8 @@ private:
     static ModelControl<Correlation *> mCorrelationModel;
     static QString mCorrelationsHeaderString;
     static QString mCorrelationString;
-    static QString mNameInputAString;
-    static QString mNameInputBString;
+    static QString mIdInputAString;
+    static QString mIdInputBString;
 };
 
 #endif // CORRELATION_H

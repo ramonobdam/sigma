@@ -9,6 +9,7 @@
 #include "stringutils.h"
 #include <third_party/Eigen/Dense>
 #include <QRegularExpression>
+#include <QUuid>
 #include <cmath>
 #include <deque>
 
@@ -164,6 +165,7 @@ OutputParameter * OutputParameter::addToModel( const bool &resetMonteCarlo ) {
 
 QJsonObject OutputParameter::toJson() const {
     QJsonObject json {};
+    json[ mIdString ] = getId().toString();
     json[ mNameString ] = getName();
     json[ mUnitString ] = getUnit();
     json[ mFormulaString ] = getFormula();
@@ -668,6 +670,9 @@ void OutputParameter::stopMonteCarlo() {
 }
 
 void OutputParameter::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ mIdString ]; v.isString() ) {
+        setId( QUuid::fromString( v.toString() ) );
+    }
     if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
         setName( v.toString() );
     }
@@ -763,7 +768,7 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
         for ( auto &variable: variables ) {
             QString inputName { QString::fromStdWString( variable.first ) };
             InputParameter *inputParameter {
-                InputParameter::getInputParameter( inputName )
+                InputParameter::getInputParameterByName( inputName )
             };
             if ( inputParameter ) {
                 UncertaintyComponent component {

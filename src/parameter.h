@@ -5,7 +5,7 @@
 #ifndef PARAMETER_H
 #define PARAMETER_H
 
-#include "record.h"
+#include "data.h"
 #include <QObject>
 #include <QString>
 #include <string>
@@ -13,7 +13,7 @@
 // Abstract Parameter class with the attributes name, unit, nominal value,
 // locked and valid. Derives from QObject to enable the 'signals and slots'
 // mechanism and Q_INVOKABLE methods that can be invoked from QML.
-class Parameter : public QObject, public Record {
+class Parameter : public QObject, public Data {
     Q_OBJECT
 
 public:

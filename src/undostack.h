@@ -10,15 +10,15 @@
 #include <QList>
 #include <QMap>
 #include <QObject>
+#include <QUuid>
 
 // Interface for a model that supports undoable transactions
 class UndoableModel {
 public:
     virtual ~UndoableModel() = default;
 
-    virtual QJsonObject currentJson( const QString &objectId ) const = 0;
+    virtual QJsonObject currentJson( const QUuid &objectId ) const = 0;
     virtual void applyDiff( const JsonDiff &diff ) = 0;
-
 };
 
 // UndoStack singleton that stores transactions and can undo/redo them.
@@ -39,7 +39,7 @@ public:
     void redo();
     void registerModel( DataType type, UndoableModel *model );
     void snapshot(
-        const QString &objectId,
+        QUuid objectId,
         DataType type,
         const QJsonObject &before
     );

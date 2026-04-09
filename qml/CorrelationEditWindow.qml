@@ -38,8 +38,8 @@ BaseWindow {
 
     function setCorrelation() {
         // Set correlation to the current input field values
-        correlation.setInputParameterA( control.paramA )
-        correlation.setInputParameterB( control.paramB )
+        correlation.setInputParameterAByName( control.paramA )
+        correlation.setInputParameterBByName( control.paramB )
         correlation.setCorrelation( control.coef )
     }
 
