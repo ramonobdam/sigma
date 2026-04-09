@@ -33,12 +33,39 @@ Parameter::Parameter(
     const bool &valid
 )
     :   QObject { parent },
+        Data {},
         mName { name },
         mUnit { unit },
         mNominalValue { nominalValue },
         mLocked { locked },
         mValid { valid }
 {}
+
+
+Parameter::Parameter( const Parameter &par )
+    :   QObject { par.parent() },
+        Data { par },
+        mName { par.getName() },
+        mUnit { par.getUnit() },
+        mNominalValue { par.getNominalValue() },
+        mLocked { par.getLocked() },
+        mValid { par.getValid() }
+{}
+
+
+Parameter & Parameter::operator=( const Parameter &par ) {
+    if ( this != &par ) {
+        Data::operator=( par );
+        setParent( par.parent() );
+        setName( par.getName() );
+        setUnit( par.getUnit() );
+        setNominalValue( par.getNominalValue() );
+        setLocked( par.getLocked() );
+        setValid( par.getValid() );
+    }
+
+    return *this;
+}
 
 
 bool Parameter::getLocked() const {

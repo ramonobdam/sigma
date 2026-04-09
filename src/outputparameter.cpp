@@ -78,14 +78,7 @@ OutputParameter::OutputParameter( QObject *parent )
 
 
 OutputParameter::OutputParameter( const OutputParameter &op )
-    :   Parameter {
-            op.parent(),
-            op.getName(),
-            op.getUnit(),
-            op.getNominalValue(),
-            op.getLocked(),
-            op.getValid()
-        },
+    :   Parameter { op },
         mFormula { op.getFormula() },
         mConfidence { op.getConfidence() },
         mError { op.getError() },
@@ -99,28 +92,19 @@ OutputParameter::OutputParameter( const OutputParameter &op )
 }
 
 
-OutputParameter::~OutputParameter(){}
-
-
-OutputParameter& OutputParameter::operator= ( const OutputParameter &op ) {
-    if ( this == &op ) {
-        return *this;
+OutputParameter & OutputParameter::operator= ( const OutputParameter &op ) {
+    if ( this != &op ) {
+        Parameter::operator=( op );
+        setFormula( op.getFormula() );
+        setConfidence( op.getConfidence() );
+        setError( op.getError() );
+        setComponents( op.getComponents() );
+        setMonteCarlo( op.getMonteCarlo() );
+        setMixedCopulaSampler( op.getMixedCopulaSampler() );
+        mMonteCarlo.setOutputParameter( this );
+        mMixedCopulaSampler.setOutputParameter( this );
+        createConnections();
     }
-
-    setName( op.getName() );
-    setUnit( op.getUnit() );
-    setFormula( op.getFormula() );
-    setNominalValue( op.getNominalValue() );
-    setConfidence( op.getConfidence() );
-    setError( op.getError() );
-    setValid( op.getValid() );
-    setComponents( op.getComponents() );
-    setMonteCarlo( op.getMonteCarlo() );
-    setLocked( op.getLocked() );
-    setParent( op.parent() );
-    setMixedCopulaSampler( op.getMixedCopulaSampler() );
-    mMonteCarlo.setOutputParameter( this );
-    mMixedCopulaSampler.setOutputParameter( this );
 
     return *this;
 }
@@ -1087,29 +1071,34 @@ bool OutputParameter::allComponentsNormal() const {
 
 
 void OutputParameter::createConnections() {
-    // Connect to Monte Carlo object
+    // Connect to the Monte Carlo object. The UniqueConnection flag is used in
+    // case the assignment operator is used and the connections already exist.
     connect(
         &mMonteCarlo,
         &MonteCarlo::started,
         this,
-        &OutputParameter::monteCarloStarted
+        &OutputParameter::monteCarloStarted,
+        Qt::UniqueConnection
     );
     connect(
         &mMonteCarlo,
         &MonteCarlo::finished,
         this,
-        &OutputParameter::monteCarloFinished
+        &OutputParameter::monteCarloFinished,
+        Qt::UniqueConnection
     );
     connect(
         &mMonteCarlo,
         &MonteCarlo::monteCarloStatusChanged,
         this,
-        &OutputParameter::monteCarloStatusChanged
+        &OutputParameter::monteCarloStatusChanged,
+        Qt::UniqueConnection
     );
     connect(
         &mMonteCarlo,
         &MonteCarlo::convergenceFactorChanged,
         this,
-        &OutputParameter::monteCarloConvergenceFactorChanged
+        &OutputParameter::monteCarloConvergenceFactorChanged,
+        Qt::UniqueConnection
     );
 }

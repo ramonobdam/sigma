@@ -46,14 +46,7 @@ InputParameter::InputParameter( QObject *parent )
 
 
 InputParameter::InputParameter( const InputParameter &ip )
-    :   Parameter {
-            ip.parent(),
-            ip.getName(),
-            ip.getUnit(),
-            ip.getNominalValue(),
-            ip.getLocked(),
-            ip.getValid()
-        },
+    :   Parameter { ip },
         mStdUncertainty { ip.getStdUncertainty() },
         mDistribution { ip.getDistribution() },
         mDOFInfinite { ip.getDOFInfinite() },
@@ -62,24 +55,15 @@ InputParameter::InputParameter( const InputParameter &ip )
 {}
 
 
-InputParameter::~InputParameter(){}
-
-
-InputParameter& InputParameter::operator= ( const InputParameter &ip ) {
-    if ( this == &ip ) {
-        return *this;
+InputParameter & InputParameter::operator= ( const InputParameter &ip ) {
+    if ( this != &ip ) {
+        Parameter::operator=( ip );
+        setStdUncertainty( ip.getStdUncertainty() );
+        setDistribution( ip.getDistribution() );
+        setDOFInfinite( ip.getDOFInfinite() );
+        setDOF( ip.getDOF() );
+        setSymbolPtr( ip.getSymbolPtr() );
     }
-
-    setName( ip.getName() );
-    setUnit( ip.getUnit() );
-    setNominalValue( ip.getNominalValue() );
-    setStdUncertainty( ip.getStdUncertainty() );
-    setDistribution( ip.getDistribution() );
-    setDOFInfinite( ip.getDOFInfinite() );
-    setDOF( ip.getDOF() );
-    setSymbolPtr( ip.getSymbolPtr() );
-    setLocked( ip.getLocked() );
-    setParent( ip.parent() );
 
     return *this;
 }

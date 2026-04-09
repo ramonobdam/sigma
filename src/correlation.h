@@ -68,6 +68,7 @@ public:
 
     bool getValid() const override;
     int columnCount() const override;
+    void reconnectInputParameters();
     void reset();
     void set( int column, const QVariant &value ) override;
     void setInputParameterA( InputParameter *inputParameter = nullptr );
@@ -103,6 +104,7 @@ public:
         const QJsonArray &jsonArray,
         QObject *parent = nullptr
     );
+    static void reconnectAllCorrelations();
 
 private:
     InputParameter *mInputParameterA;

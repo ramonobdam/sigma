@@ -32,7 +32,6 @@ class InputParameter: public Parameter {
 public:
     InputParameter( QObject *parent = nullptr );
     InputParameter( const InputParameter &ip );
-    ~InputParameter();
 
     InputParameter& operator= ( const InputParameter &ip );
     bool operator== ( const InputParameter &ip ) const;

@@ -40,7 +40,6 @@ class OutputParameter: public Parameter {
 public:
     OutputParameter( QObject *parent = nullptr );
     OutputParameter( const OutputParameter &op );
-    ~OutputParameter();
 
     OutputParameter& operator= ( const OutputParameter &op );
     bool operator== ( const OutputParameter &op ) const;

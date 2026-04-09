@@ -31,6 +31,7 @@ Correlation::Correlation(
     InputParameter *inputParameterB,
     const double &correlation
 )   :   QObject { parent },
+        Data {},
         mInputParameterA { inputParameterA },
         mInputParameterB { inputParameterB },
         mCorrelation { correlation }
@@ -38,24 +39,22 @@ Correlation::Correlation(
 
 
 Correlation::Correlation( const Correlation &cor )
-    :   Correlation {
-            cor.parent(),
-            cor.getInputParameterA(),
-            cor.getInputParameterB(),
-            cor.getCorrelation()
-        }
+    :   QObject { cor.parent() },
+        Data { cor },
+        mInputParameterA { cor.getInputParameterA() },
+        mInputParameterB { cor.getInputParameterB() },
+        mCorrelation { cor.getCorrelation() }
 {}
 
 
-Correlation& Correlation::operator= ( const Correlation &cor ) {
-    if ( this == &cor ) {
-        return *this;
+Correlation & Correlation::operator= ( const Correlation &cor ) {
+    if ( this != &cor ) {
+        Data::operator=( cor );
+        setParent( cor.parent() );
+        setInputParameterA( cor.getInputParameterA() );
+        setInputParameterB( cor.getInputParameterB() );
+        setCorrelation( cor.getCorrelation() );
     }
-
-    setParent( cor.parent() );
-    setInputParameterA( cor.getInputParameterA() );
-    setInputParameterB( cor.getInputParameterB() );
-    setCorrelation( cor.getCorrelation() );
 
     return *this;
 }
@@ -303,6 +302,13 @@ int Correlation::columnCount() const {
 }
 
 
+void Correlation::reconnectInputParameters() {
+    // Set the pointers to both the InputParameters based on the Ids
+    setInputParameterAById( getInputParameterAId() );
+    setInputParameterBById( getInputParameterBId() );
+}
+
+
 void Correlation::reset() {
     setInputParameterA();
     setInputParameterB();
@@ -336,9 +342,9 @@ void Correlation::setInputParameterB( InputParameter *inputParameter ) {
 
 void Correlation::setInputParameterAById( const QUuid &id ) {
     if ( !id.isNull( ) ) {
-        InputParameter *parameter { InputParameter::getInputParameterById( id ) };
-        if ( parameter ) {
-            setInputParameterA( parameter );
+        InputParameter *param { InputParameter::getInputParameterById( id ) };
+        if ( param ) {
+            setInputParameterA( param );
         }
     }
 }
@@ -346,9 +352,9 @@ void Correlation::setInputParameterAById( const QUuid &id ) {
 
 void Correlation::setInputParameterBById( const QUuid &id ) {
     if ( !id.isNull( ) ) {
-        InputParameter *parameter { InputParameter::getInputParameterById( id ) };
-        if ( parameter ) {
-            setInputParameterB( parameter );
+        InputParameter *param { InputParameter::getInputParameterById( id ) };
+        if ( param) {
+            setInputParameterB( param );
         }
     }
 }
@@ -502,5 +508,15 @@ void Correlation::correlationsFromJson(
 ) {
     for ( const QJsonValue &correlation : jsonArray ) {
         fromJson( correlation.toObject(), true, parent );
+    }
+}
+
+
+void Correlation::reconnectAllCorrelations() {
+    // Set the pointers to both the InputParameters based on the Ids for all
+    // stored expressions. Needed when restoring the model states from Json.
+    QList<Correlation *> correlations { mCorrelationModel.getAllRows() };
+    for ( Correlation *correlation : correlations ) {
+        correlation->reconnectInputParameters();
     }
 }

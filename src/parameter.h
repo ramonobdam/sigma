@@ -26,7 +26,10 @@ public:
         const bool &locked,
         const bool &valid
     );
+    Parameter( const Parameter &par );
     virtual ~Parameter() = default;
+
+    Parameter& operator= (const Parameter &par );
 
     virtual bool getLocked() const;
     virtual std::wstring getNameStdWString() const;
