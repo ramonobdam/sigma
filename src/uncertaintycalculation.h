@@ -19,13 +19,11 @@
 #include <QStringList>
 #include <QStringListModel>
 #include <QUrl>
-#include <QtQmlIntegration/qqmlintegration.h>
 
 // The UncertaintyCalculation class orchestrates the different parts of the
 // uncertainty calculation and interfaces with the QML UI layer
 class UncertaintyCalculation : public QObject {
     Q_OBJECT
-    QML_ELEMENT
 
 public:
     UncertaintyCalculation( QObject *parent = nullptr );
@@ -174,6 +172,7 @@ public:
 
 public slots:
     void lockItemSelectionModels();
+    void onMonteCarloFinished();
     void setOutputRow();
     void unsavedChanges();
 
@@ -218,7 +217,8 @@ private:
     void emitAllResultsChanged();
     void emitOutputModelsAboutToBeReset();
     void emitOutputModelsReset();
-    void parametersFromJson( const QJsonObject &json );
+    void projectFromJson( const QJsonObject &json );
+    void recompileAllExpressions( bool resetMonteCarlo = false );
     void recompileExpressions(
         const bool recompileInvalidExpressions = false,
         InputParameter *inputParameterA = nullptr,

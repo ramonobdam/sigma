@@ -6,6 +6,7 @@
 #include "settings.h"
 #include "stringutils.h"
 #include "uncertaintycalculation.h"
+#include "undostack.h"
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QDebug>
@@ -215,7 +216,7 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     QByteArray projectData = loadFile.readAll();
     QJsonDocument projectDoc( QJsonDocument::fromJson( projectData ) );
     clearProject( false );  // Currently open project should not be saved
-    parametersFromJson( projectDoc.object() );
+    projectFromJson( projectDoc.object() );
     setProjectFilePath( url );
     setUnsavedChanges( false );
     return true;
@@ -338,34 +339,61 @@ const ResultsModel * UncertaintyCalculation::resultsItemModel() const {
 
 
 void UncertaintyCalculation::addCorrelation( Correlation *correlation ) {
-    if ( correlation && correlation->addToModel() ) {
-        // Recompile expressions that use both correlated InputParameters
-        recompileExpressions(
-            false,
-            correlation->getInputParameterA(),
-            correlation->getInputParameterB()
+    if ( correlation ) {
+        UndoStack::instance().beginTransaction(
+            "add correlation between " +
+            correlation->getInputParameterNameA() +
+            " & " +
+            correlation->getInputParameterNameB()
         );
-        setUnsavedChanges( true );
+        if ( correlation->addToModel() ) {
+            // Recompile expressions that use both correlated InputParameters
+            recompileExpressions(
+                false,
+                correlation->getInputParameterA(),
+                correlation->getInputParameterB()
+            );
+            UndoStack::instance().commitTransaction();
+            setUnsavedChanges( true );
+        }
+        else {
+            UndoStack::instance().abortTransaction();
+        }
     }
 }
 
 
 void UncertaintyCalculation::addInputParameter( InputParameter *parameter ) {
-    if ( parameter && parameter->addToModel() ) {
-        recompileExpressions( true );
-        setUnsavedChanges( true );
+    if ( parameter ) {
+        UndoStack::instance().beginTransaction(
+            "add input parameter " + parameter->getName()
+        );
+        if ( parameter->addToModel() ) {
+            recompileExpressions( true );
+            UndoStack::instance().commitTransaction();
+            setUnsavedChanges( true );
+        }
+        else {
+            UndoStack::instance().abortTransaction();
+        }
     }
 }
 
 
 void UncertaintyCalculation::addOutputParameter( OutputParameter *parameter ) {
     if ( parameter ) {
+        UndoStack::instance().beginTransaction(
+            "add output parameter " + parameter->getName()
+        );
         const OutputParameter *newParameter { parameter->addToModel() };
 
         if ( newParameter ) {
             connectToOutputParameter( newParameter );
-
+            UndoStack::instance().commitTransaction();
             setUnsavedChanges( true );
+        }
+        else {
+            UndoStack::instance().abortTransaction();
         }
     }
 }
@@ -381,13 +409,14 @@ void UncertaintyCalculation::addUnit( const QString &name ) {
 
 
 void UncertaintyCalculation::clearProject( const bool &unsavedChanges ) {
-    emitOutputModelsAboutToBeReset();
+    // ClearProject() is not undoable
+    UndoStack::instance().clear();
+
     OutputParameter::clearModel();
     Correlation::clearModel();
     InputParameter::clearModel();
     emit inputParameterChanged();
-    emitOutputModelsReset();
-    setOutputRow();
+    setOutputRow(); // This also evokes emitAllResultsChanged()
     setUnsavedChanges( unsavedChanges );
 }
 
@@ -401,6 +430,13 @@ void UncertaintyCalculation::newProject() {
 void UncertaintyCalculation::removeCorrelation() {
     Correlation * const correlation { getSelectedCorrelation() };
     if ( correlation ) {
+        UndoStack::instance().beginTransaction(
+            "delete correlation between " +
+            correlation->getInputParameterNameA() +
+            " & " +
+            correlation->getInputParameterNameB()
+        );
+
         // Store referenced InputParameters and correlation coefficient
         InputParameter *paramA { correlation->getInputParameterA() };
         InputParameter *paramB { correlation->getInputParameterB() };
@@ -411,26 +447,46 @@ void UncertaintyCalculation::removeCorrelation() {
             if ( correlationCoeff != 0 ) {
                 recompileExpressions( false, paramA, paramB );
             }
+            UndoStack::instance().commitTransaction();
             setUnsavedChanges( true );
+        }
+        else {
+            UndoStack::instance().abortTransaction();
         }
     }
 }
 
 
 void UncertaintyCalculation::removeInputParameter() {
+    UndoStack::instance().beginTransaction(
+        "delete input parameter " + getInputName()
+    );
+
     InputParameter *deletedParameter {
         InputParameter::removeSelectedModelRow()
     };
     if ( deletedParameter ) {
+        Correlation::removeCorrelatedInputParameter( deletedParameter );
         recompileExpressions( false, deletedParameter );
+        UndoStack::instance().commitTransaction();
         setUnsavedChanges( true );
+    }
+    else {
+        UndoStack::instance().abortTransaction();
     }
 }
 
 
 void UncertaintyCalculation::removeOutputParameter() {
+    UndoStack::instance().beginTransaction(
+        "delete output parameter " + getOutputName()
+    );
     if ( mOutputParametersModel->removeSelectedRow() ) {
+        UndoStack::instance().commitTransaction();
         setUnsavedChanges( true );
+    }
+    else {
+        UndoStack::instance().abortTransaction();
     }
 }
 
@@ -446,16 +502,21 @@ void UncertaintyCalculation::resetDisplay() {
 
 void UncertaintyCalculation::runMonteCarlo() {
     OutputParameter * const parameter { getSelectedOutputParameter() };
-    if ( parameter ) {
+    if ( parameter && !parameter->getLocked() ) {
+        UndoStack::instance().beginTransaction(
+            "run Monte Carlo " + getOutputName()
+        );
         parameter->startMonteCarlo();
+        // Note that commitTransaction() is called in onMonteCarloFinished()
     }
 }
 
 
 void UncertaintyCalculation::stopMonteCarlo() {
     OutputParameter *parameter { getSelectedOutputParameter() };
-    if ( parameter ) {
+    if ( parameter && parameter->getLocked() ) {
         parameter->stopMonteCarlo();
+        // Note that commitTransaction() is called in onMonteCarloFinished()
     }
 }
 
@@ -464,6 +525,7 @@ void UncertaintyCalculation::updateCorrelation( Correlation *correlation ) {
     if ( correlation ) {
         bool recompile { true };
         Correlation * const selectedCorrelation { getSelectedCorrelation() };
+
         // Store the InputParameters that are currently referenced
         InputParameter *originalParamA { correlation->getInputParameterA() };
         InputParameter *originalParamB { correlation->getInputParameterB() };
@@ -472,23 +534,37 @@ void UncertaintyCalculation::updateCorrelation( Correlation *correlation ) {
             // recompile.
             recompile = false;
         }
+
+        UndoStack::instance().beginTransaction(
+            "update correlation between " +
+            correlation->getInputParameterNameA() +
+            " & " +
+            correlation->getInputParameterNameB()
+        );
         emitOutputModelsAboutToBeReset();
         Correlation *updatedCorrelation {
             correlation->updateSelectedModelRow()
         };
         emitOutputModelsReset();
-        emit resultsChanged();
-        if ( updatedCorrelation && recompile ) {
-            // Recompile to check the original InputParameters
-            recompileExpressions( false, originalParamA, originalParamB );
-            // Recompile to check the new InputParameters
-            recompileExpressions(
-                false,
-                updatedCorrelation->getInputParameterA(),
-                updatedCorrelation->getInputParameterB()
-            );
+        if ( updatedCorrelation ) {
+            emit resultsChanged();
+            if ( recompile ) {
+                // Recompile to check the original InputParameters
+                recompileExpressions( false, originalParamA, originalParamB );
+                // Recompile to check the new InputParameters
+                recompileExpressions(
+                    false,
+                    updatedCorrelation->getInputParameterA(),
+                    updatedCorrelation->getInputParameterB()
+                );
+            }
+            UndoStack::instance().commitTransaction();
+            setUnsavedChanges( true );
         }
-        setUnsavedChanges( true );
+        else {
+            UndoStack::instance().abortTransaction();
+        }
+
     }
 }
 
@@ -504,16 +580,25 @@ void UncertaintyCalculation::updateInputParameter( InputParameter *parameter) {
             // recompile.
             recompile = false;
         }
+        UndoStack::instance().beginTransaction(
+            "update input parameter " + parameter->getName()
+        );
         emitOutputModelsAboutToBeReset();
         InputParameter *updatedParameter {
             parameter->updateSelectedModelRow()
         };
         emitOutputModelsReset();
-        emit resultsChanged();
-        if ( updatedParameter && recompile ) {
-            recompileExpressions( true, updatedParameter );
+        if ( updatedParameter ) {
+            emit resultsChanged();
+            if ( recompile ) {
+                recompileExpressions( true, updatedParameter );
+            }
+            UndoStack::instance().commitTransaction();
+            setUnsavedChanges( true );
         }
-        setUnsavedChanges( true );
+        else {
+            UndoStack::instance().abortTransaction();
+        }
     }
 }
 
@@ -522,11 +607,20 @@ void UncertaintyCalculation::updateOutputParameter(
     OutputParameter *parameter
 ) {
     if ( parameter ) {
+        UndoStack::instance().beginTransaction(
+            "update output parameter " + parameter->getName()
+        );
         emitOutputModelsAboutToBeReset();
-        parameter->updateSelectedModelRow();
+        const bool success { parameter->updateSelectedModelRow() };
         emitOutputModelsReset();
-        emitAllResultsChanged();
-        setUnsavedChanges( true );
+        if ( success ) {
+            emitAllResultsChanged();
+            UndoStack::instance().commitTransaction();
+            setUnsavedChanges( true );
+        }
+        else {
+            UndoStack::instance().abortTransaction();
+        }
     }
 }
 
@@ -536,6 +630,11 @@ void UncertaintyCalculation::lockItemSelectionModels() {
     mInputParametersModel->setSelectionLocked( locked );
     mOutputParametersModel->setSelectionLocked( locked );
     emit outputLockedChanged();
+}
+
+
+void UncertaintyCalculation::onMonteCarloFinished() {
+    UndoStack::instance().commitTransaction();
 }
 
 
@@ -831,6 +930,12 @@ void UncertaintyCalculation::connectToOutputParameter(
             this,
             &UncertaintyCalculation::unsavedChanges
         );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloFinished,
+            this,
+            &UncertaintyCalculation::onMonteCarloFinished
+        );
     }
 }
 
@@ -855,7 +960,7 @@ void UncertaintyCalculation::emitOutputModelsReset() {
 }
 
 
-void UncertaintyCalculation::parametersFromJson( const QJsonObject &json ) {
+void UncertaintyCalculation::projectFromJson( const QJsonObject &json ) {
     if ( const QJsonValue v = json[ mInputParametersString ]; v.isArray() ) {
         const QJsonArray paramArray { v.toArray() };
         InputParameter::parametersFromJson( paramArray, this );
@@ -883,6 +988,16 @@ void UncertaintyCalculation::parametersFromJson( const QJsonObject &json ) {
 }
 
 
+void UncertaintyCalculation::recompileAllExpressions( bool resetMonteCarlo ) {
+    QList<OutputParameter *> outputParameters {
+        mOutputParametersModel->getAllRows()
+    };
+    for ( OutputParameter *outputParameter : outputParameters ) {
+        outputParameter->compile( resetMonteCarlo );
+    }
+}
+
+
 void UncertaintyCalculation::recompileExpressions(
     const bool recompileInvalidExpressions,
     InputParameter *inputParameterA,
@@ -893,11 +1008,10 @@ void UncertaintyCalculation::recompileExpressions(
     // null_ptr) or both inputParameterA and inputParameterB. So valid
     // parameters that do not reference the inputParameter(s) are left
     // untouched.
-    int rows { mOutputParametersModel->rowCount() };
-    for ( int row { 0 }; row < rows; ++row ) {
-        OutputParameter *outputParameter {
-            mOutputParametersModel->getRow( row )
-        };
+    QList<OutputParameter *> outputParameters {
+        mOutputParametersModel->getAllRows()
+    };
+    for ( OutputParameter *outputParameter : outputParameters ) {
         if ( outputParameter && (
             ( recompileInvalidExpressions && !outputParameter->getValid() ) ||
                 (
