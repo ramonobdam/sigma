@@ -47,9 +47,6 @@ Correlation::Correlation( const Correlation &cor )
 {}
 
 
-Correlation::~Correlation() {}
-
-
 Correlation& Correlation::operator= ( const Correlation &cor ) {
     if ( this == &cor ) {
         return *this;
@@ -407,7 +404,7 @@ bool Correlation::inputParameterCorrelated( InputParameter *inputParameter ) {
         if (
             ( paramA && paramA == inputParameter ) ||
             ( paramB && paramB == inputParameter )
-            ) {
+        ) {
             return true;
         }
     }
@@ -428,7 +425,7 @@ void Correlation::removeCorrelatedInputParameter(
     InputParameter *inputParameter
     ) {
     // Remove all correlations that contain the InputParameter
-    if ( inputParameter && inputParameterCorrelated( inputParameter ) ) {
+    if ( inputParameter ) {
         for ( int row { mCorrelationModel.rowCount() - 1 }; row >= 0; --row ) {
             Correlation *correlation { mCorrelationModel.getRow( row ) };
             if ( correlation ) {
@@ -437,7 +434,7 @@ void Correlation::removeCorrelatedInputParameter(
                 if (
                     ( paramA && paramA == inputParameter ) ||
                     ( paramB && paramB == inputParameter )
-                    ) {
+                ) {
                     mCorrelationModel.removeRow( row );
                 }
             }

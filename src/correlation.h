@@ -6,6 +6,7 @@
 #define CORRELATION_H
 
 #include "datatype.h"
+#include "inputparameter.h"
 #include "modelcontrol.hpp"
 #include "record.h"
 #include <QJsonArray>
@@ -16,9 +17,6 @@
 #include <QString>
 #include <QStringList>
 #include <QtQmlIntegration/qqmlintegration.h>
-
-// Forward declaration of InputParameter (to avoid recursion loop)
-class InputParameter;
 
 // Class that defines the correlation coefficient between 2 InputParameters.
 class Correlation : public QObject, public Record {
@@ -33,7 +31,6 @@ public:
         const double &correlation = 0.
     );
     Correlation( const Correlation &cor );
-    ~Correlation();
 
     Correlation& operator= ( const Correlation &cor );
     bool operator== ( const Correlation &cor ) const;
