@@ -524,7 +524,7 @@ void Correlation::correlationsFromJson(
 
 void Correlation::reconnectAllCorrelations() {
     // Set the pointers to both the InputParameters based on the Ids for all
-    // stored expressions. Needed when restoring the model states from Json.
+    // stored correlations. Needed when restoring the model states from Json.
     QList<Correlation *> correlations { mCorrelationModel.getAllRows() };
     for ( Correlation *correlation : correlations ) {
         correlation->reconnectInputParameters();
