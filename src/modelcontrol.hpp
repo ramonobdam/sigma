@@ -27,8 +27,8 @@ public:
     }
 
 
-    QObject *itemModel() {
-        return static_cast<QObject *> ( &mModel );
+    Model<T> *itemModel() {
+        return &mModel;
     }
 
 
