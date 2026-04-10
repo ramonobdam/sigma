@@ -156,6 +156,14 @@ ApplicationWindow {
         aboutWindow.show()
     }
 
+    function undo() {
+        calculation.undo()
+    }
+
+    function redo() {
+        calculation.redo()
+    }
+
     width: properties.defaultMainWindowWidth
     height: properties.defaultMainWindowHeight
     topPadding: 0
@@ -392,6 +400,26 @@ ApplicationWindow {
                     shortcut: "Ctrl+E"
                     onTriggered: { openCSV() }
                     enabled: !properties.outputLocked
+                }
+            }
+
+            SigmaMenu {
+                title: "Edit"
+                implicitWidth: 200
+
+                SigmaMenuBarMenuItem {
+                    text: "Undo"
+                    shortcut: properties.macOs ? StandardKey.Undo : "Ctrl+Z"
+                    enabled: properties.canUndo
+                    onTriggered: { undo() }
+                }
+
+                SigmaMenuBarMenuItem {
+                    text: "Redo"
+                    shortcut: properties.macOs ? StandardKey.Redo :
+                                                 "Ctrl+Shift+Z"
+                    enabled: properties.canRedo
+                    onTriggered: { redo() }
                 }
             }
 

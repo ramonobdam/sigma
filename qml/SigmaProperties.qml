@@ -301,6 +301,10 @@ QtObject {
     property string projectFileName: calculation.projectFileName
     property url projectFilePath: calculation.projectFilePath
 
+    // Undo/redo available
+    property bool canRedo: calculation.canRedo && !outputLocked
+    property bool canUndo: calculation.canUndo && !outputLocked
+
     // OS
     property bool macOS: ( Qt.platform.os === "osx" ) ||
                          ( Qt.platform.os === "macos" )
