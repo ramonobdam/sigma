@@ -24,6 +24,11 @@ QUuid Data::getId() const {
 }
 
 
+void Data::resetId() {
+    mId = QUuid::createUuid();
+}
+
+
 void Data::setId( const QUuid &id ) {
     mId = id;
 }

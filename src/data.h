@@ -19,6 +19,7 @@ public:
     Data &operator= ( const Data &dat );
 
     QUuid getId() const override;
+    void resetId();
 
 protected:
     void setId( const QUuid &id );
