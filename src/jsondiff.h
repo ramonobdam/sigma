@@ -15,6 +15,7 @@
 struct JsonDiff {
     QUuid objectId;
     DataType objectType;
+    int row { -1 };     // row index for restore
     QJsonObject before; // empty = object did not exist yet
     QJsonObject after;  // empty = object was deleted
 };
