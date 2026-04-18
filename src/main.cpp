@@ -41,7 +41,9 @@ int main( int argc, char *argv[] ) {
         Qt::QueuedConnection );
 
     ApplicationSettings *appSettings { new ApplicationSettings( &app ) };
-    UncertaintyCalculation *calculation { new UncertaintyCalculation( &app ) };
+    UncertaintyCalculation *calculation {
+        new UncertaintyCalculation( &app, appSettings )
+    };
     WindowsCaptionHelper *captionHelper { new WindowsCaptionHelper( &app ) };
 
     // Load a project based on the command-line argument or restore the last
