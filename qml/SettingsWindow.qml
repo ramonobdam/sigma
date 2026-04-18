@@ -29,7 +29,6 @@ BaseWindow {
 
     function reset() {
         appSettings.setToDefaults()
-        calculation.resetDisplay()
     }
 
     function save() {
@@ -301,7 +300,6 @@ BaseWindow {
             }
             function restoreInitial() {
                 appSettings.setDisplayPrecision( initial )
-                calculation.resetDisplay()
             }
 
             anchors {
@@ -316,7 +314,6 @@ BaseWindow {
             onValueModified: {
                 if ( control.formActive ) {
                     appSettings.setDisplayPrecision( value )
-                    calculation.resetDisplay()
                 }
             }
 
