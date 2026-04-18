@@ -6,12 +6,6 @@
 #include "stringutils.h"
 
 
-QString Parameter::mNameString = "name";
-QString Parameter::mNominalValueString = "nominalValue";
-QString Parameter::mUnitString = "unit";
-QString Parameter::mValidString = "valid";
-
-
 Parameter::Parameter( QObject *parent )
     :   Parameter {
             parent,
@@ -28,9 +22,9 @@ Parameter::Parameter(
     QObject *parent,
     const QString &name,
     const QString &unit,
-    const double &nominalValue,
-    const bool &locked,
-    const bool &valid
+    double nominalValue,
+    bool locked,
+    bool valid
 )
     :   QObject { parent },
         Data {},
@@ -78,7 +72,7 @@ std::wstring Parameter::getNameStdWString() const {
 }
 
 
-void Parameter::setValid( const bool &valid ) {
+void Parameter::setValid( bool valid ) {
     mValid = valid;
 }
 
@@ -88,7 +82,7 @@ QString Parameter::getName( bool csvMode ) const {
 }
 
 
-QString Parameter::getUnit( const bool csvMode ) const {
+QString Parameter::getUnit( bool csvMode ) const {
     return csvMode ? StringUtils::addQuotes( mUnit ) : mUnit;
 }
 
@@ -103,7 +97,7 @@ double Parameter::getNominalValue() const {
 }
 
 
-void Parameter::setLocked( const bool &locked ) {
+void Parameter::setLocked( bool locked ) {
     mLocked = locked;
 }
 
@@ -113,7 +107,7 @@ void Parameter::setName( const QString &name ) {
 }
 
 
-void Parameter::setNominalValue( const double &nominalValue ) {
+void Parameter::setNominalValue( double nominalValue ) {
     mNominalValue = nominalValue;
 }
 
