@@ -2,15 +2,17 @@
     "Sigma version": "1.0.5",
     "correlations": [
         {
-            "correlation": -0.93,
-            "inputParameterA": "y1",
-            "inputParameterB": "y2"
+            "Id": "{f0b9a595-4215-4893-b34e-81b203e9fbf9}",
+            "IdInputParameterA": "{d0ec4647-b160-46fb-a9eb-66a0b2d76075}",
+            "IdInputParameterB": "{9f1b24c2-7f67-4154-9f32-2698c3154c2d}",
+            "correlation": -0.93
         }
     ],
     "inputParameters": [
         {
             "DOF": 9,
             "DOFInfinite": false,
+            "Id": "{d0ec4647-b160-46fb-a9eb-66a0b2d76075}",
             "distribution": "normal",
             "name": "y1",
             "nominalValue": -0.1712,
@@ -20,6 +22,7 @@
         {
             "DOF": 9,
             "DOFInfinite": false,
+            "Id": "{9f1b24c2-7f67-4154-9f32-2698c3154c2d}",
             "distribution": "normal",
             "name": "y2",
             "nominalValue": 0.00218,
@@ -29,6 +32,7 @@
         {
             "DOF": 9,
             "DOFInfinite": true,
+            "Id": "{4acc5493-6a33-4455-ae9f-0b18418d79bf}",
             "distribution": "none",
             "name": "t0",
             "nominalValue": 20,
@@ -38,6 +42,7 @@
         {
             "DOF": 9,
             "DOFInfinite": true,
+            "Id": "{7ac7c228-b2ef-4674-b83b-a32e85cabc34}",
             "distribution": "none",
             "name": "t",
             "nominalValue": 30,
@@ -47,6 +52,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{53c96481-25da-4f47-8ff5-6f973be85eb9}",
             "confidence": 0.95,
             "formula": "y1 + y2 * (t - t0)",
             "monteCarlo": {

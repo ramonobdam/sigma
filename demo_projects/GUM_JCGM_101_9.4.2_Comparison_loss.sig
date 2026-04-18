@@ -6,6 +6,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{6d715949-eb7d-4b37-85db-5db1f1a1a7a0}",
             "distribution": "normal",
             "name": "X10",
             "nominalValue": 0,
@@ -15,6 +16,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{adf1cca9-6dea-4f25-a893-7d17cbb2c24f}",
             "distribution": "normal",
             "name": "X11",
             "nominalValue": 0.01,
@@ -24,6 +26,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{11138835-1b47-4c7e-af04-81143459f9d5}",
             "distribution": "normal",
             "name": "X15",
             "nominalValue": 0.05,
@@ -33,6 +36,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{00863467-61e6-4fd0-9c9d-89573ca2a25f}",
             "distribution": "normal",
             "name": "X2",
             "nominalValue": 0,
@@ -42,6 +46,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{a3646321-a8db-4992-a046-d0a872d37472}",
             "confidence": 0.95,
             "formula": "X10^2 + X2^2",
             "monteCarlo": {
@@ -135,6 +140,7 @@
             "unit": ""
         },
         {
+            "Id": "{8882ef2c-1575-461a-956f-79471e5008c3}",
             "confidence": 0.95,
             "formula": "X11^2 + X2^2",
             "monteCarlo": {
@@ -228,6 +234,7 @@
             "unit": ""
         },
         {
+            "Id": "{e02956c5-43b3-49bf-a5f5-1b95a500a3f2}",
             "confidence": 0.95,
             "formula": "X15^2 + X2^2",
             "monteCarlo": {

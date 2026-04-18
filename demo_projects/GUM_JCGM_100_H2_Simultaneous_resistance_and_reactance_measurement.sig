@@ -2,25 +2,29 @@
     "Sigma version": "1.0.5",
     "correlations": [
         {
-            "correlation": -0.36,
-            "inputParameterA": "V",
-            "inputParameterB": "I"
+            "Id": "{64f8fa4b-1151-495c-bd89-28ddf449672e}",
+            "IdInputParameterA": "{ef950a05-3fca-4c0b-81b8-028fda35d507}",
+            "IdInputParameterB": "{06d01481-2cf4-494e-9353-a88583a86e6d}",
+            "correlation": -0.36
         },
         {
-            "correlation": 0.86,
-            "inputParameterA": "V",
-            "inputParameterB": "Φ"
+            "Id": "{dd3201f5-324c-4381-be26-2da7504e2eed}",
+            "IdInputParameterA": "{ef950a05-3fca-4c0b-81b8-028fda35d507}",
+            "IdInputParameterB": "{5ee8f52b-0290-44a5-b6f2-77af95320e09}",
+            "correlation": 0.86
         },
         {
-            "correlation": -0.65,
-            "inputParameterA": "I",
-            "inputParameterB": "Φ"
+            "Id": "{c6b5c2ec-0b33-4adb-8195-acd7a4791350}",
+            "IdInputParameterA": "{06d01481-2cf4-494e-9353-a88583a86e6d}",
+            "IdInputParameterB": "{5ee8f52b-0290-44a5-b6f2-77af95320e09}",
+            "correlation": -0.65
         }
     ],
     "inputParameters": [
         {
             "DOF": 4,
             "DOFInfinite": false,
+            "Id": "{ef950a05-3fca-4c0b-81b8-028fda35d507}",
             "distribution": "normal",
             "name": "V",
             "nominalValue": 4.999,
@@ -30,6 +34,7 @@
         {
             "DOF": 4,
             "DOFInfinite": false,
+            "Id": "{06d01481-2cf4-494e-9353-a88583a86e6d}",
             "distribution": "normal",
             "name": "I",
             "nominalValue": 0.019661,
@@ -39,6 +44,7 @@
         {
             "DOF": 4,
             "DOFInfinite": false,
+            "Id": "{5ee8f52b-0290-44a5-b6f2-77af95320e09}",
             "distribution": "normal",
             "name": "Φ",
             "nominalValue": 1.04446,
@@ -48,6 +54,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{dc5a6d02-6ee2-49b3-af95-570a212fec89}",
             "confidence": 0.95,
             "formula": "V / I * cos(Φ)",
             "monteCarlo": {
@@ -141,6 +148,7 @@
             "unit": "Ω"
         },
         {
+            "Id": "{2b09ee83-f336-4a2b-9f7a-1f22f310ed92}",
             "confidence": 0.95,
             "formula": "V / I * sin(Φ)",
             "monteCarlo": {
@@ -234,6 +242,7 @@
             "unit": "Ω"
         },
         {
+            "Id": "{28be136c-4832-434b-bc65-f4119dc5b819}",
             "confidence": 0.95,
             "formula": "V / I",
             "monteCarlo": {

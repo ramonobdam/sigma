@@ -6,6 +6,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{c6f7ab42-d480-4b61-853f-be41d912bc2a}",
             "distribution": "normal",
             "name": "m_Rc",
             "nominalValue": 100000,
@@ -15,6 +16,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{b22ad644-e841-4309-ab0b-13aee77080f8}",
             "distribution": "normal",
             "name": "δm_Rc",
             "nominalValue": 1.234,
@@ -24,6 +26,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{9142b799-2726-4399-bc68-ac8626e0f179}",
             "distribution": "uniform",
             "name": "ρ_a",
             "nominalValue": 1.2,
@@ -33,6 +36,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{81d45c18-990e-4203-b5a3-58ffdb9dcddd}",
             "distribution": "uniform",
             "name": "ρ_w",
             "nominalValue": 8000,
@@ -42,6 +46,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{41c6bdf4-7487-447b-ab8e-d0f3574c11b7}",
             "distribution": "uniform",
             "name": "ρ_R",
             "nominalValue": 8000,
@@ -51,6 +56,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{ae776001-ef6e-4bc2-8aff-de0882bac2c3}",
             "distribution": "none",
             "name": "ρ_a0",
             "nominalValue": 1.2,
@@ -60,6 +66,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{d87670c5-5945-44d6-9587-d1fa0c14589f}",
             "distribution": "none",
             "name": "m_nom",
             "nominalValue": 100000,
@@ -69,6 +76,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{87dcdb15-b173-4aa8-bee8-be73c9c72a39}",
             "confidence": 0.95,
             "formula": "(m_Rc + δm_Rc) [1 + (ρ_a - ρ_a0) (1 / ρ_w - 1/ρ_R) ] - m_nom",
             "monteCarlo": {

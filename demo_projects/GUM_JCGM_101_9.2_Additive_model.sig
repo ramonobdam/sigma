@@ -6,6 +6,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{039c9337-a8bb-4710-b19a-3e6b5f287a19}",
             "distribution": "normal",
             "name": "X1_n",
             "nominalValue": 0,
@@ -15,6 +16,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{7483e296-e631-4ab7-a562-16ce08a43703}",
             "distribution": "normal",
             "name": "X2_n",
             "nominalValue": 0,
@@ -24,6 +26,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{1c312126-6698-4cf3-80e1-ade0631f4dde}",
             "distribution": "normal",
             "name": "X3_n",
             "nominalValue": 0,
@@ -33,6 +36,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{d06cb1c5-14b9-44ac-bbee-ad7b2862bb9d}",
             "distribution": "normal",
             "name": "X4_n",
             "nominalValue": 0,
@@ -42,6 +46,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{8b2660e1-323b-4024-973d-4f4f99d19f74}",
             "distribution": "uniform",
             "name": "X1_u",
             "nominalValue": 0,
@@ -51,6 +56,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{98c8e6c7-71f5-486f-9fd3-d5972b41a6cc}",
             "distribution": "uniform",
             "name": "X2_u",
             "nominalValue": 0,
@@ -60,6 +66,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{347d5c57-8322-4c19-8d6e-93e5da297f6f}",
             "distribution": "uniform",
             "name": "X3_u",
             "nominalValue": 0,
@@ -69,6 +76,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{cb380f20-33a1-44e2-86d8-2f04d7623444}",
             "distribution": "uniform",
             "name": "X4_u",
             "nominalValue": 0,
@@ -78,6 +86,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{28a6aa7f-bd1c-4e50-b3b7-b093d384b133}",
             "distribution": "uniform",
             "name": "X5_u",
             "nominalValue": 0,
@@ -87,6 +96,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{eecf56cd-46f4-480a-b7b7-205b56b5d7f6}",
             "confidence": 0.95,
             "formula": "X1_n + X2_n + X3_n + X4_n",
             "monteCarlo": {
@@ -180,6 +190,7 @@
             "unit": ""
         },
         {
+            "Id": "{c186e4d3-d655-417f-af10-a6544ed92222}",
             "confidence": 0.95,
             "formula": "X1_u +X2_u + X3_u + X4_u",
             "monteCarlo": {
@@ -273,6 +284,7 @@
             "unit": ""
         },
         {
+            "Id": "{b7c2b0f8-7f6c-4c9b-9846-309b2909ac70}",
             "confidence": 0.95,
             "formula": "X1_u +X2_u + X3_u + X5_u",
             "monteCarlo": {

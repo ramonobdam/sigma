@@ -2,15 +2,17 @@
     "Sigma version": "1.0.5",
     "correlations": [
         {
-            "correlation": 0.646,
-            "inputParameterA": "R_x",
-            "inputParameterB": "R_S"
+            "Id": "{b0638a3e-cde5-4794-8c06-6c2d0d6725db}",
+            "IdInputParameterA": "{88967a55-0bbc-4a44-9c1b-ae393ef08e32}",
+            "IdInputParameterB": "{c5829b5d-a188-49ce-9a3d-2abfb76ee7e6}",
+            "correlation": 0.646
         }
     ],
     "inputParameters": [
         {
             "DOF": 9,
             "DOFInfinite": true,
+            "Id": "{aca67060-4f5c-415c-846d-b64d630486e2}",
             "distribution": "normal",
             "name": "A_S",
             "nominalValue": 0.1368,
@@ -20,6 +22,7 @@
         {
             "DOF": 9,
             "DOFInfinite": true,
+            "Id": "{b1f35555-9226-465b-8f01-dece5693a540}",
             "distribution": "normal",
             "name": "m_S",
             "nominalValue": 5.0192,
@@ -29,6 +32,7 @@
         {
             "DOF": 9,
             "DOFInfinite": true,
+            "Id": "{a435e79c-ebd5-40a6-8687-412f3ebf113d}",
             "distribution": "normal",
             "name": "m_X",
             "nominalValue": 5.0571,
@@ -38,6 +42,7 @@
         {
             "DOF": 5,
             "DOFInfinite": false,
+            "Id": "{88967a55-0bbc-4a44-9c1b-ae393ef08e32}",
             "distribution": "normal",
             "name": "R_x",
             "nominalValue": 652.6,
@@ -47,6 +52,7 @@
         {
             "DOF": 5,
             "DOFInfinite": false,
+            "Id": "{c5829b5d-a188-49ce-9a3d-2abfb76ee7e6}",
             "distribution": "normal",
             "name": "R_S",
             "nominalValue": 206.09,
@@ -56,6 +62,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{ee5c94c4-d44d-4eef-9e20-4dfde7ca56ea}",
             "confidence": 0.95,
             "formula": "A_S * (m_S / m_X) * (R_x/R_S)",
             "monteCarlo": {

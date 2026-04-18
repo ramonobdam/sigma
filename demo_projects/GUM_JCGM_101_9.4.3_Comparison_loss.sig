@@ -2,25 +2,29 @@
     "Sigma version": "1.0.5",
     "correlations": [
         {
-            "correlation": 0.9,
-            "inputParameterA": "X10",
-            "inputParameterB": "X2"
+            "Id": "{cf16de96-b70f-477d-979b-a0f3859f8503}",
+            "IdInputParameterA": "{3355474e-020a-438c-86c3-dc0f2712865d}",
+            "IdInputParameterB": "{0ede7186-cf4a-4848-8b7a-374998f5e17f}",
+            "correlation": 0.9
         },
         {
-            "correlation": 0.9,
-            "inputParameterA": "X11",
-            "inputParameterB": "X2"
+            "Id": "{0cd2883c-be69-4294-89de-3a1a7cd34a7c}",
+            "IdInputParameterA": "{d25a413c-e229-427a-8d3a-b24cb53442b5}",
+            "IdInputParameterB": "{0ede7186-cf4a-4848-8b7a-374998f5e17f}",
+            "correlation": 0.9
         },
         {
-            "correlation": 0.9,
-            "inputParameterA": "X15",
-            "inputParameterB": "X2"
+            "Id": "{a6222d26-29f5-4e9e-846c-f0f81d755805}",
+            "IdInputParameterA": "{1d43a4ce-da64-4245-9498-1f5afab11a19}",
+            "IdInputParameterB": "{0ede7186-cf4a-4848-8b7a-374998f5e17f}",
+            "correlation": 0.9
         }
     ],
     "inputParameters": [
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{3355474e-020a-438c-86c3-dc0f2712865d}",
             "distribution": "normal",
             "name": "X10",
             "nominalValue": 0,
@@ -30,6 +34,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{d25a413c-e229-427a-8d3a-b24cb53442b5}",
             "distribution": "normal",
             "name": "X11",
             "nominalValue": 0.01,
@@ -39,6 +44,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{1d43a4ce-da64-4245-9498-1f5afab11a19}",
             "distribution": "normal",
             "name": "X15",
             "nominalValue": 0.05,
@@ -48,6 +54,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{0ede7186-cf4a-4848-8b7a-374998f5e17f}",
             "distribution": "normal",
             "name": "X2",
             "nominalValue": 0,
@@ -57,6 +64,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{26d08c51-7c0a-41bc-88b8-353733395c2b}",
             "confidence": 0.95,
             "formula": "X10^2 + X2^2",
             "monteCarlo": {
@@ -150,6 +158,7 @@
             "unit": ""
         },
         {
+            "Id": "{e96dd351-2c96-4690-86a2-494c4ee4f35f}",
             "confidence": 0.95,
             "formula": "X11^2 + X2^2",
             "monteCarlo": {
@@ -243,6 +252,7 @@
             "unit": ""
         },
         {
+            "Id": "{6fe90341-bbb5-4b47-a4bb-6d3252aef3aa}",
             "confidence": 0.95,
             "formula": "X15^2 + X2^2",
             "monteCarlo": {

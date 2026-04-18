@@ -6,6 +6,7 @@
         {
             "DOF": 4,
             "DOFInfinite": true,
+            "Id": "{07500fa5-0847-4f60-a58f-93ecbe14b194}",
             "distribution": "none",
             "name": "d",
             "nominalValue": 36,
@@ -15,6 +16,7 @@
         {
             "DOF": 4,
             "DOFInfinite": false,
+            "Id": "{589e4b28-7cb8-45ec-9cde-e6130ef71924}",
             "distribution": "normal",
             "name": "d_k",
             "nominalValue": 0,
@@ -24,6 +26,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{87932783-ca9c-4662-8984-3ebe514f6ca0}",
             "distribution": "uniform",
             "name": "δ",
             "nominalValue": 0,
@@ -33,6 +36,7 @@
         {
             "DOF": 5,
             "DOFInfinite": true,
+            "Id": "{88da27fd-3b01-4972-a479-0e915e265921}",
             "distribution": "normal",
             "name": "z_S",
             "nominalValue": 0,
@@ -42,6 +46,7 @@
         {
             "DOF": 5,
             "DOFInfinite": true,
+            "Id": "{80709c6f-5031-4e2f-bcae-ea7138618468}",
             "distribution": "normal",
             "name": "z",
             "nominalValue": 0,
@@ -51,6 +56,7 @@
         {
             "DOF": 4,
             "DOFInfinite": true,
+            "Id": "{ff7bd7be-f5d4-404e-9b39-3cb77989e7ff}",
             "distribution": "triangular",
             "name": "Δ_b",
             "nominalValue": 0,
@@ -60,6 +66,7 @@
         {
             "DOF": 4,
             "DOFInfinite": true,
+            "Id": "{ea6ccc87-2a35-42af-a0fe-fe32b0ab469d}",
             "distribution": "normal",
             "name": "Δ_S",
             "nominalValue": 0,
@@ -69,6 +76,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{7ce54e0a-45c8-4bb4-a8d8-4d29e262007a}",
             "confidence": 0.95,
             "formula": "100 - d - d_k - δ - z_S - z - Δ_b - Δ_S",
             "monteCarlo": {

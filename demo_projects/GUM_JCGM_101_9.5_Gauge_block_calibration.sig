@@ -6,6 +6,7 @@
         {
             "DOF": 18,
             "DOFInfinite": false,
+            "Id": "{d6854bae-0046-42a1-8c7d-797b5acf22e0}",
             "distribution": "student's t",
             "name": "L_S",
             "nominalValue": 50000623,
@@ -15,6 +16,7 @@
         {
             "DOF": 24,
             "DOFInfinite": false,
+            "Id": "{56ea0826-4a0c-4145-8fa5-f4fe0315cb72}",
             "distribution": "student's t",
             "name": "D",
             "nominalValue": 215,
@@ -24,6 +26,7 @@
         {
             "DOF": 1,
             "DOFInfinite": true,
+            "Id": "{d16e5660-9575-4fc9-b160-f56c0534d2a5}",
             "distribution": "uniform",
             "name": "α_S",
             "nominalValue": 1.15e-05,
@@ -33,6 +36,7 @@
         {
             "DOF": 25,
             "DOFInfinite": true,
+            "Id": "{71377b86-1a41-4b84-ab95-96dcac1b9dbe}",
             "distribution": "normal",
             "name": "θ0",
             "nominalValue": -0.1,
@@ -42,6 +46,7 @@
         {
             "DOF": 50,
             "DOFInfinite": false,
+            "Id": "{fbda2907-15ec-4cd6-857a-131798b258ef}",
             "distribution": "uniform",
             "name": "δα",
             "nominalValue": 0,
@@ -51,6 +56,7 @@
         {
             "DOF": 2,
             "DOFInfinite": false,
+            "Id": "{0978ebdc-2e47-447e-9935-e5fc29e67d55}",
             "distribution": "uniform",
             "name": "δθ",
             "nominalValue": 0,
@@ -60,6 +66,7 @@
         {
             "DOF": 5,
             "DOFInfinite": false,
+            "Id": "{16d51da9-7d97-4d0d-9501-cc026e38af6f}",
             "distribution": "student's t",
             "name": "d1",
             "nominalValue": 0,
@@ -69,6 +76,7 @@
         {
             "DOF": 8,
             "DOFInfinite": false,
+            "Id": "{1d966e8e-58b6-4f31-9dd9-1644c32dcae9}",
             "distribution": "student's t",
             "name": "d2",
             "nominalValue": 0,
@@ -78,6 +86,7 @@
         {
             "DOF": 25,
             "DOFInfinite": true,
+            "Id": "{b8abec15-e5e1-4afc-ad20-4f0b4a23289d}",
             "distribution": "arcsine",
             "name": "Δ",
             "nominalValue": 0,
@@ -87,6 +96,7 @@
         {
             "DOF": 2,
             "DOFInfinite": true,
+            "Id": "{9eb748fa-2848-49d4-b0ad-a3033f5d6668}",
             "distribution": "none",
             "name": "L_nom",
             "nominalValue": 50000000,
@@ -96,6 +106,7 @@
     ],
     "outputParameters": [
         {
+            "Id": "{9082ccd8-b707-41c3-b391-c8168c4e66c1}",
             "confidence": 0.99,
             "formula": "L_S + D + d1 + d2 - L_S (δα * (θ0 + Δ)+ α_S * δθ) - L_nom",
             "monteCarlo": {
