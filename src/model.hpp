@@ -6,19 +6,19 @@
 #define MODEL_HPP
 
 #include "record.h"
-#include "undostack.h"
 #include <QAbstractTableModel>
 #include <QList>
 #include <QModelIndex>
 #include <QObject>
-#include <QtAssert>
+#include <QUuid>
+#include <QtMinMax>
 #include <type_traits>
 
 // Template implementation of the QAbstractTableModel class to store objects
 // derived from both Record and QObject
 
 template <typename T>
-class Model : public QAbstractTableModel, public UndoableModel {
+class Model : public QAbstractTableModel {
 
     static_assert(
         std::is_base_of_v<Record, T> && std::is_base_of_v<QObject, T>,
@@ -27,48 +27,6 @@ class Model : public QAbstractTableModel, public UndoableModel {
 
 public:
     Model( QObject *parent = nullptr ) : QAbstractTableModel { parent } {}
-
-
-    QJsonObject currentJson( const QUuid &id ) const override {
-        T *record { getRowById( id ) };
-        if ( record ) {
-            return record->toJson();
-        }
-        return QJsonObject {};
-    }
-
-
-    void applyDiff( const JsonDiff &diff ) override {
-        if ( diff.after.isEmpty() ) {
-            // Remove object that was added before
-            removeRowById( diff.objectId );
-        } else if ( diff.before.isEmpty() ) {
-            // Re-add object that was deleted before
-            T record { T::fromJson( diff.after ) };
-            appendRow( record );
-        } else {
-            // Object was modified — restore state
-            T *record { getRowById( diff.objectId ) };
-            if ( record ) {
-                record->updateFromJson( diff.after );
-                emitRowChanged( getRowIndex( record ) );
-            }
-        }
-    }
-
-
-    void recordWasUpdated( T *record ) {
-        // Used when a record is updated outside of the Model interface (i.e.
-        // in-place)
-        if ( record ) {
-            UndoStack::instance().snapshot(
-                record->getId(),
-                record->dataType(),
-                record->toJson()
-            );
-            emitRowChanged( getRowIndex( record ) );
-        }
-    }
 
 
     void clear() {
@@ -117,7 +75,7 @@ public:
     }
 
 
-    T *getRow( int row ) const {
+    T *getByRow( int row ) const {
         if ( row >= 0 && row < rowCount() ) {
             return mRecords.at( row );
         }
@@ -125,22 +83,43 @@ public:
     }
 
 
-    T *getRowById( const QUuid &id ) const {
-        for ( T *record : mRecords ) {
-            if ( record->getId() == id ) {
-                return record;
+    T *getById( const QUuid &id ) const {
+        if ( !id.isNull() ) {
+            for ( T *record : getAllRows() ) {
+                if ( record->getId() == id ) {
+                    return record;
+                }
             }
         }
         return nullptr;
     }
 
 
-    int getRowIndex( T *record ) const {
-        return mRecords.indexOf( record );
+    T *getByName( const QString &name ) const {
+        if ( name.size() > 0 ) {
+            for ( T *record : getAllRows() ) {
+                if ( record->getName().toLower() == name.toLower() ) {
+                    return record;
+                }
+            }
+        }
+        return nullptr;
     }
 
 
-    QList<T *> getAllRows() const {
+    int getRowIndex( const QUuid &id ) const {
+        if ( !id.isNull() ) {
+            for ( int row { 0 }; row < rowCount(); ++row ) {
+                if ( mRecords.at( row )->getId() == id ) {
+                    return row;
+                }
+            }
+        }
+        return -1;
+    }
+
+
+    const QList<T *> &getAllRows() const {
         return mRecords;
     }
 
@@ -157,37 +136,38 @@ public:
     }
 
 
-    void appendRow( const T &record ) {
-        UndoStack::instance().snapshot(
-            record.getId(),
-            record.dataType(),
-            QJsonObject {}    // empty = did not exist yet
-        );
-
-        beginInsertRows( QModelIndex(), rowCount(), rowCount() );
+    T* insertRow( int row, const T &record ) {
+        const int boundedRow { qBound( 0, row, rowCount() ) };
         T *newRecord { new T { record } };
         if ( !newRecord->parent() ) {
             // Record has no parent, set its parent to this
             newRecord->setParent ( this );
         }
-        mRecords.append( newRecord );
+        beginInsertRows( QModelIndex(), boundedRow, boundedRow );
+        mRecords.insert( boundedRow, newRecord );
         endInsertRows();
+        return mRecords.at( boundedRow );
     }
 
 
-    void updateRow( int row, const T &record ) {
+    T* appendRow( const T &record ) {
+        return insertRow( rowCount(), record );
+    }
+
+
+    T* updateByRow( int row, const T &record ) {
         if ( row >= 0 && row < rowCount() ) {
             T *existing { mRecords.at( row ) };
-
-            UndoStack::instance().snapshot(
-                existing->getId(),
-                existing->dataType(),
-                existing->toJson()
-            );
-
             *existing = record;
             emitRowChanged( row );
+            return existing;
         }
+        return nullptr;
+    }
+
+
+    T* updateById( const QUuid &id, const T &record ) {
+        return updateByRow( getRowIndex( id ), record );
     }
 
 
@@ -204,13 +184,6 @@ public:
         beginRemoveRows( QModelIndex(), row, last );
         for ( int i { last }; i >= row; --i ) {
             T *record { mRecords.at( i ) };
-
-            UndoStack::instance().snapshot(
-                record->getId(),
-                record->dataType(),
-                record->toJson()
-            );
-
             delete record;
             mRecords.remove( i );
         }
@@ -219,19 +192,13 @@ public:
     }
 
 
-    void removeRowById( const QUuid &id ) {
-        int row { getRowIndex( getRowById( id ) ) };
-        if ( row >= 0 ) removeRows( row, 1 );
+    bool removeById( const QUuid &id ) {
+        return removeRows( getRowIndex( id ), 1 );
     }
 
 
     bool nameIsPresent( const QString &name ) const {
-        for ( const T *record : getAllRows()) {
-            if ( record->getName().toLower() == name.toLower() ) {
-                return true;
-            }
-        }
-        return false;
+        return getByName( name );
     }
 
 
@@ -257,14 +224,7 @@ public:
         ) {
             return false;
         }
-        T *record { getRow( row ) };
-
-        UndoStack::instance().snapshot(
-            record->getId(),
-            record->dataType(),
-            record->toJson()
-        );
-
+        T *record { getByRow( row ) };
         record->set( column, value );
         emit dataChanged(
             index,
@@ -272,6 +232,14 @@ public:
             { Qt::DisplayRole, Qt::DecorationRole }
         );
         return true;
+    }
+
+
+    void emitIdChanged( const QUuid &id ) {
+        const int row { getRowIndex( id ) };
+        if ( row >= 0 && row < rowCount() ) {
+            emitRowChanged( row );
+        }
     }
 
 
