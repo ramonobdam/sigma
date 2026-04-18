@@ -10,7 +10,7 @@ BaseDialog {
     id: control
 
     function clearAndHide() {
-        calculation.clearProject()
+        calculation.userClearProject()
         hide()
     }
 
