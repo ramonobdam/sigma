@@ -8,12 +8,14 @@
 #include "correlation.h"
 #include "third_party/exprtk/exprtk.hpp"
 #include "mixedcopulasampler.h"
+#include "jsondiff.h"
 #include "modelcontrol.hpp"
 #include "montecarlo.h"
 #include "uncertaintycomponent.h"
 #include "parameter.h"
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLatin1StringView>
 #include <QList>
 #include <QObject>
 #include <QString>
@@ -48,40 +50,37 @@ public:
     DataType dataType() const override;
     MixedCopulaSampler getMixedCopulaSampler() const;
     MonteCarlo getMonteCarlo() const;
-    OutputParameter *addToModel( const bool &resetMonteCarlo = true );
+    OutputParameter *appendToModel();
     QJsonObject toJson() const override;
     QList<UncertaintyComponent> getComponents() const;
-    QList<double> getHistogramValues();
+    QList<double> getHistogramValues() const;
     QString componentsToCSVString() const;
-    QString getComponentContributionAsString( const int &row ) const;
-    QString getContributionAsString( const int &row, const int &column ) const;
-    QString getCorrelationContributionAsString( const int &row ) const;
-    QString getTotalContributionAsString( const int &row ) const;
+    QString getComponentContributionAsString( int row ) const;
+    QString getContributionAsString( int row, int column ) const;
+    QString getCorrelationContributionAsString( int row ) const;
+    QString getTotalContributionAsString( int row ) const;
     QString histogramToCSVString() const;
     QString resultsToCSVString() const;
     QString toCSVString() const;
-    QStringList getMonteCarloResults( const bool &csvMode = false ) const;
-    QStringList getResults( const bool &csvMode = false ) const;
+    QStringList getMonteCarloResults( bool csvMode = false ) const;
+    QStringList getResults( bool csvMode = false ) const;
     QVariant get( int column, bool csvMode = false ) const override;
-    QVariant getResult( const int &column, const bool &csvMode = false ) const;
+    QVariant getResult( int column, bool csvMode = false ) const;
     QVariant headerData( int column ) const override;
-    UncertaintyComponent *getComponent( const int &row ) const;
+    UncertaintyComponent *getComponent( int row ) const;
     bool getMonteCarloValid() const;
-    bool isInputParameterReferenced(
-        InputParameter * const &inputParameter
-    ) const;
-    bool updateSelectedModelRow();
+    bool isInputParameterReferenced( const QUuid &id ) const;
     double getCombinedStdUncertainty() const;
-    double getComponentContribution( const int &row ) const;
-    double getContribution( const int &row, const int &column ) const;
-    double getCorrelationContribution( const int &row ) const;
+    double getComponentContribution( int row ) const;
+    double getContribution( int row, int column ) const;
+    double getCorrelationContribution( int row ) const;
     double getCoverageFactor() const;
     double getExpandedUncertainty() const;
     double getHistogramXMax() const;
     double getHistogramXMin() const;
     double getHistogramYMax() const;
     double getMonteCarloConvergenceFactor() const;
-    double getTotalContribution( const int &row ) const;
+    double getTotalContribution( int row ) const;
     int columnCount() const override;
     int getEffectiveDOF() const;
     int getHistogramHigherIndex() const;
@@ -90,12 +89,12 @@ public:
     std::wstring getFormulaStdWString() const;
     void addComponent( const UncertaintyComponent &component );
     void clearComponents();
-    void resetResults( const bool &resetMonteCarlo = true );
+    void resetResults( bool resetMonteCarlo = true );
     void resetSymbolValues();
     void set( int column, const QVariant &value ) override;
     void setComponents( const QList<UncertaintyComponent> &components );
     void setError( const QString &error = "" );
-    void setLocked( const bool &locked ) override;
+    void setLocked( bool locked ) override;
     void setMixedCopulaSampler( const MixedCopulaSampler &mixedCopulaSampler );
     void setMonteCarlo( const MonteCarlo &monteCarlo );
     void setRandomSymbolValues();
@@ -104,42 +103,77 @@ public:
     void updateFromJson( const QJsonObject &json ) override;
 
     Q_INVOKABLE QString getConfidenceAsString() const;
-    Q_INVOKABLE QString getError( const bool &csvMode = false ) const;
-    Q_INVOKABLE QString getFormula( const bool &csvMode = false ) const;
-    Q_INVOKABLE QString getNominalValueAsString(
-        const bool &csvMode = false
-    ) const;
+    Q_INVOKABLE QString getError( bool csvMode = false ) const;
+    Q_INVOKABLE QString getFormula( bool csvMode = false ) const;
+    Q_INVOKABLE QString getNominalValueAsString( bool csvMode = false ) const;
     Q_INVOKABLE double getConfidence() const;
-    Q_INVOKABLE void compile( const bool &resetMonteCarlo = true );
-    Q_INVOKABLE void setConfidence( const double &confidence );
+    Q_INVOKABLE void compile( bool resetMonteCarlo = true );
+    Q_INVOKABLE void setConfidence( double confidence );
     Q_INVOKABLE void setFormula( const QString &formula );
     Q_INVOKABLE void setToSelected();
 
     static ModelControl<OutputParameter *> *getOutputModel();
     static OutputParameter fromJson(
         const QJsonObject &json,
-        const bool &addToModel = true,
+        bool appendToModel = true,
         QObject *parent = nullptr
     );
+    static OutputParameter *getByName( const QString &name );
+    static OutputParameter *getById( const QUuid &id );
+    static OutputParameter *getSelected();
     static QJsonArray parametersToJson();
+    static QJsonObject currentJson( const QUuid &id );
+    static const QList<OutputParameter *> &getAll();
     static QString parametersToCSVString();
+    static QUuid getSelectedId();
+    static bool remove( const QUuid &id );
+    static bool update( const QUuid &id, OutputParameter *parameter );
     static bool validName(
         const QString &name,
-        const bool &checkCurrentSelection = false
+        bool checkCurrentSelection = false
     );
+    static int getRowIndex( const QUuid &id );
+    static int getSelectedRow();
+    static void applyDiff( const JsonDiff &diff );
     static void clearModel();
     static void parametersFromJson(
         const QJsonArray &jsonArray,
         QObject *parent = nullptr
     );
-    static void setCollectVariables( const bool &collect );
+    static void onDisplayPrecisionChanged();
+    static void recompileAllExpressions( bool resetMonteCarlo = false );
+    static void setCollectVariables( bool collect );
+    static void setSelectionLocked( bool locked );
 
-    static QList<int> columnWidths;
-    static QList<int> resultColumnWidths;
-    static QString defaultName;
-    static QStringList headerLabels;
-    static QStringList resultLabels;
-    static parser_t parser;
+    static constexpr QLatin1StringView defaultName { "Y" };
+    inline static const QList<int> columnWidths { 120, 180, 55, 140 };
+    inline static const QList<int> resultColumnWidths {
+        100,
+        55,
+        120,
+        212,
+        198,
+        120,
+        155,
+        140
+    };
+    inline static const QStringList headerLabels {
+        "Output name",
+        "Measurement function",
+        "Unit",
+        "Level of confidence"
+    };
+    inline static const QStringList resultLabels {
+        "Output name",
+        "Unit",
+        "Output estimate",
+        "Combined standard uncertainty",
+        "Effective degrees of freedom",
+        "Coverage factor",
+        "Expanded uncertainty",
+        "Level of confidence"
+    };
+    inline static parser_t parser {};
 
 signals:
     void lockedChanged();
@@ -149,23 +183,15 @@ signals:
     void monteCarloStatusChanged();
 
 private:
-    QString getCombinedStdUncertaintyAsString(
-        const bool &csvMode = false
-    ) const;
-    QString getCoverageFactorAsString( const bool &csvMode = false ) const;
+    OutputParameter *insertIntoModel( int row );
+    QString getCombinedStdUncertaintyAsString( bool csvMode = false ) const;
+    QString getCoverageFactorAsString( bool csvMode = false ) const;
     QString getEffectiveDOFAsString() const;
-    QString getExpandedUncertaintyAsString( const bool &csvMode = false ) const;
+    QString getExpandedUncertaintyAsString( bool csvMode = false ) const;
     QString getVariables() const;
     bool allComponentsNormal() const;
     void createConnections();
 
-    const QString mEmptyExpressionString { "Measurement function is empty" };
-    const QString mInvalidNominalString { "Nominal output value is invalid: " };
-    const QString mNoInputParametersString { "No input parameters detected" };
-    const QString mRegExErrorReplace { "!" };
-    const QString mValidExpressionString { "Input parameters detected: " };
-    const QString variableSeparator { ", " };
-    const int mErrorCodeLength { 9 };
     MixedCopulaSampler mMixedCopulaSampler;
     MonteCarlo mMonteCarlo;
     QList<UncertaintyComponent> mComponents;
@@ -174,14 +200,36 @@ private:
     double mConfidence;
 
     static ModelControl<OutputParameter *> mOutputModel;
-    static QString mCombinedUncertaintyHeaderString;
-    static QString mConfidenceString;
-    static QString mErrorString;
-    static QString mFormulaString;
-    static QString mMonteCarloHeaderString;
-    static QString mMonteCarloString;
-    static QString mOutputParametersHeaderString;
-    static QString mUncertaintyComponentsHeaderString;
+
+    static constexpr QLatin1StringView sEmptyExpressionString {
+        "Measurement function is empty"
+    };
+    static constexpr QLatin1StringView sInvalidNominalString {
+        "Nominal output value is invalid: "
+    };
+    static constexpr QLatin1StringView sNoInputParametersString {
+        "No input parameters detected"
+    };
+    static constexpr QLatin1StringView sRegExErrorReplace { "!" };
+    static constexpr QLatin1StringView sValidExpressionString {
+        "Input parameters detected: "
+    };
+    static constexpr QLatin1StringView sCombinedUncertaintyHeaderString {
+        "Combined uncertainty:"
+    };
+    static constexpr QLatin1StringView sConfidenceString { "confidence" };
+    static constexpr QLatin1StringView sFormulaString { "formula" };
+    static constexpr QLatin1StringView sMonteCarloHeaderString {
+        "Monte Carlo simulation:"
+    };
+    static constexpr QLatin1StringView sMonteCarloString { "monteCarlo" };
+    static constexpr QLatin1StringView sOutputParametersHeaderString {
+        "Output parameters:"
+    };
+    static constexpr QLatin1StringView sUncertaintyComponentsHeaderString {
+        "Uncertainty components "
+    };
+    static constexpr int sErrorCodeLength { 9 };
 };
 
 #endif // OUTPUTPARAMETER_H
