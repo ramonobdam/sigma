@@ -11,7 +11,9 @@
 #include <QModelIndex>
 #include <QObject>
 #include <QString>
+#include <QUuid>
 #include <QVariant>
+#include <QtMinMax>
 
 // Class that combines a Model and LockableItemSelectionModel for type T
 template <typename pT>
@@ -52,19 +54,30 @@ public:
     }
 
 
-    T *appendRow( const T &parameter ) {
-        mModel.appendRow( parameter );
-        const int row { rowCount() - 1 };
-        selectRow( row );
-        return getRow( row );
+    T *appendRow( const T &record ) {
+        return insertRow( rowCount(), record );
     }
 
 
-    void updateSelectedRow( const T &parameter ) {
+    T *insertRow( int row, const T &record ) {
+        const int boundedRow { qBound( 0, row, rowCount() ) };
+        mModel.insertRow( boundedRow, record );
+        selectRow( boundedRow );   // The new row becomes the selected row
+        return getByRow( boundedRow );
+    }
+
+
+    T* updateSelectedRow( const T &record ) {
         const int row { selectedRow() };
         if ( row >= 0 ) {
-            updateRow( row, parameter );
+            return updateByRow( row, record );
         }
+        return nullptr;
+    }
+
+
+    void emitIdChanged( const QUuid &id ) {
+        mModel.emitIdChanged( id );
     }
 
 
@@ -78,34 +91,63 @@ public:
     }
 
 
-    void updateRow( int row, const T &parameter ) {
-        mModel.updateRow( row, parameter );
+    T* updateByRow( int row, const T &record ) {
+        return mModel.updateByRow( row, record );
     }
 
 
-    T *getRow( int row ) const {
-        return mModel.getRow( row );
+    T* updateById( const QUuid &id, const T &record ) {
+        return mModel.updateById( id, record );
     }
 
 
-    QList<T *> getAllRows() const {
+    T *getByRow( int row ) const {
+        return mModel.getByRow( row );
+    }
+
+
+    T *getById( const QUuid &id ) const {
+        return mModel.getById( id );
+    }
+
+
+    T *getByName( const QString &name ) const {
+        return mModel.getByName( name );
+    }
+
+
+    const QList<T *> &getAllRows() const {
         return mModel.getAllRows();
     }
 
 
-    T *getSelectedRow() const {
+    int getRowIndex( const QUuid &id ) const {
+        return mModel.getRowIndex( id );
+    }
+
+
+    T *getSelected() const {
         const int row = { selectedRow() };
         if ( row >= 0 ) {
-            return getRow( row );
+            return getByRow( row );
         }
         return nullptr;
     }
 
 
+    QUuid getSelectedId() const {
+        T *record { getSelected() };
+        if ( record ) {
+            return record->getId();
+        }
+        return QUuid();
+    }
+
+
     QVariant getSelectedItem( int column = 0 ) const {
-        T *parameter { getSelectedRow() };
-        if ( parameter ) {
-            return parameter->get( column );
+        T *record { getSelected() };
+        if ( record ) {
+            return record->get( column );
         }
         return QVariant();
     }
@@ -113,23 +155,30 @@ public:
 
     bool removeRow( int row ) {
         if ( row >= 0 && row < rowCount() ) {
-            mModel.removeRow( row );
-            // Update the selected row when the table is not empty, else clear
-            // the selection
-            if ( rowCount() > 0 ) {
-                if ( row - 1 >= 0 ) {
-                    selectRow( row - 1 );
+            if ( mModel.removeRow( row ) ) {
+                // Update the selected row when the table is not empty, else
+                // clear the selection
+                if ( rowCount() > 0 ) {
+                    if ( row - 1 >= 0 ) {
+                        selectRow( row - 1 );
+                    }
+                    else {
+                        selectRow( row );
+                    }
                 }
                 else {
-                    selectRow( row );
+                    clearSelection();
                 }
+                return true;
             }
-            else {
-                clearSelection();
-            }
-            return true;
         }
         return false;
+    }
+
+
+    bool removeById( const QUuid &id ) {
+        // Removed via removeRow() to also update the selection
+        return removeRow( getRowIndex( id ) );
     }
 
 
@@ -144,9 +193,9 @@ public:
 
 
     bool nameIsSelected( const QString &name ) const {
-        T *parameter { getSelectedRow() };
-        if ( parameter ) {
-            return parameter->getName().toLower() == name.toLower();
+        T *record { getSelected() };
+        if ( record ) {
+            return record->getName().toLower() == name.toLower();
         }
         return false;
     }
@@ -185,24 +234,16 @@ public:
     int selectedRow() const {
         // The row of the current index is used because the selection is
         // cleared in the QML TableView when the current index changes.
-        int row { -1 };
-        QModelIndex index = mSelection.currentIndex();
+        QModelIndex index { mSelection.currentIndex() };
         if ( index.isValid() ) {
-            row = index.row();
+            return index.row();
         }
-        return row;
+        return -1;
     }
 
 
     void setSelectionLocked( bool locked ) {
         mSelection.setSelectionLocked( locked );
-    }
-
-
-    void recordWasUpdated( T *record ) {
-        // Used when a record is updated outside of the Model interface (i.e.
-        // in-place)
-        mModel.recordWasUpdated( record );
     }
 
 
