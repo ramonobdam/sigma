@@ -64,7 +64,6 @@ BaseWindow {
 
     function addParam() {
         // Add a new OutputParameter
-        param.setLocked( false );
         control.setParam()
         calculation.addOutputParameter( param )
     }
