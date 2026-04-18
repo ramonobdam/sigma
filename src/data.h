@@ -20,11 +20,10 @@ public:
 
     QUuid getId() const override;
     void resetId();
-
-protected:
     void setId( const QUuid &id );
 
-    static constexpr QLatin1StringView mIdString { "Id" };
+protected:
+    static constexpr QLatin1StringView sIdString { "Id" };
 
 private:
     QUuid mId;
