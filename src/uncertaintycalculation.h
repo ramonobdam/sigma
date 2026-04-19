@@ -5,8 +5,10 @@
 #ifndef UNCERTAINTYCALCULATION_H
 #define UNCERTAINTYCALCULATION_H
 
+#include "applicationsettings.h"
 #include "budgetmodel.h"
 #include "correlation.h"
+#include "diffutil.h"
 #include "inputparameter.h"
 #include "modelcontrol.hpp"
 #include "outputparameter.h"
@@ -14,25 +16,27 @@
 #include <QAbstractItemModel>
 #include <QItemSelectionModel>
 #include <QJsonObject>
+#include <QLatin1StringView>
+#include <QList>
 #include <QObject>
 #include <QString>
 #include <QStringList>
 #include <QStringListModel>
 #include <QUrl>
+#include <QUuid>
 
 // The UncertaintyCalculation class orchestrates the different parts of the
-// uncertainty calculation and interfaces with the QML UI layer
+// uncertainty calculation, wraps data manipulation actions in transactions for
+// the undo/redo system, and interfaces with the QML UI layer
 class UncertaintyCalculation : public QObject {
     Q_OBJECT
 
 public:
-    UncertaintyCalculation( QObject *parent = nullptr );
-    ~UncertaintyCalculation();
+    UncertaintyCalculation(
+        QObject *parent = nullptr,
+        ApplicationSettings *appSettings = new ApplicationSettings()
+    );
 
-    Correlation *getSelectedCorrelation() const;
-    InputParameter *getSelectedInputParameter() const;
-    OutputParameter *getSelectedOutputParameter() const;
-    QStringList getDistributionStrings() const;
     QStringList getUnits() const;
 
     Q_INVOKABLE QList<int> getBudgetColumnWidths() const;
@@ -40,7 +44,7 @@ public:
     Q_INVOKABLE QList<int> getInputColumnWidths() const;
     Q_INVOKABLE QList<int> getOutputColumnWidths() const;
     Q_INVOKABLE QList<int> getResultsColumnWidths() const;
-    Q_INVOKABLE QString getMonteCarloHeader( const int &column ) const;
+    Q_INVOKABLE QString getMonteCarloHeader( int column ) const;
     Q_INVOKABLE QString getNewInputParameterName() const;
     Q_INVOKABLE QString getNewOutputParameterName() const;
     Q_INVOKABLE QString getSelectedCorrelationReferences() const;
@@ -68,26 +72,27 @@ public:
     Q_INVOKABLE const QStringListModel *distributionsModel() const;
     Q_INVOKABLE const QStringListModel *unitsModel() const;
     Q_INVOKABLE const ResultsModel *resultsItemModel() const;
-    Q_INVOKABLE void addCorrelation( Correlation *correlation );
-    Q_INVOKABLE void addInputParameter( InputParameter *parameter );
-    Q_INVOKABLE void addOutputParameter( OutputParameter *parameter );
+    Q_INVOKABLE void addCorrelation( const Correlation *correlation );
+    Q_INVOKABLE void addInputParameter( const InputParameter *parameter );
+    Q_INVOKABLE void addOutputParameter( const OutputParameter *parameter );
     Q_INVOKABLE void addUnit( const QString &name );
-    Q_INVOKABLE void clearProject( const bool &unsavedChanges = true );
     Q_INVOKABLE void newProject();
     Q_INVOKABLE void removeCorrelation();
     Q_INVOKABLE void removeInputParameter();
     Q_INVOKABLE void removeOutputParameter();
-    Q_INVOKABLE void resetDisplay();
     Q_INVOKABLE void runMonteCarlo();
     Q_INVOKABLE void stopMonteCarlo();
-    Q_INVOKABLE void updateCorrelation( Correlation *correlation );
-    Q_INVOKABLE void updateInputParameter( InputParameter *parameter );
-    Q_INVOKABLE void updateOutputParameter( OutputParameter *parameter );
+    Q_INVOKABLE void updateCorrelation( const Correlation *correlation );
+    Q_INVOKABLE void updateInputParameter( const InputParameter *parameter );
+    Q_INVOKABLE void updateOutputParameter( const OutputParameter *parameter );
+    Q_INVOKABLE void userClearProject();
+    Q_INVOKABLE void undo();
+    Q_INVOKABLE void redo();
 
     Q_PROPERTY(
         QList<double> histogramValues
         READ getHistogramValues
-        NOTIFY monteCarloValuesChanged
+        NOTIFY histogramValuesChanged
     )
     Q_PROPERTY(
         QString inputName
@@ -120,9 +125,19 @@ public:
         NOTIFY projectFilePathChanged
     )
     Q_PROPERTY(
+        bool canRedo
+        READ canRedo
+        NOTIFY canRedoChanged
+    )
+    Q_PROPERTY(
+        bool canUndo
+        READ canUndo
+        NOTIFY canUndoChanged
+    )
+    Q_PROPERTY(
         bool histogramValid
         READ getHistogramValid
-        NOTIFY monteCarloValuesChanged
+        NOTIFY histogramValuesChanged
     )
     Q_PROPERTY(
         bool outputLocked
@@ -142,17 +157,17 @@ public:
     Q_PROPERTY(
         double histogramXMax
         READ getHistogramXMax
-        NOTIFY monteCarloValuesChanged
+        NOTIFY histogramValuesChanged
     )
     Q_PROPERTY(
         double histogramXMin
         READ getHistogramXMin
-        NOTIFY monteCarloValuesChanged
+        NOTIFY histogramValuesChanged
     )
     Q_PROPERTY(
         double histogramYMax
         READ getHistogramYMax
-        NOTIFY monteCarloValuesChanged
+        NOTIFY histogramValuesChanged
     )
     Q_PROPERTY(
         double monteCarloConvergenceFactor
@@ -162,26 +177,28 @@ public:
     Q_PROPERTY(
         int histogramHigherIndex
         READ getHistogramHigherIndex
-        NOTIFY monteCarloValuesChanged
+        NOTIFY histogramValuesChanged
     )
     Q_PROPERTY(
         int histogramLowerIndex
         READ getHistogramLowerIndex
-        NOTIFY monteCarloValuesChanged
+        NOTIFY histogramValuesChanged
     )
 
 public slots:
     void lockItemSelectionModels();
     void onMonteCarloFinished();
-    void setOutputRow();
+    void onTransactionApplied();
     void unsavedChanges();
 
 signals:
+    void canUndoChanged();
+    void canRedoChanged();
     void inputParameterChanged();
     void monteCarloConvergenceFactorChanged();
     void monteCarloResultsChanged();
     void monteCarloResultsListChanged();
-    void monteCarloValuesChanged();
+    void histogramValuesChanged();
     void outputLockedChanged();
     void projectFilePathChanged();
     void resultsChanged();
@@ -198,11 +215,14 @@ private:
         const QStringList &references
     ) const;
     QString projectToCSVString() const;
+    QStringList getDistributionStrings() const;
     QStringList getInputParameterReferences(
-        InputParameter * const &inputParameter
+        const InputParameter *inputParameter
     ) const;
     QStringList getMonteCarloResults() const;
     QUrl getProjectFilePath() const;
+    bool canRedo() const;
+    bool canUndo() const;
     bool getHistogramValid() const;
     bool getOutputLocked() const;
     bool getOutputValid() const;
@@ -213,32 +233,45 @@ private:
     double getMonteCarloConvergenceFactor() const;
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
+    void clearProject( bool unsavedChanges = true );
     void connectToOutputParameter( const OutputParameter *parameter);
+    void createConnections();
     void emitAllResultsChanged();
-    void emitOutputModelsAboutToBeReset();
-    void emitOutputModelsReset();
     void projectFromJson( const QJsonObject &json );
-    void recompileAllExpressions( bool resetMonteCarlo = false );
     void recompileExpressions(
-        const bool recompileInvalidExpressions = false,
-        InputParameter *inputParameterA = nullptr,
-        InputParameter *inputParameterB = nullptr
+        DiffUtil &diffUtil,
+        const bool recompileInvalidExpressions,
+        const QUuid inputParamAId = QUuid(),
+        const QUuid inputParamBId = QUuid()
     );
+    void registerDiffUtilDataTypeMethods();
+    void resetDisplay();
     void resetProjectFilePath();
     void setProjectFilePath( const QUrl &projectFilePath );
-    void setUnsavedChanges( const bool &unsavedChanges );
+    void setUnsavedChanges(  bool unsavedChanges );
     void updateUnits();
 
-    const QString mCorrelationsString { "correlations" };
-    const QString mCSVFailedString { "CSV file '%1' could not be saved." };
-    const QString mInputParametersString { "inputParameters" };
-    const QString mLoadFailedString {
+    static constexpr QLatin1StringView sCorrelationsString {
+        "correlations"
+    };
+    static constexpr QLatin1StringView sCSVFailedString {
+        "CSV file '%1' could not be saved."
+    };
+    static constexpr QLatin1StringView sInputParametersString {
+        "inputParameters"
+    };
+    static constexpr QLatin1StringView sLoadFailedString {
         "Project file '%1' could not be loaded."
     };
-    const QString mOutputParametersString { "outputParameters" };
-    const QString mSaveFailedString { "Project file '%1' could not be saved." };
-    const QString mVersionString { "Sigma version" };
-    const QStringList mDefaultUnits {
+    static constexpr QLatin1StringView sOutputParametersString {
+        "outputParameters"
+    };
+    static constexpr QLatin1StringView sSaveFailedString {
+        "Project file '%1' could not be saved."
+    };
+    static constexpr QLatin1StringView sVersionString { "Sigma version" };
+    static constexpr int sMaxNameAttempts { 100 };
+    inline static const QStringList sDefaultUnits {
         "A",
         "°F",
         "cd",
@@ -271,18 +304,17 @@ private:
         "°C",
         "%"
     };
-    const int maxNameAttempts { 100 };
+
+    ApplicationSettings *mAppSettings;
     BudgetModel mBudgetModel;
-    ModelControl<Correlation *> *mCorrelationModel;
-    ModelControl<InputParameter *> *mInputParametersModel;
-    ModelControl<OutputParameter *> *mOutputParametersModel;
+    // Persistent DiffUtil for Monte Carlo — begin/commit in different methods:
+    DiffUtil mDiffUtil;
     QStringList mUnits;
     QStringListModel mDistributionModel;
     QStringListModel mUnitsModel;
     QUrl mProjectFilePath;
     ResultsModel mResultsModel;
     bool mUnsavedChanges;
-    int mOutputRow;
 };
 
 #endif // UNCERTAINTYCALCULATION_H
