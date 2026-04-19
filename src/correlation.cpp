@@ -6,30 +6,17 @@
 #include "inputparameter.h"
 #include "settings.h"
 #include "stringutils.h"
+#include <QtAssert>
 
 
-QStringList Correlation::headerLabels = {
-    "Input parameter A",
-    "Input parameter B",
-    "Correlation coefficient"
-};
-
-QList<int> Correlation::columnWidths = { 155, 155, 158 };
-
-ModelControl<Correlation *> Correlation::mCorrelationModel = \
-    ModelControl<Correlation *>();
-
-QString Correlation::mCorrelationsHeaderString = "Correlations:";
-QString Correlation::mCorrelationString = "correlation";
-QString Correlation::mIdInputAString = "IdInputParameterA";
-QString Correlation::mIdInputBString = "IdInputParameterB";
+ModelControl<Correlation *> Correlation::mCorrelationModel = {};
 
 
 Correlation::Correlation(
     QObject *parent,
     InputParameter *inputParameterA,
     InputParameter *inputParameterB,
-    const double &correlation
+    double correlation
 )   :   QObject { parent },
         Data {},
         mInputParameterA { inputParameterA },
@@ -71,18 +58,8 @@ bool Correlation::operator== ( const Correlation &cor ) const {
     // InputParameters (in arbitrary order) and their correlation coefficient is
     // equal.
     return (
-        mCorrelation == cor.getCorrelation() &&
-        (
-            (
-                mInputParameterA == cor.getInputParameterA() &&
-                mInputParameterB == cor.getInputParameterB()
-            )
-            ||
-            (
-                mInputParameterA == cor.getInputParameterB() &&
-                mInputParameterB == cor.getInputParameterA()
-            )
-        )
+        sameInputParameters( this, &cor ) &&
+        mCorrelation == cor.getCorrelation()
     );
 }
 
@@ -92,21 +69,9 @@ bool Correlation::operator!= ( const Correlation &cor ) const {
 }
 
 
-Correlation * Correlation::addToModel() {
-    if ( correlationIsUnique( this ) ) {
-        return mCorrelationModel.appendRow( *this );
-    }
-    return nullptr;
-}
-
-
-Correlation * Correlation::updateSelectedModelRow() {
-    Correlation *currentCorrelation { mCorrelationModel.getSelectedRow() };
-    if ( currentCorrelation ) {
-        mCorrelationModel.updateSelectedRow( *this );
-        return currentCorrelation;
-    }
-    return nullptr;
+Correlation * Correlation::appendToModel() {
+    // Append this Correlation to the model if it is unique
+    return insertIntoModel( mCorrelationModel.rowCount() );
 }
 
 
@@ -127,20 +92,20 @@ InputParameter * Correlation::getInputParameterB() const {
 
 QJsonObject Correlation::toJson() const {
     QJsonObject json {};
-    json[ mIdString ] = getId().toString();
-    json[ mIdInputAString ] = getInputParameterAId().toString();
-    json[ mIdInputBString ] = getInputParameterBId().toString();
-    json[ mCorrelationString ] = getCorrelation();
+    json[ sIdString ] = getId().toString();
+    json[ sIdInputAString ] = getInputParameterAId().toString();
+    json[ sIdInputBString ] = getInputParameterBId().toString();
+    json[ sCorrelationString ] = getCorrelation();
     return json;
 }
 
 
 QString Correlation::getName( bool csvMode ) const {
     // A corralation does not have a name, return the name of the two
-    // InputParameters as unique identifier
+    // InputParameters
     return getInputParameterNameA( csvMode ) +
            "_" +
-           getInputParameterNameB( csvMode);
+           getInputParameterNameB( csvMode );
 }
 
 
@@ -191,129 +156,21 @@ QUuid Correlation::getInputParameterBId() const {
 }
 
 
-void Correlation::setInputParameterAId( const QUuid &id ) {
-    mInputParameterAId = id;
-}
-
-
-void Correlation::setInputParameterBId( const QUuid &id ) {
-    mInputParameterBId = id;
-}
-
-
-void Correlation::updateFromJson( const QJsonObject &json ) {
-    if ( const QJsonValue v = json[ mIdString ]; v.isString() ) {
-        setId( QUuid::fromString( v.toString() ) );
-    }
-    if ( const QJsonValue v = json[ mIdInputAString ]; v.isString() ) {
-        setInputParameterAId( QUuid::fromString( v.toString() ) );
-    }
-    if ( const QJsonValue v = json[ mIdInputBString ]; v.isString() ) {
-        setInputParameterBId( QUuid::fromString( v.toString() ) );
-    }
-    if ( const QJsonValue v = json[ mCorrelationString ]; v.isDouble() ) {
-        setCorrelation( v.toDouble() );
-    }
-}
-
-
-QString Correlation::getInputParameterNameA( const bool csvMode ) const {
-    if ( mInputParameterA ) {
-        return mInputParameterA->getName( csvMode );
-    }
-    else {
-        return QString( "" );
-    }
-}
-
-
-QString Correlation::getInputParameterNameB( const bool csvMode ) const {
-    if ( mInputParameterB ) {
-        return mInputParameterB->getName( csvMode );
-    }
-    else {
-        return QString( "" );
-    }
-}
-
-
-bool Correlation::isUnique( const bool &checkCurrentSelection ) const {
-    return correlationIsUnique( this, checkCurrentSelection );
-}
-
-
-bool Correlation::setInputParameterAByName( const QString &name ) {
-    InputParameter *parameter {
-        InputParameter::getInputParameterByName( name )
-    };
-    if ( parameter ) {
-        setInputParameterA( parameter );
-        setInputParameterAId( parameter->getId() );
-        return true;
-    }
-    return false;
-}
-
-
-bool Correlation::setInputParameterBByName( const QString &name ) {
-    InputParameter *parameter {
-        InputParameter::getInputParameterByName( name )
-    };
-    if ( parameter ) {
-        setInputParameterB( parameter );
-        setInputParameterBId( parameter->getId() );
-        return true;
-    }
-    return false;
-}
-
-
-double Correlation::getCorrelation() const {
-    return mCorrelation;
-}
-
-
-void Correlation::setCorrelation( const double &correlation ) {
-    mCorrelation = correlation;
-}
-
-
-void Correlation::setToSelected() {
-    Correlation * const correlation { mCorrelationModel.getSelectedRow() };
-    if ( correlation ) {
-        *this = *correlation;
-    }
-    else {
-        reset();
-    }
-}
-
-
 bool Correlation::getValid() const {
     // Both InputParameters must be different and the coefficient between -1 and
     // 1
-    if (
-        mInputParameterA &&
-        mInputParameterB &&
-        mInputParameterA != mInputParameterB &&
+    return (
+        !mInputParameterAId.isNull() &&
+        !mInputParameterBId.isNull() &&
+        mInputParameterAId != mInputParameterBId &&
         mCorrelation >= -1. &&
         mCorrelation <= 1.
-        ) {
-        return true;
-    }
-    return false;
+    );
 }
 
 
 int Correlation::columnCount() const {
     return headerLabels.size();
-}
-
-
-void Correlation::reconnectInputParameters() {
-    // Set the pointers to both the InputParameters based on the Ids
-    setInputParameterAById( getInputParameterAId() );
-    setInputParameterBById( getInputParameterBId() );
 }
 
 
@@ -345,14 +202,9 @@ void Correlation::setInputParameterA( InputParameter *inputParameter ) {
 }
 
 
-void Correlation::setInputParameterB( InputParameter *inputParameter ) {
-    mInputParameterB = inputParameter;
-    mInputParameterBId = inputParameter ? inputParameter->getId() : QUuid {};
-}
-
 void Correlation::setInputParameterAById( const QUuid &id ) {
     if ( !id.isNull( ) ) {
-        InputParameter *param { InputParameter::getInputParameterById( id ) };
+        InputParameter *param { InputParameter::getById( id ) };
         if ( param ) {
             setInputParameterA( param );
         }
@@ -360,9 +212,20 @@ void Correlation::setInputParameterAById( const QUuid &id ) {
 }
 
 
+void Correlation::setInputParameterAId( const QUuid &id ) {
+    mInputParameterAId = id;
+}
+
+
+void Correlation::setInputParameterB( InputParameter *inputParameter ) {
+    mInputParameterB = inputParameter;
+    mInputParameterBId = inputParameter ? inputParameter->getId() : QUuid {};
+}
+
+
 void Correlation::setInputParameterBById( const QUuid &id ) {
     if ( !id.isNull( ) ) {
-        InputParameter *param { InputParameter::getInputParameterById( id ) };
+        InputParameter *param { InputParameter::getById( id ) };
         if ( param) {
             setInputParameterB( param );
         }
@@ -370,25 +233,106 @@ void Correlation::setInputParameterBById( const QUuid &id ) {
 }
 
 
+void Correlation::setInputParameterBId( const QUuid &id ) {
+    mInputParameterBId = id;
+}
+
+
+void Correlation::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ sIdString ]; v.isString() ) {
+        setId( QUuid::fromString( v.toString() ) );
+    }
+    if ( const QJsonValue v = json[ sIdInputAString ]; v.isString() ) {
+        setInputParameterAId( QUuid::fromString( v.toString() ) );
+    }
+    if ( const QJsonValue v = json[ sIdInputBString ]; v.isString() ) {
+        setInputParameterBId( QUuid::fromString( v.toString() ) );
+    }
+    if ( const QJsonValue v = json[ sCorrelationString ]; v.isDouble() ) {
+        setCorrelation( v.toDouble() );
+    }
+}
+
+
+QString Correlation::getInputParameterNameA( bool csvMode ) const {
+    return mInputParameterA ? mInputParameterA->getName( csvMode ) : "";
+}
+
+
+QString Correlation::getInputParameterNameB( bool csvMode ) const {
+    return mInputParameterB ? mInputParameterB->getName( csvMode ) : "";
+
+}
+
+
+bool Correlation::isUnique( bool checkCurrentSelection ) const {
+    return correlationIsUnique( this, checkCurrentSelection );
+}
+
+
+bool Correlation::setInputParameterAByName( const QString &name ) {
+    InputParameter *parameter { InputParameter::getByName( name ) };
+    if ( parameter ) {
+        setInputParameterA( parameter );
+        return true;
+    }
+    return false;
+}
+
+
+bool Correlation::setInputParameterBByName( const QString &name ) {
+    InputParameter *parameter { InputParameter::getByName( name ) };
+    if ( parameter ) {
+        setInputParameterB( parameter );
+        return true;
+    }
+    return false;
+}
+
+
+double Correlation::getCorrelation() const {
+    return mCorrelation;
+}
+
+
+void Correlation::setCorrelation( double correlation ) {
+    mCorrelation = correlation;
+}
+
+
+void Correlation::setToSelected() {
+    // Set this Correlation to the values of the selected Correlation, or reset
+    // is no Correlation is selected
+    const Correlation *correlation { mCorrelationModel.getSelected() };
+    if ( correlation ) {
+        *this = *correlation;
+    }
+    else {
+        reset();
+    }
+}
+
+Correlation * Correlation::getById( const QUuid &id ) {
+    return mCorrelationModel.getById( id );
+}
+
+
 Correlation * Correlation::getCorrelation(
-    InputParameter *inputParamA,
-    InputParameter *inputParamB
+    const QUuid &idA,
+    const QUuid &idB
 ) {
-    // Return a pointer to the correlation between inputParameterA and
-    // inputParameterB if it exists
-    if ( inputParamA && inputParamB ) {
-        QList<Correlation *> correlations { mCorrelationModel.getAllRows() };
-        for ( Correlation *correlation : correlations ) {
-            InputParameter *corParA { correlation->getInputParameterA() };
-            InputParameter *corParB { correlation->getInputParameterB() };
-            if ( corParA && corParB ) {
-                if (
-                    ( inputParamA == corParA && inputParamB == corParB ) ||
-                    ( inputParamA == corParB && inputParamB == corParA )
-                ) {
-                    // Correlation found
-                    return correlation;
-                }
+    // Return a pointer to the correlation between the InputParameters with idA
+    // and idB, if it exists
+    if ( !idA.isNull() && !idB.isNull() ) {
+        for ( Correlation *correlation : getAll() ) {
+            QUuid corParAid { correlation->getInputParameterAId() };
+            QUuid corParBid { correlation->getInputParameterBId() };
+            if (
+                ( idA == corParAid && idB == corParBid ) ||
+                ( idA == corParBid && idB == corParAid )
+            ) {
+                // Correlation found
+                return correlation;
             }
         }
     }
@@ -396,16 +340,21 @@ Correlation * Correlation::getCorrelation(
 }
 
 
+Correlation * Correlation::getSelected() {
+    return mCorrelationModel.getSelected();
+}
+
+
 Correlation Correlation::fromJson(
     const QJsonObject &json,
-    const bool &addToModel,
+    bool appendToModel,
     QObject *parent
 ) {
     Correlation correlation { Correlation( parent ) };
     correlation.updateFromJson( json );
 
-    if ( addToModel ) {
-        correlation.addToModel();
+    if ( appendToModel ) {
+        correlation.appendToModel();
     }
 
     return correlation;
@@ -419,38 +368,81 @@ ModelControl<Correlation *> * Correlation::getCorrelationModel() {
 
 QJsonArray Correlation::correlationsToJson() {
     QJsonArray correlationsArray {};
-    for ( Correlation * &correlation : mCorrelationModel.getAllRows() ) {
+    for ( const Correlation *correlation : getAll() ) {
         correlationsArray.append( correlation->toJson() );
     }
     return correlationsArray;
 }
 
 
+QJsonObject Correlation::currentJson( const QUuid &id ) {
+    Correlation *correlation { getById( id ) };
+    return correlation ? correlation->toJson() : QJsonObject {};
+}
+
+
+const QList<Correlation *> & Correlation::getAll() {
+    return mCorrelationModel.getAllRows();
+}
+
+
+QList<Correlation *> Correlation::getCorrelationsForInputParameter(
+    const QUuid &id
+) {
+    // Return the correlations that reference the InputParameter with id
+    QList<Correlation *> result {};
+    if ( !id.isNull() ) {
+        for ( Correlation *correlation : getAll() ) {
+            if (
+                correlation->getInputParameterAId() == id ||
+                correlation->getInputParameterBId() == id
+            ) {
+                result.append( correlation );
+            }
+        }
+    }
+    return result;
+}
+
+
 QString Correlation::correlationsToCSVString() {
-    QString result { mCorrelationsHeaderString + StringUtils::endl };
-    result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
-    for ( Correlation * &correlation : mCorrelationModel.getAllRows() ) {
+    QString result { sCorrelationsHeaderString + StringUtils::endl };
+    result += headerLabels.join( StringUtils::csvSeparator ) +
+              StringUtils::endl;
+    for ( const Correlation *correlation : getAll() ) {
         result += correlation->toCSVString() + StringUtils::endl;
     }
     return result;
 }
 
 
+QUuid Correlation::getSelectedId() {
+    return mCorrelationModel.getSelectedId();
+}
+
+
 bool Correlation::correlationIsUnique(
     const Correlation *newCorrelation,
-    const bool &checkCurrentSelection
+    bool checkCurrentSelection
 ) {
     // Is the same correlation already stored in the model? When
     // checkCurrentSelection = True, the correlation is allowed to be the same
-    // as the currently selected one.
-    InputParameter *newParamA { newCorrelation->getInputParameterA() };
-    InputParameter *newParamB { newCorrelation->getInputParameterB() };
-    Correlation *correlation { getCorrelation( newParamA, newParamB) };
-    Correlation *selectedCorrelation { mCorrelationModel.getSelectedRow() };
+    // as the currently selected one (i.e. can use the same InputParameters).
+    Correlation *correlation {
+        getCorrelation(
+            newCorrelation->getInputParameterAId(),
+            newCorrelation->getInputParameterBId()
+        )
+    };
+    Correlation *selectedCorrelation { mCorrelationModel.getSelected() };
 
     if ( correlation && !(
                             checkCurrentSelection &&
-                            correlation == selectedCorrelation
+                            selectedCorrelation &&
+                            sameInputParameters(
+                                correlation,
+                                selectedCorrelation
+                            )
                         )
     ) {
         return false;
@@ -459,50 +451,81 @@ bool Correlation::correlationIsUnique(
 }
 
 
-bool Correlation::inputParameterCorrelated( InputParameter *inputParameter ) {
-    // Is the InputParameter part of the correlations table?
-    QList<Correlation *> correlations { mCorrelationModel.getAllRows() };
-    for ( Correlation *correlation : correlations ) {
-        InputParameter *paramA { correlation->getInputParameterA() };
-        InputParameter *paramB { correlation->getInputParameterB() };
-        if (
-            ( paramA && paramA == inputParameter ) ||
-            ( paramB && paramB == inputParameter )
-        ) {
-            return true;
-        }
+bool Correlation::remove( const QUuid &id ) {
+    bool correlationRemoved { mCorrelationModel.removeById( id ) };
+    Q_ASSERT_X(
+        correlationRemoved,
+        "Correlation::remove",
+        "Correlation could not be removed"
+    );
+    return correlationRemoved;
+}
+
+
+bool Correlation::update( const QUuid &id, Correlation *correlation ) {
+    // The new correlation has to be unique or use the same InputParameters as
+    // the original correlation
+    Correlation *originalCorrelation { getById( id ) };
+    Q_ASSERT_X(
+        originalCorrelation,
+        "Correlation::update",
+        "Original correlation not found"
+    );
+    if (
+        correlation &&
+        originalCorrelation &&
+        (
+            correlationIsUnique( correlation, false ) ||
+            sameInputParameters( correlation, originalCorrelation )
+        )
+    ) {
+        bool correlationUpdated =
+            mCorrelationModel.updateById( id, *correlation );
+        Q_ASSERT_X(
+            correlationUpdated,
+            "Correlation::update",
+            "Correlation could not be updated"
+        );
+        return correlationUpdated;
     }
     return false;
 }
 
 
-bool Correlation::removeSelectedModelRow() {
-    Correlation *correlation { mCorrelationModel.getSelectedRow() };
-    if ( correlation ) {
-        return mCorrelationModel.removeSelectedRow();
-    }
-    return false;
+int Correlation::getRowIndex( const QUuid &id ) {
+    return mCorrelationModel.getRowIndex( id );
 }
 
 
-void Correlation::removeCorrelatedInputParameter(
-    InputParameter *inputParameter
-) {
-    // Remove all correlations that contain the InputParameter
-    if ( inputParameter ) {
-        for ( int row { mCorrelationModel.rowCount() - 1 }; row >= 0; --row ) {
-            Correlation *correlation { mCorrelationModel.getRow( row ) };
-            if ( correlation ) {
-                InputParameter *paramA { correlation->getInputParameterA() };
-                InputParameter *paramB { correlation->getInputParameterB() };
-                if (
-                    ( paramA && paramA == inputParameter ) ||
-                    ( paramB && paramB == inputParameter )
-                ) {
-                    mCorrelationModel.removeRow( row );
-                }
-            }
-        }
+void Correlation::applyDiff( const JsonDiff &diff ) {
+    if ( diff.after.isEmpty() ) {
+        // Target state is empty — remove from model
+        bool correlationRemoved { remove( diff.objectId ) };
+        Q_ASSERT_X(
+            correlationRemoved,
+            "Correlation::applyDiff",
+            "After empty - Correlation could not be removed"
+        );
+    } else if ( diff.before.isEmpty() ) {
+        // Before state is empty — insert in the previous position
+        Correlation correlation { fromJson( diff.after, false ) };
+        bool correlationInserted = correlation.insertIntoModel( diff.row );
+        Q_ASSERT_X(
+            correlationInserted,
+            "Correlation::applyDiff",
+            "Before empty - Correlation could not be inserted"
+        );
+    } else {
+        // Update the existing correlation in the model
+        Correlation afterCorrelation { *( getById( diff.objectId ) ) };
+        afterCorrelation.updateFromJson( diff.after );
+        bool correlationUpdated { update( diff.objectId, &afterCorrelation ) };
+        Q_ASSERT_X(
+            correlationUpdated,
+            "Correlation::applyDiff",
+            "Update - Correlation could not be updated"
+        );
+
     }
 }
 
@@ -522,11 +545,72 @@ void Correlation::correlationsFromJson(
 }
 
 
+void Correlation::notifyInputParameterChanged( const QUuid &id ) {
+    // Emit the 'dataChanged' signal for rows containing a Correlation that
+    // references the changed InputParameter
+    QList<Correlation *> corrs { getCorrelationsForInputParameter( id ) };
+    for ( Correlation *correlation : corrs ) {
+        mCorrelationModel.emitIdChanged( correlation->getId() );
+    }
+}
+
+
+void Correlation::onDisplayPrecisionChanged() {
+    mCorrelationModel.emitAllDataChanged();
+}
+
+
 void Correlation::reconnectAllCorrelations() {
     // Set the pointers to both the InputParameters based on the Ids for all
     // stored correlations. Needed when restoring the model states from Json.
-    QList<Correlation *> correlations { mCorrelationModel.getAllRows() };
-    for ( Correlation *correlation : correlations ) {
+    for ( Correlation *correlation : getAll() ) {
         correlation->reconnectInputParameters();
     }
+}
+
+
+void Correlation::setSelectionLocked( bool locked ) {
+    mCorrelationModel.setSelectionLocked( locked );
+}
+
+
+Correlation * Correlation::insertIntoModel( int row ) {
+    // Insert this Correlation into the model at row if it is unique
+    if ( correlationIsUnique( this ) ) {
+        const int boundedRow { qBound( 0, row, mCorrelationModel.rowCount() ) };
+        return mCorrelationModel.insertRow( boundedRow, *this );
+    }
+    return nullptr;
+}
+
+
+void Correlation::reconnectInputParameters() {
+    // Set the pointers to both the InputParameters based on the Ids
+    setInputParameterAById( mInputParameterAId );
+    setInputParameterBById( mInputParameterBId );
+}
+
+
+bool Correlation::sameInputParameters(
+    const Correlation *corrA,
+    const Correlation *corrB
+) {
+    // Do two correlations reference the same InputParameters (in arbitrary
+    // order)
+    if ( corrA && corrB ) {
+        if (
+            (
+                corrA->getInputParameterAId() == corrB->getInputParameterAId() &&
+                corrA->getInputParameterBId() == corrB->getInputParameterBId()
+            )
+            ||
+            (
+                corrA->getInputParameterAId() == corrB->getInputParameterBId() &&
+                corrA->getInputParameterBId() == corrB->getInputParameterAId()
+            )
+        ) {
+            return true;
+        }
+    }
+    return false;
 }

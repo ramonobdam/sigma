@@ -8,9 +8,11 @@
 #include "data.h"
 #include "datatype.h"
 #include "inputparameter.h"
+#include "jsondiff.h"
 #include "modelcontrol.hpp"
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLatin1StringView>
 #include <QList>
 #include <QObject>
 #include <QVariant>
@@ -19,7 +21,8 @@
 #include <QUuid>
 #include <QtQmlIntegration/qqmlintegration.h>
 
-// Class that defines the correlation coefficient between 2 InputParameters.
+// Class that stores the correlation coefficient between 2 InputParameters and
+// defines the static ModelControl object that stores the correlations
 class Correlation : public QObject, public Data {
     Q_OBJECT
     QML_ELEMENT
@@ -29,16 +32,15 @@ public:
         QObject *parent = nullptr,
         InputParameter *inputParameterA = nullptr,
         InputParameter *inputParameterB = nullptr,
-        const double &correlation = 0.
+        double correlation = 0.
     );
     Correlation( const Correlation &cor );
 
-    Correlation& operator= ( const Correlation &cor );
+    Correlation & operator= ( const Correlation &cor );
     bool operator== ( const Correlation &cor ) const;
     bool operator!= ( const Correlation &cor ) const;
 
-    Correlation *addToModel();
-    Correlation *updateSelectedModelRow();
+    Correlation *appendToModel();
     DataType dataType() const override;
     InputParameter *getInputParameterA() const;
     InputParameter *getInputParameterB() const;
@@ -49,67 +51,78 @@ public:
     QVariant headerData( int column ) const override;
     QUuid getInputParameterAId() const;
     QUuid getInputParameterBId() const;
-    void setInputParameterAId( const QUuid &id );
-    void setInputParameterBId( const QUuid &id );
-
-    void updateFromJson( const QJsonObject &json ) override;
-
-    Q_INVOKABLE QString getInputParameterNameA(
-        const bool csvMode = false
-    ) const;
-    Q_INVOKABLE QString getInputParameterNameB(
-        const bool csvMode = false
-    ) const;
-    Q_INVOKABLE bool isUnique(
-        const bool &checkCurrentSelection = false
-    ) const;
-    Q_INVOKABLE bool setInputParameterAByName( const QString &name );
-    Q_INVOKABLE bool setInputParameterBByName( const QString &name );
-    Q_INVOKABLE double getCorrelation() const;
-    Q_INVOKABLE void setCorrelation( const double &correlation = 0. );
-    Q_INVOKABLE void setToSelected();
-
     bool getValid() const override;
     int columnCount() const override;
-    void reconnectInputParameters();
     void reset();
     void set( int column, const QVariant &value ) override;
     void setInputParameterA( InputParameter *inputParameter = nullptr );
-    void setInputParameterB( InputParameter *inputParameter = nullptr );
     void setInputParameterAById( const QUuid &id );
+    void setInputParameterAId( const QUuid &id );
+    void setInputParameterB( InputParameter *inputParameter = nullptr );
     void setInputParameterBById( const QUuid &id );
+    void setInputParameterBId( const QUuid &id );
+    void updateFromJson( const QJsonObject &json ) override;
 
-    static Correlation *getCorrelation(
-        InputParameter *inputParamA,
-        InputParameter *inputParamB
-    );
+    Q_INVOKABLE QString getInputParameterNameA( bool csvMode = false ) const;
+    Q_INVOKABLE QString getInputParameterNameB( bool csvMode = false ) const;
+    Q_INVOKABLE bool isUnique( bool checkCurrentSelection = false ) const;
+    Q_INVOKABLE bool setInputParameterAByName( const QString &name );
+    Q_INVOKABLE bool setInputParameterBByName( const QString &name );
+    Q_INVOKABLE double getCorrelation() const;
+    Q_INVOKABLE void setCorrelation( double correlation = 0. );
+    Q_INVOKABLE void setToSelected();
+
+    static Correlation *getById( const QUuid &id );
+    static Correlation *getCorrelation( const QUuid &idA, const QUuid &idB );
+    static Correlation *getSelected();
     static Correlation fromJson(
         const QJsonObject &json,
-        const bool &addToModel = true,
+        bool appendToModel = true,
         QObject *parent = nullptr
     );
     static ModelControl<Correlation *> *getCorrelationModel();
     static QJsonArray correlationsToJson();
-    static QList<int> columnWidths;
+    static QJsonObject currentJson( const QUuid &id );
+    static const QList<Correlation *> &getAll();
+    static QList<Correlation *> getCorrelationsForInputParameter(
+        const QUuid &id
+    );
     static QString correlationsToCSVString();
-    static QStringList headerLabels;
+    static QUuid getSelectedId();
     static bool correlationIsUnique(
         const Correlation *newCorrelation,
-        const bool &checkCurrentSelection = false
+        bool checkCurrentSelection = false
     );
-    static bool inputParameterCorrelated( InputParameter *inputParameter );
-    static bool removeSelectedModelRow();
-    static void removeCorrelatedInputParameter(
-        InputParameter *inputParameter
-    );
+    static bool remove(  const QUuid &id );
+    static bool update( const QUuid &id, Correlation *correlation );
+    static int getRowIndex( const QUuid &id );
+    static void applyDiff( const JsonDiff &diff );
     static void clearModel();
     static void correlationsFromJson(
         const QJsonArray &jsonArray,
         QObject *parent = nullptr
     );
+    static void notifyInputParameterChanged( const QUuid &id );
+    static void onDisplayPrecisionChanged();
     static void reconnectAllCorrelations();
+    static void setSelectionLocked( bool locked );
+
+    inline const static QList<int> columnWidths { 155, 155, 158 };
+    inline const static QStringList headerLabels {
+        "Input parameter A",
+        "Input parameter B",
+        "Correlation coefficient"
+    };
 
 private:
+    Correlation *insertIntoModel( int row );
+    void reconnectInputParameters();
+
+    static bool sameInputParameters(
+        const Correlation *corrA,
+        const Correlation *corrB
+    );
+
     InputParameter *mInputParameterA;
     InputParameter *mInputParameterB;
     QUuid mInputParameterAId;
@@ -117,10 +130,12 @@ private:
     double mCorrelation;
 
     static ModelControl<Correlation *> mCorrelationModel;
-    static QString mCorrelationsHeaderString;
-    static QString mCorrelationString;
-    static QString mIdInputAString;
-    static QString mIdInputBString;
+    static constexpr QLatin1StringView sCorrelationsHeaderString {
+        "Correlations:"
+    };
+    static constexpr QLatin1StringView sCorrelationString { "correlation" };
+    static constexpr QLatin1StringView sIdInputAString { "IdInputParameterA" };
+    static constexpr QLatin1StringView sIdInputBString { "IdInputParameterB" };
 };
 
 #endif // CORRELATION_H
