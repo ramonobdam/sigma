@@ -2,37 +2,16 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
+#include "correlation.h"
 #include "inputparameter.h"
 #include "settings.h"
 #include "stringutils.h"
 #include <QJsonValue>
+#include <QtAssert>
+#include <QtMinMax>
 
 
-QString InputParameter::mDOFInfiniteString = "DOFInfinite";
-QString InputParameter::mDOFString = "DOF";
-QString InputParameter::mDistributionString = "distribution";
-QString InputParameter::mInputParametersHeaderString = "Input parameters:";
-QString InputParameter::mStdUncertaintyString = "stdUncertainty";
-
-ModelControl<InputParameter *> InputParameter::mInputModel = \
-    ModelControl<InputParameter *>();
-
-symbol_table_t InputParameter::symbolTable = symbol_table_t();
-
-QStringList InputParameter::headerLabels = {
-    "Input name",
-    "Unit",
-    "Input estimate",
-    "Standard uncertainty",
-    "Distribution",
-    "Degrees of freedom"
-};
-
-QString InputParameter::defaultName = "X";
-
-QString InputParameter::infiniteString = "infinite";
-
-QList<int> InputParameter::columnWidths = { 90, 55, 105, 148, 92, 144 };
+ModelControl<InputParameter *> InputParameter::mInputModel = {};
 
 
 InputParameter::InputParameter( QObject *parent )
@@ -41,7 +20,7 @@ InputParameter::InputParameter( QObject *parent )
         mDistribution { Distribution::Type::normal },
         mDOFInfinite { true },
         mDOF { 1 },
-        mSymbolPtr {}
+        mSymbolValue {}
 {}
 
 
@@ -51,7 +30,7 @@ InputParameter::InputParameter( const InputParameter &ip )
         mDistribution { ip.getDistribution() },
         mDOFInfinite { ip.getDOFInfinite() },
         mDOF { ip.getDOF() },
-        mSymbolPtr { ip.getSymbolPtr() }
+        mSymbolValue { ip.getSymbolValue() }
 {}
 
 
@@ -62,7 +41,7 @@ InputParameter & InputParameter::operator= ( const InputParameter &ip ) {
         setDistribution( ip.getDistribution() );
         setDOFInfinite( ip.getDOFInfinite() );
         setDOF( ip.getDOF() );
-        setSymbolPtr( ip.getSymbolPtr() );
+        setSymbolValue( ip.getSymbolValue() );
     }
 
     return *this;
@@ -70,13 +49,16 @@ InputParameter & InputParameter::operator= ( const InputParameter &ip ) {
 
 
 bool InputParameter::operator== ( const InputParameter &ip ) const {
-    // Two InputParameters are considered equal when the output estimate or
+    // Two InputParameters are considered equal when the output estimate and
     // Monte Carlo results of an OutputParameter that uses either of them does
-    // not change.
-    // I.e. the InputParameter unitcan be updated without the need to recompile
-    // OutputParameters that use it.
+    // not change:
+    //  - The InputParameter unit can be updated without the need to recompile
+    //    OutputParameters that use it.
+    //  - The InputParameter names may differ in capitalization because ExprTk
+    //    does not make a distinction between the upper/lower case version of a
+    //    symbol.
     return (
-        mName == ip.getName() &&
+        mName.toLower() == ip.getName().toLower() &&
         mNominalValue == ip.getNominalValue() &&
         mStdUncertainty == ip.getStdUncertainty() &&
         mDistribution == ip.getDistribution() &&
@@ -96,51 +78,35 @@ DataType InputParameter::InputParameter::dataType() const {
 }
 
 
-
 Distribution::Type InputParameter::getDistribution() const {
     return mDistribution;
 }
 
 
-InputParameter * InputParameter::addToModel() {
-    if ( validName( getName() ) && addToSymbolTable() ) {
-        return mInputModel.appendRow( *this );
-    }
-    return nullptr;
-}
-
-
-InputParameter * InputParameter::updateSelectedModelRow() {
-    if ( validName( getName(), true ) ) {
-        InputParameter *currentParameter { mInputModel.getSelectedRow() };
-        if ( currentParameter && removeSymbol( currentParameter->getName() ) ) {
-            if ( addToSymbolTable() ) {
-                mInputModel.updateSelectedRow( *this );
-                return currentParameter;
-            }
-        }
-    }
-    return nullptr;
+InputParameter * InputParameter::appendToModel() {
+    // Append this InputParameter to the model and add its name to the symbol
+    // table if its name is valid
+    return insertIntoModel( mInputModel.rowCount() );
 }
 
 
 QJsonObject InputParameter::toJson() const {
     QJsonObject json {};
-    json[ mIdString ] = getId().toString();
-    json[ mNameString ] = getName();
-    json[ mUnitString ] = getUnit();
-    json[ mNominalValueString ] = getNominalValue();
-    json[ mStdUncertaintyString ] = getStdUncertainty();
-    json[ mDOFInfiniteString ] = getDOFInfinite();
-    json[ mDOFString ] = getDOF();
-    json[ mDistributionString ] = getDistributionAsString();
+    json[ sIdString ] = getId().toString();
+    json[ sNameString ] = getName();
+    json[ sUnitString ] = getUnit();
+    json[ sNominalValueString ] = getNominalValue();
+    json[ sStdUncertaintyString ] = getStdUncertainty();
+    json[ sDOFInfiniteString ] = getDOFInfinite();
+    json[ sDOFString ] = getDOF();
+    json[ sDistributionString ] = getDistributionAsString();
     return json;
 }
 
 
 QString InputParameter::getDOFAsString() const {
     if ( mDOFInfinite ) {
-        return InputParameter::infiniteString;
+        return StringUtils::infinite;
     }
     return QString::number( mDOF );
 }
@@ -202,8 +168,8 @@ Distribution::InvCDF InputParameter::getInvCDF() const {
 }
 
 
-double * InputParameter::getSymbolPtr() const {
-    return mSymbolPtr;
+double InputParameter::getSymbolValue() const {
+    return mSymbolValue;
 }
 
 
@@ -213,9 +179,7 @@ int InputParameter::columnCount() const {
 
 
 void InputParameter::resetSymbolValue() {
-    if ( mSymbolPtr ) {
-        *mSymbolPtr = getNominalValue();
-    }
+    mSymbolValue = mNominalValue;
 }
 
 
@@ -242,53 +206,43 @@ void InputParameter::set( int column, const QVariant &value ) {
         case 6:
             setDOF( value.toInt() );
             break;
-        case 7:
-            setSymbolPtr( value.value<double *>() );
-            break;
     }
 }
 
 
-void InputParameter::setDistribution( const Distribution::Type &distribution ) {
+void InputParameter::setDistribution( Distribution::Type distribution ) {
     mDistribution = distribution;
 }
 
 
-void InputParameter::setSymbolPtr( double *symbolPtr ) {
-    mSymbolPtr = symbolPtr;
-}
-
-
-void InputParameter::setSymbolValue( const double &value ) {
-    if ( mSymbolPtr ) {
-        *mSymbolPtr = value;
-    }
+void InputParameter::setSymbolValue( double value ) {
+    mSymbolValue = value;
 }
 
 
 void InputParameter::updateFromJson( const QJsonObject &json ) {
-    if ( const QJsonValue v = json[ mIdString ]; v.isString() ) {
+    if ( const QJsonValue v = json[ sIdString ]; v.isString() ) {
         setId( QUuid::fromString( v.toString() ) );
     }
-    if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
+    if ( const QJsonValue v = json[ sNameString ]; v.isString() ) {
         setName( v.toString() );
     }
-    if ( const QJsonValue v = json[ mUnitString ]; v.isString() ) {
+    if ( const QJsonValue v = json[ sUnitString ]; v.isString() ) {
         setUnit( v.toString() );
     }
-    if ( const QJsonValue v = json[ mNominalValueString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sNominalValueString ]; v.isDouble() ) {
         setNominalValue( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mStdUncertaintyString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sStdUncertaintyString ]; v.isDouble() ) {
         setStdUncertainty( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mDOFInfiniteString ]; v.isBool() ) {
+    if ( const QJsonValue v = json[ sDOFInfiniteString ]; v.isBool() ) {
         setDOFInfinite( v.toBool() );
     }
-    if ( const QJsonValue v = json[ mDOFString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sDOFString ]; v.isDouble() ) {
         setDOF( v.toInt() );
     }
-    if ( const QJsonValue v = json[ mDistributionString ]; v.isString() ) {
+    if ( const QJsonValue v = json[ sDistributionString ]; v.isString() ) {
         setDistribution( v.toString() );
     }
 }
@@ -314,12 +268,12 @@ int InputParameter::getDOF() const {
 }
 
 
-void InputParameter::setDOF( const int &DOF ) {
+void InputParameter::setDOF( int DOF ) {
     mDOF = DOF;
 }
 
 
-void InputParameter::setDOFInfinite( const bool &DOFInfinite ) {
+void InputParameter::setDOFInfinite( bool DOFInfinite ) {
     mDOFInfinite = DOFInfinite;
 }
 
@@ -329,13 +283,13 @@ void InputParameter::setDistribution( const QString &distributionString ) {
 }
 
 
-void InputParameter::setStdUncertainty( const double &stdUncertainty ) {
+void InputParameter::setStdUncertainty( double stdUncertainty ) {
     mStdUncertainty = stdUncertainty;
 }
 
 
 void InputParameter::setToSelected() {
-    const InputParameter *parameter { mInputModel.getSelectedRow() };
+    const InputParameter *parameter { mInputModel.getSelected() };
     if ( parameter ) {
         *this = *parameter;
     }
@@ -344,63 +298,33 @@ void InputParameter::setToSelected() {
 
 InputParameter InputParameter::fromJson(
     const QJsonObject &json,
-    const bool &addToModel,
+    bool appendToModel,
     QObject *parent
 ) {
     InputParameter parameter { InputParameter( parent ) };
     parameter.updateFromJson( json );
 
-    if ( addToModel ) {
-        parameter.addToModel();
+    if ( appendToModel ) {
+        parameter.appendToModel();
     }
 
     return parameter;
 }
 
 
-InputParameter * InputParameter::getInputParameterByName(
-    const QString &name
-) {
-    int rows { mInputModel.rowCount() };
-    for ( int row {0}; row < rows; ++row ) {
-        InputParameter *parameter { mInputModel.getRow( row ) };
-        if (
-            parameter &&
-            ( parameter->getName().toLower() == name.toLower() )
-        ) {
-            return parameter;
-        }
-    }
-    return nullptr;
+InputParameter * InputParameter::getByName( const QString &name ) {
+    return mInputModel.getByName( name );
 }
 
 
-InputParameter * InputParameter::getInputParameterById( const QUuid &id ) {
-    if ( !id.isNull() ) {
-        int rows { mInputModel.rowCount() };
-        for ( int row {0}; row < rows; ++row ) {
-            InputParameter *parameter { mInputModel.getRow( row ) };
-            if ( parameter && ( parameter->getId() == id ) ) {
-                return parameter;
-            }
-        }
-    }
-    return nullptr;
+InputParameter * InputParameter::getById( const QUuid &id ) {
+    return mInputModel.getById( id );
 }
 
 
-InputParameter * InputParameter::removeSelectedModelRow() {
-    InputParameter *parameter { mInputModel.getSelectedRow() };
-    if (
-        parameter &&
-        removeSymbol( parameter->getName() ) &&
-        mInputModel.removeSelectedRow()
-    ) {
-        return parameter;
-    }
-    return nullptr;
+InputParameter * InputParameter::getSelected() {
+    return mInputModel.getSelected();
 }
-
 
 ModelControl<InputParameter *> * InputParameter::getInputModel() {
     return &mInputModel;
@@ -409,25 +333,42 @@ ModelControl<InputParameter *> * InputParameter::getInputModel() {
 
 QJsonArray InputParameter::parametersToJson() {
     QJsonArray paramArray {};
-    for ( InputParameter * &parameter : mInputModel.getAllRows() ) {
+    for ( const InputParameter *parameter : getAll() ) {
         paramArray.append( parameter->toJson() );
     }
     return paramArray;
 }
 
 
+QJsonObject InputParameter::currentJson( const QUuid &id ) {
+    InputParameter *parameter { getById( id ) };
+    return parameter ? parameter->toJson() : QJsonObject {};
+}
+
+
+const QList<InputParameter *> & InputParameter::getAll() {
+    return mInputModel.getAllRows();
+}
+
+
 QString InputParameter::parametersToCSVString() {
-    QString result { mInputParametersHeaderString + StringUtils::endl };
-    result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
-    for ( InputParameter * &parameter : mInputModel.getAllRows() ) {
+    QString result { sInputParametersHeaderString + StringUtils::endl };
+    result += headerLabels.join( StringUtils::csvSeparator ) +
+              StringUtils::endl;
+    for ( const InputParameter *parameter : getAll() ) {
         result += parameter->toCSVString() + StringUtils::endl;
     }
     return result;
 }
 
 
+QUuid InputParameter::getSelectedId() {
+    return mInputModel.getSelectedId();
+}
+
+
 bool InputParameter::inputParameterIsConstant( const QString &name ) {
-    InputParameter *inputParameter { getInputParameterByName( name ) };
+    InputParameter *inputParameter { getByName( name ) };
     if (
         inputParameter &&
         inputParameter->getDistribution() == Distribution::Type::none
@@ -438,19 +379,139 @@ bool InputParameter::inputParameterIsConstant( const QString &name ) {
 }
 
 
+bool InputParameter::remove( const QUuid &id ) {
+    if ( !id.isNull() ) {
+        InputParameter *inputParameter { getById( id ) };
+        Q_ASSERT_X(
+            inputParameter,
+            "InputParameter::remove",
+            "Parameter not found"
+        );
+        if ( inputParameter ) {
+            bool symbolRemoved { removeSymbol( inputParameter->getName() ) };
+            Q_ASSERT_X(
+                symbolRemoved,
+                "InputParameter::remove",
+                "Symbol could not be removed"
+            );
+            if ( symbolRemoved ) {
+                bool parameterRemoved { mInputModel.removeById( id ) };
+                Q_ASSERT_X(
+                    parameterRemoved,
+                    "InputParameter::remove",
+                    "Parameter could not be removed"
+                );
+                return parameterRemoved;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool InputParameter::update( const QUuid &id, InputParameter *parameter ) {
+    // The new name has to be valid or equal to the original parameter
+    InputParameter *originalParameter { getById( id ) };
+    Q_ASSERT_X(
+        originalParameter,
+        "InputParameter::update",
+        "Original parameter not found"
+    );
+    if (
+        parameter &&
+        originalParameter &&
+        (
+            validName( parameter->getName(), false ) ||
+            (
+                parameter->getName().toLower() ==
+                originalParameter->getName().toLower()
+            )
+        )
+    ) {
+        bool symbolRemoved { removeSymbol( originalParameter->getName() ) };
+        Q_ASSERT_X(
+            symbolRemoved,
+            "InputParameter::update",
+            "Symbol could not be removed"
+        );
+        if ( symbolRemoved ) {
+            InputParameter *newParam {
+                mInputModel.updateById( id, *parameter )
+            };
+            Q_ASSERT_X(
+                newParam,
+                "InputParameter::update",
+                "Parameter could not be updated"
+            );
+            if ( newParam ) {
+                // Notify the Correlation model that an InputParameter changed
+                Correlation::notifyInputParameterChanged( id );
+
+                bool symbolAdded { newParam->addToSymbolTable() };
+                Q_ASSERT_X(
+                    symbolAdded,
+                    "InputParameter::update",
+                    "Symbol could not be added"
+                );
+                return symbolAdded;
+            }
+        }
+    }
+    return false;
+}
+
+
 bool InputParameter::validName(
     const QString &name,
-    const bool &checkCurrentSelection
+    bool checkCurrentSelection
 ) {
-    if ( checkCurrentSelection && mInputModel.nameIsSelected( name) ) {
+    if ( checkCurrentSelection && mInputModel.nameIsSelected( name ) ) {
         return true;
     }
     return ( !symbolExists( name ) && validSymbol( name ) );
 }
 
 
+int InputParameter::getRowIndex( const QUuid &id ) {
+    return mInputModel.getRowIndex( id );
+}
+
+
 void InputParameter::addConstantsToSymbolTable() {
     symbolTable.add_constants();
+}
+
+
+void InputParameter::applyDiff( const JsonDiff &diff ) {
+    if ( diff.after.isEmpty() ) {
+        // Target state is empty — remove from model
+        bool parameterRemoved { remove( diff.objectId ) };
+        Q_ASSERT_X(
+            parameterRemoved,
+            "InputParameter::applyDiff",
+            "After empty - Parameter could not be removed"
+        );
+    } else if ( diff.before.isEmpty() ) {
+        // Before state is empty — insert in the previous position
+        InputParameter parameter { fromJson( diff.after, false ) };
+        bool parameterInserted = parameter.insertIntoModel( diff.row );
+        Q_ASSERT_X(
+            parameterInserted,
+            "InputParameter::applyDiff",
+            "Before empty - Parameter could not be inserted"
+        );
+    } else {
+        // Remove symbol with before name, add new one with after name and
+        // and update the model
+        InputParameter afterParam { *( getById( diff.objectId ) ) };
+        afterParam.updateFromJson( diff.after );
+        bool parameterUpdated { update( diff.objectId, &afterParam ) };
+        Q_ASSERT_X(
+            parameterUpdated,
+            "InputParameter::applyDiff",
+            "Update - Parameter could not be updated"
+        );
+    }
 }
 
 
@@ -466,6 +527,11 @@ void InputParameter::clearSymbolTable() {
 }
 
 
+void InputParameter::onDisplayPrecisionChanged() {
+    mInputModel.emitAllDataChanged();
+}
+
+
 void InputParameter::parametersFromJson(
     const QJsonArray &jsonArray,
     QObject *parent
@@ -476,18 +542,37 @@ void InputParameter::parametersFromJson(
 }
 
 
+void InputParameter::setSelectionLocked( bool locked ) {
+    mInputModel.setSelectionLocked( locked );
+}
+
+
+InputParameter * InputParameter::insertIntoModel( int row ) {
+    // Insert this InputParameter into the model at row and add its name to the
+    // symbol table, if its name is valid
+    if ( validName( getName() ) ) {
+        const int boundedRow { qBound( 0, row, mInputModel.rowCount() ) };
+        InputParameter *newParam { mInputModel.insertRow( boundedRow, *this ) };
+        if ( newParam ) {
+            newParam->addToSymbolTable();
+            return newParam;
+        }
+    }
+    return nullptr;
+}
+
+
 bool InputParameter::addToSymbolTable() {
     if ( validSymbol( getName() ) && !symbolExists( getName() ) ) {
-        double *x { new double( getNominalValue() ) };
-        setSymbolPtr( x );
-        return symbolTable.add_variable( getNameStdWString(), *x );
+        resetSymbolValue();
+        return symbolTable.add_variable( getNameStdWString(), mSymbolValue );
     }
     return false;
 }
 
 
 bool InputParameter::removeSymbol( const QString &name ) {
-    // Remove the symbol from the table and also the double it points to
+    // Remove the symbol from the table
     return symbolTable.remove_variable( name.toStdWString(), true );
 }
 
