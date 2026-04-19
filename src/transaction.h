@@ -17,7 +17,6 @@ public:
 
     QString getLabel() const;
     const QList<JsonDiff> &getDiffs() const;
-    QList<JsonDiff> &getDiffs();
     bool isEmpty() const;
     void addDiff( const JsonDiff &diff );
     void setLabel( const QString &label );

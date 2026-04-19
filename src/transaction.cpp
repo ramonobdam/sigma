@@ -14,11 +14,6 @@ const QList<JsonDiff> & Transaction::getDiffs() const {
 }
 
 
-QList<JsonDiff> & Transaction::getDiffs() {
-    return mDiffs;
-}
-
-
 bool Transaction::isEmpty() const {
     return mDiffs.isEmpty();
 }
