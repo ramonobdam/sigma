@@ -1,68 +1,37 @@
+// Sigma – Measurement Uncertainty Toolkit
+// Copyright (c) 2025–2026 Ramon Obdam
+// Licensed under the MIT License. See LICENSE file for details.
+
 #include "diffutil.h"
 #include "undostack.h"
 
 
 bool UndoStack::canRedo() const {
-    return sCursor < sStack.size();
+    return mCursor < mStack.size();
 }
 
 
 bool UndoStack::canUndo() const {
-    return sCursor > 0;
+    return mCursor > 0;
 }
 
 
 void UndoStack::clear() {
-    abortTransaction();
-    sStack.clear();
-    sCursor = 0;
+    mStack.clear();
+    mCursor = 0;
     emit canUndoChanged();
     emit canRedoChanged();
 }
 
 
-bool UndoStack::isTransactionActive() const {
-    return !sActiveTransaction.isEmpty();
-}
-
-
-void UndoStack::abortTransaction() {
-    sActiveTransaction = {};
-}
-
-
-void UndoStack::beginTransaction( const QString &label ) {
-    sActiveTransaction = Transaction {};
-    sActiveTransaction.setLabel( label );
-}
-
-
-void UndoStack::commitTransaction() {
-    if ( sActiveTransaction.isEmpty() ) {
-        return;
-    }
-
-    // Capture after state for all snapshots
-    for ( JsonDiff &diff : sActiveTransaction.getDiffs() ) {
-        UndoableModel *model = sRegistry.value( diff.objectType );
-        if ( model ) {
-            QJsonObject after { model->currentJson( diff.objectId ) };
-            if ( DiffUtil::isUnchanged( diff.before, after ) ) {
-                continue;
-            }
-
-            // Keep only the changed keys
-            diff.before = DiffUtil::diff( after, diff.before );
-            diff.after  = DiffUtil::diff( diff.before, after );
-        }
-    }
-
+void UndoStack::pushTransaction( const Transaction &transaction ) {
     // Truncate redo history
-    sStack.resize( sCursor );
-    sStack.append( sActiveTransaction );
-    ++sCursor;
+    mStack.resize( mCursor );
 
-    sActiveTransaction = {};
+    mStack.append( transaction );
+    ++mCursor;
+    emit canUndoChanged();
+    emit canRedoChanged();
 }
 
 
@@ -71,33 +40,10 @@ void UndoStack::redo() {
         return;
     }
 
-    applyTransaction( sStack[ sCursor ], Direction::Redo );
-    ++sCursor;
-}
-
-
-void UndoStack::registerModel( DataType type, UndoableModel *model ) {
-    sRegistry.insert( type, model );
-}
-
-
-void UndoStack::snapshot(
-    QUuid objectId,
-    DataType type,
-    const QJsonObject &before
-) {
-    // Called by Model before mutating a record
-    if ( sApplying || !isTransactionActive() ) return;
-
-    // Only snapshot before the first change to an object within a transaction
-    const QList<JsonDiff> &diffs { sActiveTransaction.getDiffs() };
-    for ( const JsonDiff &diff : diffs ) {
-        if ( diff.objectId == objectId && diff.objectType == type ) {
-            return;
-        }
-    }
-
-    sActiveTransaction.addDiff( JsonDiff { objectId, type, before, {} } );
+    applyTransaction( mStack[ mCursor ], Direction::Redo );
+    ++mCursor;
+    emit canUndoChanged();
+    emit canRedoChanged();
 }
 
 
@@ -106,9 +52,8 @@ void UndoStack::undo() {
         return;
     }
 
-    --sCursor;
-    applyTransaction( sStack[ sCursor ], Direction::Undo );
-
+    --mCursor;
+    applyTransaction( mStack[ mCursor ], Direction::Undo );
     emit canUndoChanged();
     emit canRedoChanged();
 }
@@ -120,39 +65,32 @@ UndoStack & UndoStack::instance() {
 }
 
 
-void UndoStack::applyDiff( const JsonDiff &diff, const QJsonObject &state ) {
-    // Get the data model for the objectType
-    UndoableModel *model = sRegistry.value( diff.objectType );
-
-    if ( model ) {
-        model->applyDiff(
-            JsonDiff { diff.objectId, diff.objectType, diff.before, state }
-        );
-    }
-}
+UndoStack::UndoStack()
+    :   mStack {},
+        mCursor { 0 }
+{}
 
 
 void UndoStack::applyTransaction(
     const Transaction &transaction,
     Direction direction
 ) {
-    sApplying = true;   // Guard against taking snapshots
-
-    const QList<JsonDiff> &diffs = transaction.getDiffs();
-
+    const QList<JsonDiff> &diffs { transaction.getDiffs() };
     if ( direction == Direction::Undo ) {
-        // Undo in reverse order
-        for ( auto it = diffs.rbegin(); it != diffs.rend(); ++it ) {
-            applyDiff( *it, it->before );
+        // Apply diffs in reverse order
+        for ( auto it { diffs.rbegin() }; it != diffs.rend(); ++it ) {
+            DiffUtil::applyDiff( JsonDiff {
+                it->objectId,
+                it->objectType,
+                it->row,
+                it->after,      // swap before/after for undo
+                it->before
+            } );
         }
     } else {
-        // Redo
         for ( const JsonDiff &diff : diffs ) {
-            applyDiff( diff, diff.after );
+            DiffUtil::applyDiff( diff );
         }
     }
-
-    sApplying = false;
-    emit canUndoChanged();
-    emit canRedoChanged();
+    emit transactionApplied();
 }

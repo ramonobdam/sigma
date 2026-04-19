@@ -5,26 +5,19 @@
 #ifndef UNDOSTACK_H
 #define UNDOSTACK_H
 
+#include "diffutil.h"
 #include "jsondiff.h"
 #include "transaction.h"
 #include <QList>
-#include <QMap>
 #include <QObject>
-#include <QUuid>
-
-// Interface for a model that supports undoable transactions
-class UndoableModel {
-public:
-    virtual ~UndoableModel() = default;
-
-    virtual QJsonObject currentJson( const QUuid &objectId ) const = 0;
-    virtual void applyDiff( const JsonDiff &diff ) = 0;
-};
 
 // UndoStack singleton that stores transactions and can undo/redo them.
-// Undo/redo is available for DataType objects in UndoableModels registered via
-// registerModel(). The snapShot() method is used in Model class methods that
-// change data.
+// Undo/redo applies transactions by dispatching each JsonDiff to
+// DiffUtil::applyDiff().
+// The cursor points to the next redo position:
+//   cursor = 0          -> nothing to undo
+//   cursor = stack size -> nothing to redo
+// New transactions truncate any redo history above the cursor.
 class UndoStack : public QObject {
     Q_OBJECT
 
@@ -32,17 +25,8 @@ public:
     bool canRedo() const;
     bool canUndo() const;
     void clear();
-    bool isTransactionActive() const;
-    void abortTransaction();
-    void beginTransaction( const QString &label = {} );
-    void commitTransaction();
+    void pushTransaction( const Transaction &transaction );
     void redo();
-    void registerModel( DataType type, UndoableModel *model );
-    void snapshot(
-        QUuid objectId,
-        DataType type,
-        const QJsonObject &before
-    );
     void undo();
 
     static UndoStack &instance();
@@ -50,23 +34,20 @@ public:
 signals:
     void canUndoChanged();
     void canRedoChanged();
+    void transactionApplied();
 
 private:
-    UndoStack() = default;
+    UndoStack();
 
     enum class Direction { Undo, Redo };
 
-    void applyDiff( const JsonDiff &diff, const QJsonObject &state );
     void applyTransaction(
         const Transaction &transaction,
         Direction direction
     );
 
-    inline static QList<Transaction> sStack {};
-    inline static QMap<DataType, UndoableModel*> sRegistry {};
-    inline static Transaction sActiveTransaction {};
-    inline static bool sApplying { false };
-    inline static int sCursor { 0 };
+    QList<Transaction> mStack;
+    int mCursor;
 };
 
 #endif // UNDOSTACK_H
