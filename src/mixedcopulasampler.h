@@ -9,7 +9,6 @@
 #include <third_party/Eigen/Dense>
 #include <random>
 #include <vector>
-#include <functional>
 
 // Forward declaration of OutputParameter (to avoid recursion loop)
 class OutputParameter;
@@ -37,7 +36,7 @@ private:
     OutputParameter *mOutputParameter;
     bool mReady;
 
-    static std::mt19937 mGenerator;
+    inline static std::mt19937 sGenerator {};
 };
 
 #endif // MIXEDCOPULASAMPLER_H

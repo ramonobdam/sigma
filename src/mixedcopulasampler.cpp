@@ -7,11 +7,7 @@
 #include "uncertaintycomponent.h"
 
 #include <QList>
-#include <cmath>
 #include <utility>
-
-
-std::mt19937 MixedCopulaSampler::mGenerator = std::mt19937();
 
 
 MixedCopulaSampler::MixedCopulaSampler( OutputParameter *parameter )
@@ -59,7 +55,7 @@ void MixedCopulaSampler::setRandomSymbolValues() const {
         // Step 1: latent correlated normal
         Eigen::VectorXd z( n );
         for (int i = 0; i < n; ++i) {
-            z( i ) = N01( mGenerator );
+            z( i ) = N01( sGenerator );
         }
         Eigen::VectorXd y = mL * z;
 
@@ -84,5 +80,5 @@ void MixedCopulaSampler::setOutputParameter(
 
 void MixedCopulaSampler::resetGenerator() {
     // Go back to the start of the deterministic list of random values
-    mGenerator.seed();
+    sGenerator.seed();
 }
