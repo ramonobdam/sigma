@@ -32,6 +32,7 @@ SpinBox {
     contentItem: SigmaTextField {
         id: textField
 
+        implicitWidth: control.inputFieldWidth
         text: control.textFromValue( control.value, control.locale )
         radius: 0
         dropShadow: false
