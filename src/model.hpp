@@ -10,7 +10,8 @@
 #include <QList>
 #include <QModelIndex>
 #include <QObject>
-#include <QtAssert>
+#include <QUuid>
+#include <QtMinMax>
 #include <type_traits>
 
 // Template implementation of the QAbstractTableModel class to store objects
@@ -25,18 +26,11 @@ class Model : public QAbstractTableModel {
     );
 
 public:
-    Model( QObject *parent = nullptr ) {
-        setParent( parent );
-    }
+    Model( QObject *parent = nullptr ) : QAbstractTableModel { parent } {}
 
 
     void clear() {
-        beginResetModel();
-        for ( T *parameter : mParameters ) {
-            delete parameter;
-        }
-        mParameters.clear();
-        endResetModel();
+        removeRows( 0, rowCount() );
     }
 
 
@@ -47,7 +41,7 @@ public:
         if ( parent.isValid() ) return 0;
 
         // Root of the tree (parent = invalid)
-        return T::staticColumnCount();
+        return sHeaderRecord.columnCount();
     }
 
 
@@ -56,7 +50,7 @@ public:
         if ( parent.isValid() ) return 0;
 
         // Root of the tree (parent = invalid)
-        return mParameters.size();
+        return mRecords.size();
     }
 
 
@@ -70,27 +64,63 @@ public:
         ) {
             return QVariant();
         }
-        T *parameter { mParameters.at( row ) };
+        T *record { mRecords.at( row ) };
         if ( role == Qt::DisplayRole ) {
-            return parameter->get( index.column() );
+            return record->get( index.column() );
         }
         if ( role == Qt::DecorationRole ) {
-            return parameter->getValid();
+            return record->getValid();
         }
         return QVariant();
     }
 
 
-    T *getRow( int row ) const {
+    T *getByRow( int row ) const {
         if ( row >= 0 && row < rowCount() ) {
-            return mParameters.at( row );
+            return mRecords.at( row );
         }
         return nullptr;
     }
 
 
-    QList<T *> getAllRows() const {
-        return mParameters;
+    T *getById( const QUuid &id ) const {
+        if ( !id.isNull() ) {
+            for ( T *record : getAllRows() ) {
+                if ( record->getId() == id ) {
+                    return record;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+
+    T *getByName( const QString &name ) const {
+        if ( name.size() > 0 ) {
+            for ( T *record : getAllRows() ) {
+                if ( record->getName().toLower() == name.toLower() ) {
+                    return record;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+
+    int getRowIndex( const QUuid &id ) const {
+        if ( !id.isNull() ) {
+            for ( int row { 0 }; row < rowCount(); ++row ) {
+                if ( mRecords.at( row )->getId() == id ) {
+                    return row;
+                }
+            }
+        }
+        return -1;
+    }
+
+
+    const QList<T *> &getAllRows() const {
+        return mRecords;
     }
 
 
@@ -100,29 +130,44 @@ public:
         int role = Qt::DisplayRole
     ) const override {
         if ( role == Qt::DisplayRole && orientation == Qt::Horizontal ) {
-            return T::staticHeaderData( section );
+            return sHeaderRecord.headerData( section );
         }
         return QVariant();
     }
 
 
-    void appendRow( const T &parameter ) {
-        beginInsertRows( QModelIndex(), rowCount(), rowCount() );
-        T *newParameter { new T { parameter } };
-        if ( !newParameter->parent() ) {
-            // Parameter has no parent, set its parent to this
-            newParameter->setParent ( this );
+    T* insertRow( int row, const T &record ) {
+        const int boundedRow { qBound( 0, row, rowCount() ) };
+        T *newRecord { new T { record } };
+        if ( !newRecord->parent() ) {
+            // Record has no parent, set its parent to this
+            newRecord->setParent ( this );
         }
-        mParameters.append( newParameter );
+        beginInsertRows( QModelIndex(), boundedRow, boundedRow );
+        mRecords.insert( boundedRow, newRecord );
         endInsertRows();
+        return mRecords.at( boundedRow );
     }
 
 
-    void updateRow( int row, const T &parameter ) {
+    T* appendRow( const T &record ) {
+        return insertRow( rowCount(), record );
+    }
+
+
+    T* updateByRow( int row, const T &record ) {
         if ( row >= 0 && row < rowCount() ) {
-            *mParameters.at( row ) = parameter;
+            T *existing { mRecords.at( row ) };
+            *existing = record;
             emitRowChanged( row );
+            return existing;
         }
+        return nullptr;
+    }
+
+
+    T* updateById( const QUuid &id, const T &record ) {
+        return updateByRow( getRowIndex( id ), record );
     }
 
 
@@ -138,21 +183,22 @@ public:
 
         beginRemoveRows( QModelIndex(), row, last );
         for ( int i { last }; i >= row; --i ) {
-            delete mParameters.at( i );
-            mParameters.remove( i );
+            T *record { mRecords.at( i ) };
+            delete record;
+            mRecords.remove( i );
         }
         endRemoveRows();
         return true;
     }
 
 
+    bool removeById( const QUuid &id ) {
+        return removeRows( getRowIndex( id ), 1 );
+    }
+
+
     bool nameIsPresent( const QString &name ) const {
-        for ( const T *parameter : getAllRows()) {
-            if ( parameter->getName().toLower() == name.toLower() ) {
-                return true;
-            }
-        }
-        return false;
+        return getByName( name );
     }
 
 
@@ -178,14 +224,22 @@ public:
         ) {
             return false;
         }
-        T *parameter { getRow( row ) };
-        parameter->set( column, value );
+        T *record { getByRow( row ) };
+        record->set( column, value );
         emit dataChanged(
             index,
             index,
             { Qt::DisplayRole, Qt::DecorationRole }
         );
         return true;
+    }
+
+
+    void emitIdChanged( const QUuid &id ) {
+        const int row { getRowIndex( id ) };
+        if ( row >= 0 && row < rowCount() ) {
+            emitRowChanged( row );
+        }
     }
 
 
@@ -208,7 +262,11 @@ public:
 
 
 private:
-    QList<T *> mParameters;
+    QList<T *> mRecords;
+
+    // sHeaderRecord is used to determine the number of columns and the header
+    // labels
+    inline static const T sHeaderRecord {};
 };
 
 #endif // MODEL_HPP

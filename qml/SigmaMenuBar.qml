@@ -4,12 +4,13 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // MenuBar component with custom styling
 MenuBar {
     id: control
 
-    property string backgroundColor: properties.colorBase
+    property string backgroundColor: Properties.colorBase
 
     anchors.verticalCenter: parent.verticalCenter
 
@@ -17,7 +18,7 @@ MenuBar {
                        implicitBackgroundWidth + leftInset + rightInset,
                        implicitContentWidth + leftPadding + rightPadding
                     )
-    implicitHeight: properties.menuBarHeight
+    implicitHeight: Properties.menuBarHeight
 
     topPadding: 0
     leftPadding: 0
@@ -39,9 +40,4 @@ MenuBar {
     background: Rectangle {
         color: control.backgroundColor
     }
-
-    SigmaProperties {
-        id: properties
-    }
-
 }

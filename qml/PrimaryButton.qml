@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // Button component with the highest prominence in the visual hierarchy
 Button {
@@ -14,15 +15,15 @@ Button {
     property int defaultWidth: contentItem.implicitWidth + padding * 2
     property string toolTipText
     property string toolTipTextDisabled: toolTipText
-    property string backgroundColor: properties.colorElevated
+    property string backgroundColor: Properties.colorElevated
     property alias textColor: text.color
     property alias fillColor: bg.color
     property alias borderColor: bg.border.color
 
-    height: visible ? ( properties.buttonHeight + properties.borderWidth * 4 ) :
+    height: visible ? ( Properties.buttonHeight + Properties.borderWidth * 4 ) :
                       0
     width: defaultWidth < height ? height : defaultWidth
-    padding: properties.spacingM
+    padding: Properties.spacingM
     focus: true
     hoverEnabled: true
 
@@ -39,24 +40,24 @@ Button {
         anchors.fill: parent
 
         text: button.text
-        font.family: fonts.interSemiBold.font.family
+        font.family: Fonts.interSemiBold.font.family
         font.bold: true
         color: button.enabled ? (
                                     button.down ?
-                                        properties.colorTextDown :
+                                        Properties.colorTextDown :
                                             (
                                                 button.hovered ?
-                                                    properties.colorTextHover :
+                                                    Properties.colorTextHover :
                                                     backgroundColor
                                             )
                                 ) :
-                                properties.colorStrokeStrong
+                                Properties.colorStrokeStrong
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
 
         Behavior on color {
             ColorAnimation {
-                duration: properties.animationDuration
+                duration: Properties.animationDuration
                 easing.type: Easing.InOutQuad
             }
         }
@@ -65,8 +66,8 @@ Button {
     background: Rectangle {
         anchors.fill: parent
 
-        radius: properties.radiusS + properties.borderWidth * 2
-        border.width: button.activeFocus ? properties.borderWidth : 0
+        radius: Properties.radiusS + Properties.borderWidth * 2
+        border.width: button.activeFocus ? Properties.borderWidth : 0
         border.color: bg.border.color
 
         // Apply dropshadow on 'activeFocus border' when using lightTheme.
@@ -75,50 +76,42 @@ Button {
         color: backgroundColor
         layer.enabled: button.activeFocus &&
                        button.enabled &&
-                       properties.lightTheme
+                       Properties.lightTheme
         layer.effect: ButtonElevationEffect {}
 
         Rectangle {
             id: bg
             anchors {
                 fill: parent
-                margins: properties.borderWidth * 2
+                margins: Properties.borderWidth * 2
             }
-            border.width: properties.borderWidth
+            border.width: Properties.borderWidth
             border.color: bg.color
             color: button.enabled ? (
                                         button.down ?
-                                            properties.colorDown :
+                                            Properties.colorDown :
                                             (
                                                 button.hovered ?
-                                                    properties.colorHover :
-                                                    properties.colorBrand
+                                                    Properties.colorHover :
+                                                    Properties.colorBrand
                                             )
                                     ) :
-                                    properties.colorStrokeWeak
-            radius: properties.radiusS
+                                    Properties.colorStrokeWeak
+            radius: Properties.radiusS
 
             // Apply dropshadow on button background when using lightTheme.
             layer.enabled: !button.activeFocus &&
                            button.enabled &&
-                           properties.lightTheme
+                           Properties.lightTheme
             layer.effect: ButtonElevationEffect {}
 
             Behavior on color {
                 ColorAnimation {
-                    duration: properties.animationDuration
+                    duration: Properties.animationDuration
                     easing.type: Easing.InOutQuad
                 }
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 
     SigmaToolTip {

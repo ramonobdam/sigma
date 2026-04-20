@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // Base dialog component that centers on its parent window with no window frame
 // and custom styling
@@ -22,7 +23,6 @@ Window {
     property alias primaryButton: primaryButton
     property alias secondaryButton: secondaryButton
     property alias tertiaryButton: tertiaryButton
-    property alias properties: properties
 
     function centerOnParent() {
         // Center the window on its transient parent
@@ -54,21 +54,13 @@ Window {
     minimumWidth: width
     minimumHeight: height
     modality: Qt.ApplicationModal
-    flags: properties.dialogFlags
-    color: properties.colorTransparent
+    flags: Properties.dialogFlags
+    color: Properties.colorTransparent
     onVisibleChanged: {
         if ( visible ) {
             Qt.callLater( centerOnParent )
             primaryButton.forceActiveFocus()
         }
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 
     Connections {
@@ -88,20 +80,20 @@ Window {
         anchors {
             top: parent.top
             left: parent.left
-            margins: properties.spacingM
+            margins: Properties.spacingM
         }
         width: 235
         height: contentColumn.implicitHeight + padding * 2
-        padding: properties.spacingM
+        padding: Properties.spacingM
 
         background: Rectangle {
-            color: properties.colorElevated
-            radius: properties.radiusM
-            border.width: properties.borderWidth
-            border.color: properties.colorStrokeWeak
+            color: Properties.colorElevated
+            radius: Properties.radiusM
+            border.width: Properties.borderWidth
+            border.color: Properties.colorStrokeWeak
             layer.enabled: true
             layer.effect: RoundedElevationEffect {
-                elevation: properties.elevationElevated
+                elevation: Properties.elevationElevated
                 roundedScale: Material.ExtraSmallScale
             }
         }
@@ -115,33 +107,33 @@ Window {
             spacing: 0
 
             Spacer {
-                height: properties.spacingS
+                height: Properties.spacingS
             }
 
             Text {
                 id: icon
                 width: parent.width
                 height: undefined
-                text: errorIcon ? properties.circleXmarkIcon :
-                                  properties.triangleExclamationIcon
-                font.family: fonts.fontAwesome.font.family
-                font.pixelSize: properties.fontSizeDialogIcon
-                color: errorIcon ? properties.colorError500 :
-                                   properties.colorWarning500
+                text: errorIcon ? Properties.circleXmarkIcon :
+                                  Properties.triangleExclamationIcon
+                font.family: Fonts.fontAwesome.font.family
+                font.pixelSize: Properties.fontSizeDialogIcon
+                color: errorIcon ? Properties.colorError500 :
+                                   Properties.colorWarning500
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
             }
 
             Spacer {
-                height: properties.spacingM
+                height: Properties.spacingM
             }
 
             Text {
                 id: header
                 width: parent.width
                 height: undefined
-                color: properties.colorTextStrong
-                font.family: fonts.interSemiBold.font.family
+                color: Properties.colorTextStrong
+                font.family: Fonts.interSemiBold.font.family
                 font.bold: true
                 wrapMode: Text.Wrap
                 horizontalAlignment: Text.AlignHCenter
@@ -149,21 +141,21 @@ Window {
             }
 
             Spacer {
-                height: properties.spacingS
+                height: Properties.spacingS
             }
 
             Text {
                 id: text
                 width: parent.width
                 height: undefined
-                color: properties.colorTextWeak
+                color: Properties.colorTextWeak
                 wrapMode: Text.Wrap
                 horizontalAlignment: Text.AlignHCenter
                 maximumLineCount: 10
             }
 
             Spacer {
-                height: primaryButton.visible ? properties.spacingM : 0
+                height: primaryButton.visible ? Properties.spacingM : 0
             }
 
             PrimaryButton {
@@ -174,7 +166,7 @@ Window {
             }
 
             Spacer {
-                height: secondaryButton.visible ? properties.spacingButtons : 0
+                height: secondaryButton.visible ? Properties.spacingButtons : 0
             }
 
             SecondaryButton {
@@ -187,7 +179,7 @@ Window {
             }
 
             Spacer {
-                height: tertiaryButton.visible ? properties.spacingButtons : 0
+                height: tertiaryButton.visible ? Properties.spacingButtons : 0
             }
 
             SecondaryButton {

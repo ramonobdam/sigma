@@ -4,6 +4,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // Context menu component for the table delegate
 BaseContextMenu {
@@ -19,7 +20,7 @@ BaseContextMenu {
     ContextMenuItem {
         id: addNewItem
         text: "Add new " + control.label + "..."
-        enabled: !properties.outputLocked
+        enabled: !Properties.outputLocked
         onTriggered: { control.openRequested( false ) }
         visible: control.labelAvailable
     }
@@ -31,7 +32,7 @@ BaseContextMenu {
     ContextMenuItem {
         id: editItem
         text: "Edit" + space + control.parameter + "..."
-        enabled: !properties.outputLocked
+        enabled: !Properties.outputLocked
         onTriggered: { control.openRequested( true ) }
         visible: !control.addNewOnly && control.labelAvailable
     }
@@ -39,7 +40,7 @@ BaseContextMenu {
     ContextMenuItem {
         id: deleteItem
         text: "Delete" + space + control.parameter + "..."
-        enabled: !properties.outputLocked
+        enabled: !Properties.outputLocked
         onTriggered: { control.deleteRequested() }
         visible: !control.addNewOnly && control.labelAvailable
     }
@@ -68,7 +69,7 @@ BaseContextMenu {
     ContextMenuItem {
         id: extraItem
         text: control.extra
-        enabled: !properties.outputLocked
+        enabled: !Properties.outputLocked
         onTriggered: { control.extraRequested() }
         visible: control.extra.length > 0
     }

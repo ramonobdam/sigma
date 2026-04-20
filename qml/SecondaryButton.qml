@@ -3,32 +3,29 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Button component with a lower prominence in the visual hierarchy
 PrimaryButton {
     id: button
 
     fillColor:  button.enabled ? (
-                                     button.down ? properties.colorTextDown :
+                                     button.down ? Properties.colorTextDown :
                                      (
                                           button.hovered ?
-                                            properties.colorTextHover :
+                                            Properties.colorTextHover :
                                             button.backgroundColor
                                      )
                                  ) :
                                  button.backgroundColor
     borderColor: button.textColor
     textColor: button.enabled ? (
-                                    button.down ? properties.colorDown :
+                                    button.down ? Properties.colorDown :
                                                   (
                                                       button.hovered ?
-                                                          properties.colorHover :
-                                                          properties.colorBrand
+                                                          Properties.colorHover :
+                                                          Properties.colorBrand
                                                   )
                                 ) :
-                                properties.colorStrokeWeak
-
-    SigmaProperties {
-        id: properties
-    }
+                                Properties.colorStrokeWeak
 }

@@ -4,15 +4,16 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // MenuBarItem with custom styling
 MenuBarItem {
     id: control
 
-    property int animationDuration: properties.animationDuration
-    property string backgroundColor: properties.colorElevated
+    property int animationDuration: Properties.animationDuration
+    property string backgroundColor: Properties.colorElevated
 
-    implicitHeight: properties.menuBarHeight
+    implicitHeight: Properties.menuBarHeight
     spacing: 0
     padding: 0
     leftPadding: 0
@@ -23,21 +24,21 @@ MenuBarItem {
     contentItem: SigmaText {
         anchors.fill: parent
         text: control.text
-        font.pixelSize: properties.fontSizeTitleBar
-        color: control.enabled ? properties.colorTextStrong :
-                                 properties.colorStrokeStrong
+        font.pixelSize: Properties.fontSizeTitleBar
+        color: control.enabled ? Properties.colorTextStrong :
+                                 Properties.colorStrokeStrong
         elide: Text.ElideRight
-        leftPadding: properties.spacingS
-        rightPadding: properties.spacingS
-        topPadding: properties.spacingXXS
-        bottomPadding: properties.spacingXXS
+        leftPadding: Properties.spacingS
+        rightPadding: Properties.spacingS
+        topPadding: Properties.spacingXXS
+        bottomPadding: Properties.spacingXXS
         verticalAlignment: Text.AlignVCenter
     }
 
     background: Rectangle {
-        color: control.highlighted ? properties.colorTextHover :
+        color: control.highlighted ? Properties.colorTextHover :
                                      control.backgroundColor
-        radius: properties.radiusS
+        radius: Properties.radiusS
 
         Behavior on color {
             ColorAnimation {
@@ -45,9 +46,5 @@ MenuBarItem {
                 easing.type: Easing.InOutQuad
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

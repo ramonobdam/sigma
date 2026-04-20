@@ -4,17 +4,17 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // Styled menu item component for context menus
 MenuItem {
     id: control
 
-    property int animationDuration: properties.animationDuration
-    property string backgroundColor: properties.colorElevated
-    property alias properties: properties
+    property int animationDuration: Properties.animationDuration
+    property string backgroundColor: Properties.colorElevated
     property alias shortcut: itemAction.shortcut
 
-    height: visible ? properties.rowHeight : 0
+    height: visible ? Properties.rowHeight : 0
     padding: 0
     spacing: 0
 
@@ -28,20 +28,20 @@ MenuItem {
         width: control.width
         text: control.text
         color: control.enabled ? (
-                                     control.down ? properties.colorRaised :
-                                                    properties.colorTextStrong
+                                     control.down ? Properties.colorRaised :
+                                                    Properties.colorTextStrong
                                   ) :
-                                 properties.colorStrokeStrong
+                                 Properties.colorStrokeStrong
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
     }
 
     background: Rectangle {
         anchors.fill: parent
-        color: control.down ? properties.colorBrand :
+        color: control.down ? Properties.colorBrand :
                               (
                                   control.highlighted ?
-                                      properties.colorTextHover :
+                                      Properties.colorTextHover :
                                       control.backgroundColor
                               )
 
@@ -56,8 +56,4 @@ MenuItem {
     indicator: Item {}
 
     arrow: Item {}
-
-    SigmaProperties {
-        id: properties
-    }
 }

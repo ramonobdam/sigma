@@ -4,23 +4,24 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // Action item for native MenuBar on macOS and a styled MenuBar menu item on
 // Windows
 MenuItem {
     id: control
 
-    property int fontSize: properties.fontSizeTitleBar
-    property int animationDuration: properties.animationDuration
-    property string backgroundColor: properties.colorElevated
+    property int fontSize: Properties.fontSizeTitleBar
+    property int animationDuration: Properties.animationDuration
+    property string backgroundColor: Properties.colorElevated
     property alias shortcut: itemAction.shortcut
 
-    implicitHeight: visible ? properties.rowHeight : 0
+    implicitHeight: visible ? Properties.rowHeight : 0
     implicitWidth: parent.implicitWidth
     padding: 0
     spacing: 0
 
-    contentItem: properties.macOS ? null : content
+    contentItem: Properties.macOS ? null : content
     action: itemAction
 
     Action {
@@ -45,16 +46,16 @@ MenuItem {
                 top: parent.top
                 bottom: parent.bottom
             }
-            width: properties.menuItemMargins
+            width: Properties.menuItemMargins
 
             font.pixelSize: control.fontSize
-            font.family: fonts.fontAwesome.font.family
-            text: control.checked ? properties.validIcon : ""
+            font.family: Fonts.fontAwesome.font.family
+            text: control.checked ? Properties.validIcon : ""
             color: control.enabled ? (
-                                       control.down ? properties.colorRaised :
-                                                      properties.colorTextStrong
+                                       control.down ? Properties.colorRaised :
+                                                      Properties.colorTextStrong
                                      ) :
-                                     properties.colorStrokeStrong
+                                     Properties.colorStrokeStrong
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
@@ -71,10 +72,10 @@ MenuItem {
             font.pixelSize: control.fontSize
             text: control.text
             color: control.enabled ? (
-                                       control.down ? properties.colorRaised :
-                                                      properties.colorTextStrong
+                                       control.down ? Properties.colorRaised :
+                                                      Properties.colorTextStrong
                                      ) :
-                                     properties.colorStrokeStrong
+                                     Properties.colorStrokeStrong
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
@@ -84,11 +85,11 @@ MenuItem {
 
             anchors {
                 right: parent.right
-                rightMargin: properties.menuItemMargins
+                rightMargin: Properties.menuItemMargins
                 top: parent.top
                 bottom: parent.bottom
             }
-            width: properties.menuItemShortcutWidth
+            width: Properties.menuItemShortcutWidth
 
             font.pixelSize: control.fontSize
             text: shortcutItem.nativeText
@@ -109,10 +110,10 @@ MenuItem {
 
     background: Rectangle {
         anchors.fill: parent
-        color: control.down ? properties.colorBrand :
+        color: control.down ? Properties.colorBrand :
                               (
                                   control.highlighted ?
-                                      properties.colorTextHover :
+                                      Properties.colorTextHover :
                                       control.backgroundColor
                               )
 
@@ -127,12 +128,4 @@ MenuItem {
     indicator: Item {}
 
     arrow: Item {}
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
-    }
 }

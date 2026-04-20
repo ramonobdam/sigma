@@ -6,27 +6,28 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // Button component used in combination with an input field.
 Button {
     id: button
 
-    property string backgroundColor: properties.colorElevated
-    property string buttonIcon: properties.symbolIcon
+    property string backgroundColor: Properties.colorElevated
+    property string buttonIcon: Properties.symbolIcon
     property var control
 
-    height: properties.buttonHeight
+    height: Properties.buttonHeight
     width: height
     padding: 0
     topInset: 0
     bottomInset: 0
     hoverEnabled: true
     checkable: true
-    text: checked ? properties.crossIcon : button.buttonIcon
-    font.family: checked ? fonts.fontAwesome.font.family :
-                           fonts.interSemiBold.font.family
-    font.pixelSize: checked ? properties.fontSizeComboBoxIcon :
-                              properties.fontSizeFieldButtonIcon
+    text: checked ? Properties.crossIcon : button.buttonIcon
+    font.family: checked ? Fonts.fontAwesome.font.family :
+                           Fonts.interSemiBold.font.family
+    font.pixelSize: checked ? Properties.fontSizeComboBoxIcon :
+                              Properties.fontSizeFieldButtonIcon
     font.bold: true
 
     contentItem: Text {
@@ -42,7 +43,7 @@ Button {
 
         Behavior on color {
             ColorAnimation {
-                duration: properties.animationDuration
+                duration: Properties.animationDuration
                 easing.type: Easing.InOutQuad
             }
         }
@@ -51,48 +52,40 @@ Button {
     background: RoundedRectangle {
         id: bg
         anchors.fill: parent
-        height: properties.textFieldHeight
+        height: Properties.textFieldHeight
         cornerSide: RoundedRectangle.Direction.Left
-        radius: properties.radiusS
-        border.width: properties.borderWidth
+        radius: Properties.radiusS
+        border.width: Properties.borderWidth
         border.color:
             button.enabled ? ( button.pressed ?
-                                  properties.colorDown :
+                                  Properties.colorDown :
                                   (
-                                      button.hovered ? properties.colorHover :
-                                                       properties.colorBrand
+                                      button.hovered ? Properties.colorHover :
+                                                       Properties.colorBrand
                                   )
                               ) :
-                              properties.colorStrokeWeak
+                              Properties.colorStrokeWeak
 
         color:
             button.enabled ? ( button.pressed ?
-                                  properties.colorTextDown :
+                                  Properties.colorTextDown :
                                   (
                                       button.hovered ?
-                                          properties.colorTextHover :
+                                          Properties.colorTextHover :
                                           button.backgroundColor
                                   )
                              ) :
                              button.backgroundColor
 
         // Apply dropshadow on background when using lightTheme.
-        layer.enabled: button.enabled && properties.lightTheme
+        layer.enabled: button.enabled && Properties.lightTheme
         layer.effect: ButtonElevationEffect {}
 
         Behavior on color {
             ColorAnimation {
-                duration: properties.animationDuration
+                duration: Properties.animationDuration
                 easing.type: Easing.InOutQuad
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 }

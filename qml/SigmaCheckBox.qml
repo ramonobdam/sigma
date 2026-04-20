@@ -5,26 +5,27 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Universal
+import Sigma
 
 // CheckBox component with custom styling
 CheckBox {
     id: control
 
-    property string backgroundColor: properties.colorElevated
+    property string backgroundColor: Properties.colorElevated
     property string primaryColor:
         enabled ? (
-                       down ? properties.colorDown :
+                       down ? Properties.colorDown :
                               (
-                                   hovered ? properties.colorHover :
-                                             properties.colorBrand
+                                   hovered ? Properties.colorHover :
+                                             Properties.colorBrand
                               )
                   ) :
-                  properties.colorStrokeWeak
+                  Properties.colorStrokeWeak
     property string secondaryColor:
         enabled ? (
-                      down ? properties.colorTextDown :
+                      down ? Properties.colorTextDown :
                              (
-                                 hovered ? properties.colorTextHover :
+                                 hovered ? Properties.colorTextHover :
                                            control.backgroundColor
                              )
                   ) :
@@ -42,20 +43,20 @@ CheckBox {
     indicator: Rectangle {
         id: indicator
 
-        width: properties.checkBoxWidth
-        height: properties.checkBoxWidth
-        radius: properties.radiusS + properties.borderWidth * 2
-        border.width: control.activeFocus ? properties.borderWidth : 0
+        width: Properties.checkBoxWidth
+        height: Properties.checkBoxWidth
+        radius: Properties.radiusS + Properties.borderWidth * 2
+        border.width: control.activeFocus ? Properties.borderWidth : 0
         border.color: bg.border.color
 
         // Apply dropshadow on 'activeFocus border' when using lightTheme.
         // The background is filled instead of transparent to only show the
         // shadow around the 'activeFocus border'.
-        color: properties.lightTheme ? control.backgroundColor :
-                                       properties.colorTransparent
+        color: Properties.lightTheme ? control.backgroundColor :
+                                       Properties.colorTransparent
         layer.enabled: control.activeFocus &&
                        control.enabled &&
-                       properties.lightTheme
+                       Properties.lightTheme
         layer.effect: ButtonElevationEffect {}
 
         Rectangle {
@@ -63,24 +64,24 @@ CheckBox {
 
             anchors {
                 fill: parent
-                margins: properties.borderWidth * 2
+                margins: Properties.borderWidth * 2
             }
 
             color: control.checked ? control.primaryColor :
                                      control.secondaryColor
             border.color: primaryColor
-            border.width: properties.borderWidth
-            radius: properties.radiusS
+            border.width: Properties.borderWidth
+            radius: Properties.radiusS
 
             // Apply dropshadow on button background when using lightTheme.
             layer.enabled: !control.activeFocus &&
                            control.enabled &&
-                           properties.lightTheme
+                           Properties.lightTheme
             layer.effect: ButtonElevationEffect {}
 
             Behavior on color {
                 ColorAnimation {
-                    duration: properties.animationDuration
+                    duration: Properties.animationDuration
                     easing.type: Easing.InOutQuad
                 }
             }
@@ -89,9 +90,9 @@ CheckBox {
                 anchors.fill: parent
 
                 visible: control.checked
-                text: properties.validIcon
-                font.family: fonts.fontAwesome.font.family
-                font.pixelSize: properties.fontSizeCheckBoxIcon
+                text: Properties.validIcon
+                font.family: Fonts.fontAwesome.font.family
+                font.pixelSize: Properties.fontSizeCheckBoxIcon
                 color: control.backgroundColor
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
@@ -105,17 +106,9 @@ CheckBox {
         height: control.height
         width: text.contentWidth + text.leftPadding
         text: control.text
-        color: properties.colorTextStrong
-        leftPadding: indicator.width + properties.spacingXS
+        color: Properties.colorTextStrong
+        leftPadding: indicator.width + Properties.spacingXS
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 }

@@ -5,6 +5,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import Sigma
 
 // Component used for the Monte Carlo results table left column (i.e. header)
 Item {
@@ -15,13 +16,9 @@ Item {
     anchors {
         left: parent.left
         right: parent.right
-        rightMargin: -( properties.spacingM ) / 2
+        rightMargin: -( Properties.spacingM ) / 2
     }
-    height: properties.rowHeight + line.height
-
-    SigmaProperties {
-        id: properties
-    }
+    height: Properties.rowHeight + line.height
 
     Rectangle {
         id: separatorLeft
@@ -30,14 +27,14 @@ Item {
             left: parent.left
             top: parent.top
             bottom: parent.bottom
-            topMargin: ( properties.rowHeight - properties.separatorHeight ) / 2
+            topMargin: ( Properties.rowHeight - Properties.separatorHeight ) / 2
             bottomMargin:
-                ( properties.rowHeight - properties.separatorHeight ) / 2 +
+                ( Properties.rowHeight - Properties.separatorHeight ) / 2 +
                 line.height
         }
-        width: properties.borderWidth
+        width: Properties.borderWidth
 
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 
@@ -48,15 +45,15 @@ Item {
             right: parent.right
             top: parent.top
             bottom: parent.bottom
-            topMargin: ( properties.rowHeight - properties.separatorHeight ) / 2
+            topMargin: ( Properties.rowHeight - Properties.separatorHeight ) / 2
             bottomMargin:
-                ( properties.rowHeight - properties.separatorHeight ) / 2 +
+                ( Properties.rowHeight - Properties.separatorHeight ) / 2 +
                 line.height
 
         }
-        width: properties.borderWidth
+        width: Properties.borderWidth
 
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 
@@ -69,8 +66,8 @@ Item {
         }
 
         text: control.text
-        color: properties.colorTextStrong
-        padding: properties.spacingS
+        color: Properties.colorTextStrong
+        padding: Properties.spacingS
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignLeft
@@ -84,9 +81,9 @@ Item {
             right: parent.right
             bottom: parent.bottom
         }
-        height: properties.borderWidth
+        height: Properties.borderWidth
 
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 }

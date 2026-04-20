@@ -4,6 +4,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // Base table delegate component with context menu. The context menu type (
 // input, output, correlation or default) is set based on Table.Type of the
@@ -17,26 +18,24 @@ Rectangle {
     required property int column
     readonly property TableView tv: TableView.view
     property var columnWidthProvider:
-        function( column ) { return properties.defaultTableWidth }
+        function( column ) { return Properties.defaultTableWidth }
     property bool hasFocus: current &&
                             tv.activeFocus &&
-                            !properties.outputLocked
+                            !Properties.outputLocked
     property bool enableHover: true
     property bool currentRow: tv.currentRow === row
     property bool hoveredRow: tv.hoveredRow === row
-    property string backgroundColor: properties.colorRaised
+    property string backgroundColor: Properties.colorRaised
     property string label: ""
     property string parameter: ""
     property alias hovered: hoverHandler.hovered
-    property alias properties: properties
-    property alias fonts: fonts
 
     implicitWidth: columnWidthProvider( column )
-    implicitHeight: properties.rowHeight + properties.borderWidth
-    color: currentRow ? properties.colorBrand :
+    implicitHeight: Properties.rowHeight + Properties.borderWidth
+    color: currentRow ? Properties.colorBrand :
                         (
-                            hoveredRow ? properties.colorTextHover :
-                                         properties.colorTransparent
+                            hoveredRow ? Properties.colorTextHover :
+                                         Properties.colorTransparent
                         )
     clip: true
 
@@ -44,14 +43,6 @@ Rectangle {
         tv.setCurrent( row, column )
         let menu = contextMenu.createObject( control, { value: display } )
         menu.popup( position )
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 
     HoverHandler {

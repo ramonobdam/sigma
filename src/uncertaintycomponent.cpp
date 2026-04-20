@@ -9,79 +9,47 @@
 #include <cmath>
 
 
-QStringList UncertaintyComponent::headerLabels = {
-    "Input name",
-    "Unit",
-    "Input estimate",
-    "Standard uncertainty",
-    "Distribution",
-    "Degrees of freedom",
-    "Sensitivity",
-    "Component",
-    "Variance %",
-    "Correlation %",
-    "Total %"
-};
-
-QList<int> UncertaintyComponent::columnWidths = {
-    100,
-    55,
-    105,
-    147,
-    92,
-    142,
-    92,
-    90,
-    91,
-    102,
-    75
-};
-
-
 UncertaintyComponent::UncertaintyComponent()
     :   mInputParameter {},
         mSensitivity { 0. },
-        mCorrelatedComponents { QList<UncertaintyComponent *>() }
+        mCorrelatedComponents { QList<UncertaintyComponent *>() },
+        mInputParameterId {}
 {}
 
 
 UncertaintyComponent::UncertaintyComponent( InputParameter *parameter )
     :   mInputParameter { parameter },
         mSensitivity { 0. },
-        mCorrelatedComponents { QList<UncertaintyComponent *>() }
+        mCorrelatedComponents { QList<UncertaintyComponent *>() },
+        mInputParameterId { parameter ? parameter->getId() : QUuid() }
 {}
 
 
 UncertaintyComponent::UncertaintyComponent( const UncertaintyComponent &cor )
     :   mInputParameter { cor.getInputParameter() },
         mSensitivity { cor.getSensitivity() },
-        mCorrelatedComponents { cor.getCorrelatedComponents() }
+        mCorrelatedComponents { cor.getCorrelatedComponents() },
+        mInputParameterId { cor.getInputParameterId() }
 {}
 
 
-UncertaintyComponent::~UncertaintyComponent(){}
-
-
-UncertaintyComponent& UncertaintyComponent::operator= (
+UncertaintyComponent & UncertaintyComponent::operator= (
     const UncertaintyComponent &cor
 ) {
-    if ( this == &cor ) {
-        return *this;
+    if ( this != &cor ) {
+        setInputParameter( cor.getInputParameter() );
+        setSentitivity( cor.getSensitivity() );
+        setCorrelatedComponents( cor.getCorrelatedComponents() );
+        setInputParameterId( cor.getInputParameterId() );
     }
-
-    setInputParameter( cor.getInputParameter() );
-    setSentitivity( cor.getSensitivity() );
-    setCorrelatedComponents( cor.getCorrelatedComponents() );
 
     return *this;
 }
 
 
 Distribution::Type UncertaintyComponent::getDistribution() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getDistribution();
-    }
-    return Distribution::Type::none;
+    return mInputParameter ? mInputParameter->getDistribution() :
+                             Distribution::Type::none;
 }
 
 
@@ -102,10 +70,10 @@ QList<double> UncertaintyComponent::getEvaluationValues() const {
     if ( parameter ) {
         const double nominalValue { parameter->getNominalValue() };
         // stepSize is equal to:
-        // abs(nominalValue * mStepSize) when nominalValue is not 0, otherwise
-        // mStepSize
-        double stepSize { std::abs( nominalValue * mStepSize ) };
-        stepSize = stepSize == 0 ? mStepSize : stepSize;
+        // abs(nominalValue * sStepSize) when nominalValue is not 0, otherwise
+        // sStepSize
+        double stepSize { std::abs( nominalValue * sStepSize ) };
+        stepSize = stepSize == 0. ? sStepSize : stepSize;
         values.append( nominalValue + 2. * stepSize );
         values.append( nominalValue + 1. * stepSize );
         values.append( nominalValue - 1. * stepSize );
@@ -116,41 +84,31 @@ QList<double> UncertaintyComponent::getEvaluationValues() const {
 
 
 QString UncertaintyComponent::getDOFAsString() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getDOFAsString();
-    }
-    return "";
+    return mInputParameter ? mInputParameter->getDOFAsString() : "";
 }
 
 
 QString UncertaintyComponent::getDistributionAsString() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getDistributionAsString();
-    }
-    return "";
+    return mInputParameter ? mInputParameter->getDistributionAsString() : "";
 }
 
 
-QString UncertaintyComponent::getName( const bool &csvMode ) const {
-    if ( mInputParameter ) {
-        return mInputParameter->getName( csvMode );
-    }
-    return "";
+QString UncertaintyComponent::getName( bool csvMode ) const {
+    return mInputParameter ? mInputParameter->getName( csvMode ) : "";
 }
 
 
-QString UncertaintyComponent::getUnit( const bool &csvMode ) const {
-    if ( mInputParameter ) {
-        return mInputParameter->getUnit( csvMode );
-    }
-    return "";
+QString UncertaintyComponent::getUnit( bool csvMode ) const {
+    return mInputParameter ? mInputParameter->getUnit( csvMode ) : "";
 }
 
 
-QVariant UncertaintyComponent::get(
-    const int &column,
-    const bool &csvMode
-) const {
+QUuid UncertaintyComponent::getInputParameterId() const {
+    return mInputParameterId;
+}
+
+
+QVariant UncertaintyComponent::get( int column, bool csvMode ) const {
     const int precision = {
         csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
     };
@@ -187,18 +145,13 @@ QVariant UncertaintyComponent::get(
 
 
 Distribution::InvCDF UncertaintyComponent::getInvCDF() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getInvCDF();
-    }
-    return Distribution::invCDFConstant( 0. );
+    return mInputParameter ? mInputParameter->getInvCDF() :
+                             Distribution::invCDFConstant( 0. );
 }
 
 
 bool UncertaintyComponent::getDOFInfinite() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getDOFInfinite();
-    }
-    return true;
+    return mInputParameter ? mInputParameter->getDOFInfinite() : true;
 }
 
 
@@ -225,8 +178,8 @@ double UncertaintyComponent::getCorrelationValue() const {
             double sensitivityCor { component->getSensitivity() };
             Correlation *correlation {
                 Correlation::getCorrelation(
-                    mInputParameter,
-                    component->getInputParameter()
+                    mInputParameter->getId(),
+                    component->getInputParameterId()
                 )
             };
             if ( correlation ) {
@@ -244,10 +197,7 @@ double UncertaintyComponent::getCorrelationValue() const {
 
 
 double UncertaintyComponent::getNominalValue() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getNominalValue();
-    }
-    return 0.;
+    return mInputParameter ? mInputParameter->getNominalValue() : 0.;
 }
 
 
@@ -257,18 +207,12 @@ double UncertaintyComponent::getSensitivity() const {
 
 
 double UncertaintyComponent::getStdUncertainty() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getStdUncertainty();
-    }
-    return 0.;
+    return mInputParameter ? mInputParameter->getStdUncertainty() : 0.;
 }
 
 
 double UncertaintyComponent::getSymbolValue() const {
-    if ( mInputParameter ) {
-        return *mInputParameter->getSymbolPtr();
-    }
-    return 0.;
+    return mInputParameter ? mInputParameter->getSymbolValue() : 0.;
 }
 
 
@@ -297,8 +241,8 @@ double UncertaintyComponent::getWelchSatterthwaiteTerms() const {
                 int v_j { component->getDOF() };
                 Correlation *correlation {
                     Correlation::getCorrelation(
-                        mInputParameter,
-                        component->getInputParameter()
+                        mInputParameterId,
+                        component->getInputParameterId()
                     )
                 };
                 if ( correlation ) {
@@ -306,7 +250,7 @@ double UncertaintyComponent::getWelchSatterthwaiteTerms() const {
                     double term {};
                     // First term
                     term = std::pow( r_ij * c_i * c_j * u_i * u_j, 2 );
-                    term *= ( ( v_i + v_j + 0.5) / ( v_i * v_j) ) / 2.;
+                    term *= ( ( v_i + v_j + 0.5 ) / ( v_i * v_j) ) / 2.;
                     value += term;
 
                     // Second term
@@ -324,12 +268,8 @@ double UncertaintyComponent::getWelchSatterthwaiteTerms() const {
 }
 
 
-
 int UncertaintyComponent::getDOF() const {
-    if ( mInputParameter ) {
-        return mInputParameter->getDOF();
-    }
-    return 1;
+    return mInputParameter ? mInputParameter->getDOF() : 1;
 }
 
 
@@ -343,7 +283,7 @@ void UncertaintyComponent::addCorrelatedComponent(
 
 
 void UncertaintyComponent::calculateSensitivity(
-    const double &stepSize,
+    double stepSize,
     const QList<double> &values
 ) {
     // Five point midpoint approximation formula for first derivative
@@ -365,22 +305,28 @@ void UncertaintyComponent::resetSymbolValue() {
 
 void UncertaintyComponent::setCorrelatedComponents(
     const QList<UncertaintyComponent *> &components
-    ) {
+) {
     mCorrelatedComponents = components;
 }
 
 
 void UncertaintyComponent::setInputParameter( InputParameter *parameter ) {
     mInputParameter = parameter;
+    mInputParameterId =  parameter ? parameter->getId() : QUuid();
 }
 
 
-void UncertaintyComponent::setSentitivity( const double &sensitivity ) {
+void UncertaintyComponent::setInputParameterId( const QUuid &id ) {
+    mInputParameterId = id;
+}
+
+
+void UncertaintyComponent::setSentitivity( double sensitivity ) {
     mSensitivity = sensitivity;
 }
 
 
-void UncertaintyComponent::setSymbolValue( const double &value ) {
+void UncertaintyComponent::setSymbolValue( double value ) {
     if ( mInputParameter ) {
         mInputParameter->setSymbolValue(value);
     }

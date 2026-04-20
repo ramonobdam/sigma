@@ -5,6 +5,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtCore
+import Sigma
 
 // Window with version and license information
 BaseWindow {
@@ -24,7 +25,7 @@ BaseWindow {
             right: parent.right
             top: titleBar.bottom
             bottom: parent.bottom
-            margins: properties.spacingM
+            margins: Properties.spacingM
         }
 
         focus: true
@@ -36,8 +37,8 @@ BaseWindow {
 
             anchors.horizontalCenter: parent.horizontalCenter
 
-            source: properties.appIcon
-            width: properties.appIconWidth
+            source: Properties.appIcon
+            width: Properties.appIconWidth
             height: width
             fillMode: Image.PreserveAspectFit
             mipmap: true
@@ -50,13 +51,13 @@ BaseWindow {
 
             anchors {
                 top: icon.bottom
-                topMargin: properties.spacingM
+                topMargin: Properties.spacingM
                 left: parent.left
                 right: parent.right
             }
 
             text: Application.displayName
-            color: properties.colorTextStrong
+            color: Properties.colorTextStrong
         }
 
         SigmaText {
@@ -64,7 +65,7 @@ BaseWindow {
 
             anchors {
                 top: heading.bottom
-                topMargin: properties.spacingS
+                topMargin: Properties.spacingS
                 left: parent.left
                 right: parent.right
             }
@@ -78,7 +79,7 @@ BaseWindow {
 
             anchors {
                 top: version.bottom
-                topMargin: properties.spacingM
+                topMargin: Properties.spacingM
                 left: parent.left
                 right: parent.right
             }
@@ -94,7 +95,7 @@ BaseWindow {
                 <p>
                 The combined measurement uncertainty and uncertainty budget are
                 calculated using the method of propagation of uncertainties as
-                given in <a style=\"color: " + properties.colorBrand  +
+                given in <a style=\"color: " + Properties.colorBrand  +
                 ";\" href='https://doi.org/10.59161/JCGM100-2008E'>"+
                 "GUM JCGM 100:2008</a>.
                 </p>
@@ -103,7 +104,7 @@ BaseWindow {
                 In addition, a more broadly applicable Monte Carlo simulation
                 option is available that implements the propagation of
                 distributions method as given in
-                <a style=\"color: " + properties.colorBrand  +
+                <a style=\"color: " + Properties.colorBrand  +
                 ";\" href='https://doi.org/10.59161/JCGM101-2008'>
                 GUM JCGM 101:2008</a>.
                 </p>"
@@ -114,7 +115,7 @@ BaseWindow {
 
             anchors {
                 top: description.bottom
-                topMargin: properties.spacingM
+                topMargin: Properties.spacingM
                 left: parent.left
                 right: parent.right
             }
@@ -124,7 +125,7 @@ BaseWindow {
         SigmaRichText {
             anchors {
                 top: rule.bottom
-                topMargin: properties.spacingM
+                topMargin: Properties.spacingM
                 left: parent.left
                 right: parent.right
             }
@@ -137,7 +138,7 @@ BaseWindow {
             <p>
             Sigma is licensed under the
             <a style=\"color: " +
-            properties.colorBrand  +
+            Properties.colorBrand  +
             ";\" href='https://opensource.org/licenses/MIT'>MIT License</a>.
             </p>
 
@@ -145,7 +146,7 @@ BaseWindow {
             This product dynamically links against the Qt framework.
             Qt is licensed under the
             <a style=\"color: " +
-            properties.colorBrand  +
+            Properties.colorBrand  +
             ";\" href='https://www.gnu.org/licenses/lgpl-3.0.html'>
             GNU Lesser General Public License v3 (LGPL v3)</a>.
             </p>

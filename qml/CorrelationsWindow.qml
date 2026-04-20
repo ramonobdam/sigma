@@ -68,10 +68,6 @@ BaseWindow {
             calculation.getCorrelationColumnWidths()
     }
 
-    SigmaProperties {
-        id: properties
-    }
-
     CorrelationEditWindow {
         id: editCorrelation
 
@@ -92,7 +88,7 @@ BaseWindow {
             right: parent.right
             top: titleBar.bottom
             bottom: parent.bottom
-            margins: properties.spacingM
+            margins: Properties.spacingM
         }
 
         focus: true
@@ -120,16 +116,16 @@ BaseWindow {
                 top: parent.top
                 right: parent.right
                 // Compensate for 'activefocus border' on button
-                topMargin: -2 * properties.borderWidth
-                rightMargin: -2 * properties.borderWidth
+                topMargin: -2 * Properties.borderWidth
+                rightMargin: -2 * Properties.borderWidth
             }
 
             SecondaryButton {
                 id: addCorrelationButton
 
-                text: properties.buttonTextNew
-                toolTipText: enabled ? properties.tipNewCorrelation :
-                                       properties.tipAdd2InputParamFirst
+                text: Properties.buttonTextNew
+                toolTipText: enabled ? Properties.tipNewCorrelation :
+                                       Properties.tipAdd2InputParamFirst
                 anchors {
                     right: parent.left
                 }
@@ -149,9 +145,9 @@ BaseWindow {
 
             anchors {
                 top: correlationsHeading.bottom
-                topMargin: properties.spacingM
+                topMargin: Properties.spacingM
                 bottom: horizontalRule.top
-                bottomMargin: properties.spacingM
+                bottomMargin: Properties.spacingM
             }
 
             model: calculation.correlationItemModel()

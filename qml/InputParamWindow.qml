@@ -192,10 +192,6 @@ BaseWindow {
         id: param
     }
 
-    SigmaProperties {
-        id: properties
-    }
-
     Item {
         id: container
 
@@ -204,7 +200,7 @@ BaseWindow {
             right: parent.right
             top: titleBar.bottom
             bottom: parent.bottom
-            margins: properties.spacingM
+            margins: Properties.spacingM
         }
 
         focus: true
@@ -229,7 +225,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             maximumLength: 50
             unacceptableInputMessage: "Enter a valid input name"
@@ -262,7 +258,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             model: calculation.unitsModel()
             editable: true
@@ -293,7 +289,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             validator: DoubleValidator {
                 notation: DoubleValidator.ScientificNotation
@@ -326,7 +322,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             // Disable the field and its validator when the probability
             // distribution is none. The standard uncertainty is not used in
@@ -350,7 +346,7 @@ BaseWindow {
             SigmaToolTip {
                 visible: stdUncertaintyField.hovered &&
                          !stdUncertaintyField.enabled
-                text: properties.tipNoDistribution
+                text: Properties.tipNoDistribution
             }
         }
 
@@ -373,7 +369,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             model: calculation.distributionsModel()
             editable: false
@@ -419,7 +415,7 @@ BaseWindow {
             anchors {
                 top: dofCheckBox.top
                 left: dofCheckBox.right
-                leftMargin: properties.spacingL
+                leftMargin: Properties.spacingL
             }
             inputFieldWidth: 50
 
@@ -479,10 +475,10 @@ BaseWindow {
             anchors {
                 top: saveButton.top
                 left: saveButton.right
-                leftMargin: properties.spacingButtons
+                leftMargin: Properties.spacingButtons
             }
 
-            text: properties.buttonTextCancel
+            text: Properties.buttonTextCancel
 
             onClicked: { control.close() }
 

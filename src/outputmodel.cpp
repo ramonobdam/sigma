@@ -7,59 +7,120 @@
 
 OutputModel::OutputModel( QObject *parent )
     :   QAbstractTableModel { parent },
-        mOutputRow { -1 },
-        mOutputParameterModel {}
-{}
+        mCurrentIndex {},
+        mInputParameterModel { InputParameter::getInputModel() },
+        mOutputParameterModel { OutputParameter::getOutputModel() }
+{
+    // Create connections to the OutputParameter model
+    connect(
+        mOutputParameterModel->selectionModel(),
+        &QItemSelectionModel::currentRowChanged,
+        this,
+        &OutputModel::setCurrentIndex
+    );
 
+    connect(
+        mOutputParameterModel->itemModel(),
+        &QAbstractItemModel::dataChanged,
+        this,
+        &OutputModel::onOutputParameterDataChanged
+    );
 
-ModelControl<OutputParameter *> * OutputModel::getOutputParameterModel() const {
-    return mOutputParameterModel;
-}
+    connect(
+        mOutputParameterModel->itemModel(),
+        &QAbstractItemModel::rowsRemoved,
+        this,
+        &OutputModel::onOutputParameterRowsRemoved
+    );
 
+    connect(
+        mOutputParameterModel->itemModel(),
+        &QAbstractItemModel::modelReset,
+        this,
+        &OutputModel::onOutputParameterModelReset
+    );
 
-int OutputModel::getOutputRow() const {
-    return mOutputRow;
-}
-
-
-void OutputModel::emitAllDataChanged() {
-    emit dataChanged(
-        index( 0, 0 ),
-        index( rowCount() - 1, columnCount() - 1 ),
-        { Qt::DisplayRole, Qt::DecorationRole }
+    // Create connections to the InputParameter model
+    connect(
+        mInputParameterModel->itemModel(),
+        &QAbstractItemModel::dataChanged,
+        this,
+        &OutputModel::onInputParameterDataChanged
+    );
+    connect(
+        mInputParameterModel->itemModel(),
+        &QAbstractItemModel::modelReset,
+        this,
+        &OutputModel::onInputParameterDataChanged
     );
 }
 
 
-void OutputModel::emitModelAboutToBeReset() {
-    beginResetModel();
+QPersistentModelIndex OutputModel::getCurrentIndex() const {
+    return mCurrentIndex;
 }
 
 
-void OutputModel::emitModelReset() {
+void OutputModel::onInputParameterDataChanged() {
+    // An InputParameter was updated. If the InputParameter does not change
+    // numerically, the OutputParameters are not recompiled. The OutputModel is
+    // reset here to make sure the updated InputParameter is displayed.
+    beginResetModel();
     endResetModel();
 }
 
 
-void OutputModel::setOutputParameterModel(
-    ModelControl<OutputParameter *> *outputModel
+void OutputModel::onOutputParameterDataChanged(
+    const QModelIndex &topLeft,
+    const QModelIndex &bottomRight,
+    const QList<int> &roles
 ) {
-    mOutputParameterModel = outputModel;
+    if ( !mCurrentIndex.isValid() ) return;
+
+    const int row { mCurrentIndex.row() };
+    if ( row < topLeft.row() || row > bottomRight.row() ) {
+        // The changed data is not displayed
+        return;
+    }
+
+    beginResetModel();
+    endResetModel();
 }
 
 
-void OutputModel::setOutputRow( int row ) {
-    if ( row != getOutputRow() ) {
+void OutputModel::onOutputParameterModelReset() {
+    // Reset the model and display the current index of the OutputParameter
+    // model
+    beginResetModel();
+    mCurrentIndex = mOutputParameterModel->selectionModel()->currentIndex();
+    endResetModel();
+}
+
+
+void OutputModel::onOutputParameterRowsRemoved() {
+    // The QPersistentModelIndex becomes invalid when the item it is
+    // referencing is removed
+    if ( mCurrentIndex.isValid() )
+        return;
+
+    // Displayed OutputParameter was removed
+    beginResetModel();
+    endResetModel();
+}
+
+
+void OutputModel::setCurrentIndex( const QModelIndex &index ) {
+    if ( mCurrentIndex != index ) {
         beginResetModel();
-        mOutputRow = row;
+        mCurrentIndex = index;
         endResetModel();
     }
 }
 
 
 OutputParameter * OutputModel::getOutputParameter() const {
-    if ( getOutputParameterModel() ) {
-        return getOutputParameterModel()->getRow( getOutputRow() );
+    if ( mOutputParameterModel ) {
+        return mOutputParameterModel->getByRow( mCurrentIndex.row() );
     }
     return nullptr;
 }

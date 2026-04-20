@@ -15,7 +15,7 @@ ApplicationWindow {
     id: window
 
     property int titleBarHeight:
-        Math.max( SafeArea.margins.top, properties.minimumTitleBarHeight )
+        Math.max( SafeArea.margins.top, Properties.minimumTitleBarHeight )
 
     function saveProjectAs( closeWindowOnSuccess = false ) {
         fileDialog.fileMode = FileDialog.SaveFile
@@ -35,7 +35,7 @@ ApplicationWindow {
     }
 
     function openProject( checkForUnsavedChanges = true ) {
-        if ( checkForUnsavedChanges && properties.unsavedChanges ) {
+        if ( checkForUnsavedChanges && Properties.unsavedChanges ) {
             // Saving changes before opening a project
             discardUnsavedChanges.mode = DiscardUnsavedChanges.OpenProject
             discardUnsavedChanges.show()
@@ -47,7 +47,7 @@ ApplicationWindow {
     }
 
     function newProject( checkForUnsavedChanges = true ) {
-        if ( checkForUnsavedChanges && properties.unsavedChanges ) {
+        if ( checkForUnsavedChanges && Properties.unsavedChanges ) {
             // Saving changes before creating a new project
             discardUnsavedChanges.mode = DiscardUnsavedChanges.NewProject
             discardUnsavedChanges.show()
@@ -156,34 +156,42 @@ ApplicationWindow {
         aboutWindow.show()
     }
 
-    width: properties.defaultMainWindowWidth
-    height: properties.defaultMainWindowHeight
+    function undo() {
+        calculation.undo()
+    }
+
+    function redo() {
+        calculation.redo()
+    }
+
+    width: Properties.defaultMainWindowWidth
+    height: Properties.defaultMainWindowHeight
     topPadding: 0
-    minimumWidth: properties.minWidthParam +
-                  properties.spacingM +
-                  properties.minWidthMonteCarlo +
+    minimumWidth: Properties.minWidthParam +
+                  Properties.spacingM +
+                  Properties.minWidthMonteCarlo +
                   splitViewMain.anchors.margins * 2
-    minimumHeight: properties.minHeightParam +
-                   properties.spacingM +
-                   properties.minHeightResults +
+    minimumHeight: Properties.minHeightParam +
+                   Properties.spacingM +
+                   Properties.minHeightResults +
                    splitViewMain.anchors.margins * 2
     visible: true
-    title: properties.macOS ? "" : properties.windowTitle
-    flags: properties.windowFlags
-    color: properties.colorBase
-    font.family: fonts.inter.font.family
-    font.pixelSize: properties.fontSizeBody
-    Material.theme: properties.lightTheme ? Material.Light : Material.Dark
+    title: Properties.macOS ? "" : Properties.windowTitle
+    flags: Properties.windowFlags
+    color: Properties.colorBase
+    font.family: Fonts.inter.font.family
+    font.pixelSize: Properties.fontSizeBody
+    Material.theme: Properties.lightTheme ? Material.Light : Material.Dark
     onClosing: ( close ) => {
         // Before closing the main window:
 
         // Stop Monte Carlo simulation in case it is running
-        if ( properties.outputLocked ) {
+        if ( Properties.outputLocked ) {
             calculation.stopMonteCarlo()
         }
 
         // Open 'discard unsaved changes?' dialog if needed
-        if ( properties.unsavedChanges && !discardUnsavedChanges.closeWindow ) {
+        if ( Properties.unsavedChanges && !discardUnsavedChanges.closeWindow ) {
             close.accepted = false
             discardUnsavedChanges.mode = DiscardUnsavedChanges.Close
             discardUnsavedChanges.show()
@@ -193,14 +201,6 @@ ApplicationWindow {
         // Create native framesless window on Windows
         captionHelper.attachTo( window )
         captionHelper.captionHeight = window.titleBarHeight
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 
     Settings {
@@ -237,16 +237,16 @@ ApplicationWindow {
     SigmaTitleBar {
         id: titleBar
 
-        title: properties.windowTitle
+        title: Properties.windowTitle
         titleBarHeight: window.titleBarHeight
-        titleBarLeftMargin: properties.macOS ?
-                                properties.titleBarTextLeftMargin :
+        titleBarLeftMargin: Properties.macOS ?
+                                Properties.titleBarTextLeftMargin :
                                 (
                                     icon.anchors.leftMargin +
                                     icon.width +
                                     menuBar.anchors.leftMargin +
                                     menuBar.implicitWidth +
-                                    properties.spacingM
+                                    Properties.spacingM
                                 )
         titleAlignment: Text.AlignHCenter
         color: window.color
@@ -264,9 +264,9 @@ ApplicationWindow {
                 verticalCenter: parent.verticalCenter
             }
 
-            visible: properties.windows
-            source: properties.appIcon
-            width: visible ? properties.titleBarIconWidth : 0
+            visible: Properties.windows
+            source: Properties.appIcon
+            width: visible ? Properties.titleBarIconWidth : 0
             height: width
             fillMode: Image.PreserveAspectFit
             mipmap: true
@@ -278,7 +278,7 @@ ApplicationWindow {
 
             anchors {
                 left: icon.right
-                leftMargin: properties.spacingXS
+                leftMargin: Properties.spacingXS
             }
 
             property bool fullScreen:
@@ -309,8 +309,8 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
-                    text: properties.macOs ? "Quit" : "Exit"
-                    shortcut: properties.macOs ? StandardKey.Close : "Alt+F4"
+                    text: Properties.macOs ? "Quit" : "Exit"
+                    shortcut: Properties.macOs ? StandardKey.Close : "Alt+F4"
                     onTriggered: { closeWindow() }
                 }
             }
@@ -321,15 +321,15 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "New..."
-                    shortcut: properties.macOs ? StandardKey.New : "Ctrl+N"
-                    enabled: !properties.outputLocked
+                    shortcut: Properties.macOs ? StandardKey.New : "Ctrl+N"
+                    enabled: !Properties.outputLocked
                     onTriggered: { newProject() }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Open..."
-                    shortcut: properties.macOs ? StandardKey.Open : "Ctrl+O"
-                    enabled: !properties.outputLocked
+                    shortcut: Properties.macOs ? StandardKey.Open : "Ctrl+O"
+                    enabled: !Properties.outputLocked
                     onTriggered: { openProject() }
                 }
 
@@ -337,20 +337,20 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Save"
-                    shortcut: properties.macOs ? StandardKey.Save : "Ctrl+S"
-                    enabled: !properties.outputLocked &&
-                             properties.unsavedChanges
+                    shortcut: Properties.macOs ? StandardKey.Save : "Ctrl+S"
+                    enabled: !Properties.outputLocked &&
+                             Properties.unsavedChanges
                     onTriggered: {
-                        properties.filePathNotEmpty ? saveProject() :
+                        Properties.filePathNotEmpty ? saveProject() :
                                                       saveProjectAs()
                     }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Save As..."
-                    shortcut: properties.macOs ? StandardKey.SaveAs :
+                    shortcut: Properties.macOs ? StandardKey.SaveAs :
                                                  "Ctrl+Shift+S"
-                    enabled: !properties.outputLocked
+                    enabled: !Properties.outputLocked
                     onTriggered: { saveProjectAs() }
                 }
 
@@ -359,11 +359,11 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Auto Save"
                     checkable: true
-                    checked: properties.autoSaveProject
+                    checked: Properties.autoSaveProject
                     onTriggered: {
                         appSettings.setAutoSaveProject( this.checked )
                         // When Auto Save is switched on, save any unsaved changes
-                        if ( this.checked && properties.unsavedChanges ) {
+                        if ( this.checked && Properties.unsavedChanges ) {
                             calculation.saveProject()
                         }
                     }
@@ -372,7 +372,7 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Restore last project on startup"
                     checkable: true
-                    checked: properties.restoreLastProject
+                    checked: Properties.restoreLastProject
                     onTriggered: { appSettings.setRestoreLastProject( this.checked ) }
                 }
 
@@ -382,7 +382,7 @@ ApplicationWindow {
                     text: "Clear..."
                     shortcut: "Ctrl+Delete"
                     onTriggered: { clearProject() }
-                    enabled: !properties.outputLocked
+                    enabled: !Properties.outputLocked
                 }
 
                 ContextMenuRule {}
@@ -391,7 +391,27 @@ ApplicationWindow {
                     text: "Export results to CSV file..."
                     shortcut: "Ctrl+E"
                     onTriggered: { openCSV() }
-                    enabled: !properties.outputLocked
+                    enabled: !Properties.outputLocked
+                }
+            }
+
+            SigmaMenu {
+                title: "Edit"
+                implicitWidth: 200
+
+                SigmaMenuBarMenuItem {
+                    text: "Undo"
+                    shortcut: Properties.macOs ? StandardKey.Undo : "Ctrl+Z"
+                    enabled: Properties.canUndo
+                    onTriggered: { undo() }
+                }
+
+                SigmaMenuBarMenuItem {
+                    text: "Redo"
+                    shortcut: Properties.macOs ? StandardKey.Redo :
+                                                 "Ctrl+Shift+Z"
+                    enabled: Properties.canRedo
+                    onTriggered: { redo() }
                 }
             }
 
@@ -402,7 +422,7 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Add new..."
                     shortcut: "Ctrl+Shift+I"
-                    enabled: !properties.outputLocked
+                    enabled: !Properties.outputLocked
                     onTriggered: { openInputParam( false ) }
                 }
 
@@ -411,26 +431,26 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Edit" +
                           (
-                               properties.inputParamAvailable ?
-                                  ( " " + properties.inputName ) :
+                               Properties.inputParamAvailable ?
+                                  ( " " + Properties.inputName ) :
                                    ""
                           )
                           + "..."
-                    enabled: !properties.outputLocked &&
-                             properties.inputParamAvailable
+                    enabled: !Properties.outputLocked &&
+                             Properties.inputParamAvailable
                     onTriggered:  { openInputParam( true ) }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Delete" +
                           (
-                              properties.inputParamAvailable ?
-                                  ( " " + properties.inputName ) :
+                              Properties.inputParamAvailable ?
+                                  ( " " + Properties.inputName ) :
                                   ""
                           ) +
                           "..."
-                    enabled: !properties.outputLocked &&
-                             properties.inputParamAvailable
+                    enabled: !Properties.outputLocked &&
+                             Properties.inputParamAvailable
                     onTriggered: { deleteInputParam() }
                 }
 
@@ -439,7 +459,7 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Correlations..."
                     shortcut: "Ctrl+Shift+C"
-                    enabled: !properties.outputLocked
+                    enabled: !Properties.outputLocked
                     onTriggered: { openCorrelations() }
                 }
             }
@@ -451,7 +471,7 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Add new..."
                     shortcut: "Ctrl+Shift+O"
-                    enabled: !properties.outputLocked
+                    enabled: !Properties.outputLocked
                     onTriggered: { openOutputParam( false ) }
                 }
 
@@ -460,26 +480,26 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Edit" +
                           (
-                              properties.outputParamAvailable ?
-                                  ( " " + properties.outputName ) :
+                              Properties.outputParamAvailable ?
+                                  ( " " + Properties.outputName ) :
                                   ""
                           ) +
                           "..."
-                    enabled: !properties.outputLocked &&
-                             properties.outputParamAvailable
+                    enabled: !Properties.outputLocked &&
+                             Properties.outputParamAvailable
                     onTriggered: { openOutputParam( true ) }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Delete" +
                           (
-                              properties.outputParamAvailable ?
-                                  ( " " + properties.outputName ) :
+                              Properties.outputParamAvailable ?
+                                  ( " " + Properties.outputName ) :
                                   ""
                           )
                           + "..."
-                    enabled: !properties.outputLocked &&
-                             properties.outputParamAvailable
+                    enabled: !Properties.outputLocked &&
+                             Properties.outputParamAvailable
                     onTriggered: { deleteOutputParam() }
                 }
             }
@@ -491,14 +511,14 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     text: "Start"
                     shortcut: "Ctrl+R"
-                    enabled: calculation.outputValid && !properties.outputLocked
+                    enabled: calculation.outputValid && !Properties.outputLocked
                     onTriggered: calculation.runMonteCarlo()
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Stop"
                     shortcut: "Ctrl+T"
-                    enabled: calculation.outputValid && properties.outputLocked
+                    enabled: calculation.outputValid && Properties.outputLocked
                     onTriggered: calculation.stopMonteCarlo()
                 }
             }
@@ -515,7 +535,7 @@ ApplicationWindow {
                 }
 
                 SigmaMenuBarMenuItem {
-                    text: properties.macOS ?
+                    text: Properties.macOS ?
                                 "Zoom" :
                                 ( menuBar.maximized ? "Restore" : "Maximize" )
                     enabled: !menuBar.fullScreen
@@ -527,7 +547,7 @@ ApplicationWindow {
                     text: "Full Screen"
                     checkable: true
                     checked: menuBar.fullScreen
-                    shortcut: properties.macOS ? StandardKey.FullScreen : "F11"
+                    shortcut: Properties.macOS ? StandardKey.FullScreen : "F11"
                     onTriggered: { captionHelper.toggleFullScreen( window ) }
                 }
             }
@@ -544,8 +564,8 @@ ApplicationWindow {
             right: parent.right
             top: titleBar.bottom
             bottom: parent.bottom
-            margins: properties.spacingM
-            topMargin: ( titleBar.height === 0 ) ? properties.spacingM : 0
+            margins: Properties.spacingM
+            topMargin: ( titleBar.height === 0 ) ? Properties.spacingM : 0
         }
 
         orientation: Qt.Horizontal
@@ -558,8 +578,8 @@ ApplicationWindow {
             // results on the bottom
 
             orientation: Qt.Vertical
-            SplitView.minimumWidth: properties.minWidthParam
-            SplitView.preferredWidth: properties.preferredWidthParam
+            SplitView.minimumWidth: Properties.minWidthParam
+            SplitView.preferredWidth: Properties.preferredWidthParam
             Component.onCompleted: restoreState( settings.svVertical )
             Component.onDestruction: settings.svVertical = saveState()
 
@@ -569,17 +589,17 @@ ApplicationWindow {
                 // output parameters on the right
 
                 orientation: Qt.Horizontal
-                SplitView.minimumHeight: properties.minHeightParam
-                SplitView.preferredHeight: properties.preferredHeightParam
+                SplitView.minimumHeight: Properties.minHeightParam
+                SplitView.preferredHeight: Properties.preferredHeightParam
                 Component.onCompleted: restoreState( settings.svParam )
                 Component.onDestruction: settings.svParam = saveState()
 
                 Item {
                     // Input parameters panel
 
-                    SplitView.minimumWidth: properties.minWidthInputParam
+                    SplitView.minimumWidth: Properties.minWidthInputParam
                     SplitView.preferredWidth:
-                        properties.preferredWidthInputParam
+                        Properties.preferredWidthInputParam
 
                     Card {
                         id: inputParamCard
@@ -600,22 +620,22 @@ ApplicationWindow {
                                 top: parent.top
                                 right: parent.right
                                 // Compensate for 'activefocus border' on button
-                                topMargin: -2 * properties.borderWidth
-                                rightMargin: -2 * properties.borderWidth
+                                topMargin: -2 * Properties.borderWidth
+                                rightMargin: -2 * Properties.borderWidth
                             }
 
                             SecondaryButton {
                                 id: addInputParamButton
 
-                                text: properties.buttonTextNew
-                                backgroundColor: properties.colorRaised
-                                toolTipText: properties.tipNewInputParameter
+                                text: Properties.buttonTextNew
+                                backgroundColor: Properties.colorRaised
+                                toolTipText: Properties.tipNewInputParameter
                                 toolTipTextDisabled:
-                                    properties.tipMonteCarloRunning
-                                enabled: !properties.outputLocked
+                                    Properties.tipMonteCarloRunning
+                                enabled: !Properties.outputLocked
                                 anchors {
                                     right: correlationsButton.left
-                                    rightMargin: properties.spacingButtons
+                                    rightMargin: Properties.spacingButtons
                                 }
                                 onClicked: { openInputParam( false ) }
                                 KeyNavigation.backtab: runMonteCarloButton
@@ -629,16 +649,16 @@ ApplicationWindow {
                                 id: correlationsButton
 
                                 text: "Correlations"
-                                backgroundColor: properties.colorRaised
-                                toolTipText: properties.tipShowCorrelations
+                                backgroundColor: Properties.colorRaised
+                                toolTipText: Properties.tipShowCorrelations
                                 toolTipTextDisabled:
-                                    properties.outputLocked ?
-                                        properties.tipMonteCarloRunning :
-                                        properties.tipAdd2InputParamFirst
+                                    Properties.outputLocked ?
+                                        Properties.tipMonteCarloRunning :
+                                        Properties.tipAdd2InputParamFirst
                                 anchors {
                                     right: parent.right
                                 }
-                                enabled: !properties.outputLocked
+                                enabled: !Properties.outputLocked
                                 onClicked: { openCorrelations() }
                                 KeyNavigation.backtab: addInputParamButton
                                 KeyNavigation.tab: addOutputParamButton
@@ -674,7 +694,7 @@ ApplicationWindow {
                                 }
                             }
                             label: "input parameter"
-                            parameter: properties.inputName
+                            parameter: Properties.inputName
                             extra: "Correlations..."
                             onDeleteRequested: { deleteInputParam() }
                             onOpenRequested: ( edit ) => openInputParam( edit )
@@ -691,13 +711,13 @@ ApplicationWindow {
                 Item {
                     // Output parameters panel
 
-                    SplitView.minimumWidth: properties.minWidthOutputParam
+                    SplitView.minimumWidth: Properties.minWidthOutputParam
                     SplitView.fillWidth: true
 
                     Card {
                         id: outputParamCard
 
-                        title: properties.titleOutputParameters
+                        title: Properties.titleOutputParameters
                         ContextMenu.menu: TableContextMenu {
                             label: "output parameter"
                             addNewOnly: true
@@ -711,19 +731,19 @@ ApplicationWindow {
                                 top: parent.top
                                 right: parent.right
                                 // Compensate for 'activefocus border' on button
-                                topMargin: -2 * properties.borderWidth
-                                rightMargin: -2 * properties.borderWidth
+                                topMargin: -2 * Properties.borderWidth
+                                rightMargin: -2 * Properties.borderWidth
                             }
 
                             SecondaryButton {
                                 id: addOutputParamButton
 
-                                text: properties.buttonTextNew
-                                backgroundColor: properties.colorRaised
-                                toolTipText: properties.tipNewOutputParameter
+                                text: Properties.buttonTextNew
+                                backgroundColor: Properties.colorRaised
+                                toolTipText: Properties.tipNewOutputParameter
                                 toolTipTextDisabled:
-                                    properties.tipMonteCarloRunning
-                                enabled: !properties.outputLocked
+                                    Properties.tipMonteCarloRunning
+                                enabled: !Properties.outputLocked
                                 anchors {
                                     right: parent.right
                                 }
@@ -769,7 +789,7 @@ ApplicationWindow {
                                 }
                             }
                             label: "output parameter"
-                            parameter: properties.outputName
+                            parameter: Properties.outputName
                             onDeleteRequested: { deleteOutputParam() }
                             onOpenRequested: ( edit ) => openOutputParam( edit )
                             upKeyFocusTarget: addOutputParamButton
@@ -786,13 +806,13 @@ ApplicationWindow {
                 // Results panel: combined uncertainty results and uncertainty
                 // components
 
-                SplitView.minimumHeight: properties.minHeightResults
+                SplitView.minimumHeight: Properties.minHeightResults
                 SplitView.fillHeight: true
 
                 Card {
                     id: resultsCard
 
-                    title: properties.titleCombinedUncertainty
+                    title: Properties.titleCombinedUncertainty
                     ContextMenu.menu: TableContextMenu {
                         extra: "Export results to CSV file..."
                         onExtraRequested: { openCSV() }
@@ -808,8 +828,8 @@ ApplicationWindow {
                             bottom: undefined
                         }
                         height: (
-                                    properties.rowHeight +
-                                    properties.borderWidth
+                                    Properties.rowHeight +
+                                    Properties.borderWidth
                                 ) * 2
                         model: calculation.resultsItemModel()
                         delegate: DefaultTableDelegate {
@@ -834,11 +854,11 @@ ApplicationWindow {
                     Heading {
                         id: budgetHeader
 
-                        text: properties.titleUncertaintyComponents
+                        text: Properties.titleUncertaintyComponents
                         anchors {
                             top: resultsTable.bottom
                             topMargin:
-                                properties.spacingM + properties.spacingXS
+                                Properties.spacingM + Properties.spacingXS
                             left: parent.left
                             right: parent.right
                         }
@@ -849,7 +869,7 @@ ApplicationWindow {
 
                         anchors {
                             top: budgetHeader.bottom
-                            topMargin: properties.spacingM
+                            topMargin: Properties.spacingM
                             left: parent.left
                             right: parent.right
                         }
@@ -883,13 +903,13 @@ ApplicationWindow {
         Item {
             // Monte Carlo panel
 
-            SplitView.minimumWidth: properties.minWidthMonteCarlo
+            SplitView.minimumWidth: Properties.minWidthMonteCarlo
             SplitView.fillWidth: true
 
             Card {
                 id: monteCarloCard
 
-                title: properties.titleMonteCarlo
+                title: Properties.titleMonteCarlo
                 ContextMenu.menu: MonteCarloContextMenu {
                     onExtraRequested: { openCSV() }
                 }
@@ -901,8 +921,8 @@ ApplicationWindow {
                         top: parent.top
                         right: parent.right
                         // Compensate for 'active focus border' on button
-                        topMargin: -2 * properties.borderWidth
-                        rightMargin: -2 * properties.borderWidth
+                        topMargin: -2 * Properties.borderWidth
+                        rightMargin: -2 * Properties.borderWidth
                     }
 
                     SecondaryButton {
@@ -912,17 +932,17 @@ ApplicationWindow {
                             right: parent.right
                         }
                         width: 62
-                        text: !properties.outputLocked ?
-                                  properties.buttonTextStart :
-                                  properties.buttonTextStop
-                        backgroundColor: properties.colorRaised
+                        text: !Properties.outputLocked ?
+                                  Properties.buttonTextStart :
+                                  Properties.buttonTextStop
+                        backgroundColor: Properties.colorRaised
                         toolTipText:
-                            !properties.outputLocked ?
-                                properties.tipStartMonteCarlo :
-                                properties.tipStopMonteCarlo
-                        toolTipTextDisabled: properties.tipSelectValidOutput
+                            !Properties.outputLocked ?
+                                Properties.tipStartMonteCarlo :
+                                Properties.tipStopMonteCarlo
+                        toolTipTextDisabled: Properties.tipSelectValidOutput
                         enabled: calculation.outputValid
-                        onClicked: !properties.outputLocked ?
+                        onClicked: !Properties.outputLocked ?
                                        calculation.runMonteCarlo() :
                                        calculation.stopMonteCarlo()
                         KeyNavigation.backtab: addOutputParamButton
@@ -947,14 +967,14 @@ ApplicationWindow {
                             bottom: parent.bottom
                             left: parent.right
                             leftMargin:
-                                ( properties.spacingM - indicatorWidth ) / 2
+                                ( Properties.spacingM - indicatorWidth ) / 2
                         }
                     }
                     ScrollBar.horizontal: SigmaScrollBar {
                         anchors {
                             top: parent.bottom
                             topMargin:
-                                ( properties.spacingM - indicatorWidth ) / 2
+                                ( Properties.spacingM - indicatorWidth ) / 2
                             left: parent.left
                             right: parent.right
                         }
@@ -967,11 +987,11 @@ ApplicationWindow {
 
                         contentHeight: monteCarloResultsTable.height + (
                                        extended ? (
-                                           properties.spacingL +
+                                           Properties.spacingL +
                                            histogramHeading.height +
-                                           properties.spacingM +
+                                           Properties.spacingM +
                                            histogram.height +
-                                           properties.spacingM
+                                           Properties.spacingM
                                         ) : 0 )
                         contentWidth: width
                         clip: true
@@ -987,10 +1007,10 @@ ApplicationWindow {
                             id: histogramHeading
 
                             visible: calculation.histogramValid
-                            text: properties.titleEstimatedDistribution
+                            text: Properties.titleEstimatedDistribution
                             anchors {
                                 top: monteCarloResultsTable.bottom
-                                topMargin: properties.spacingL
+                                topMargin: Properties.spacingL
                                 left: parent.left
                                 right: parent.right
                             }
@@ -1001,7 +1021,7 @@ ApplicationWindow {
 
                             anchors {
                                 top: histogramHeading.bottom
-                                topMargin: properties.spacingM
+                                topMargin: Properties.spacingM
                                 left: parent.left
 }
                             visible: !monteCarloBusyIndicator.running &&
@@ -1009,18 +1029,18 @@ ApplicationWindow {
                             width: parent.width
                             height: width * 0.8
                             marginLeft: 0
-                            marginRight: properties.spacingM
-                            marginTop: properties.spacingXS
+                            marginRight: Properties.spacingM
+                            marginTop: Properties.spacingXS
                             marginBottom: 0
 
                             axisX: ValueAxis {
                                 property string title:
-                                    properties.outputName +
-                                    " [" + properties.outputUnit + "]"
-                                titleText: properties.outputParamAvailable ?
+                                    Properties.outputName +
+                                    " [" + Properties.outputUnit + "]"
+                                titleText: Properties.outputParamAvailable ?
                                                title :
                                                ""
-                                titleColor: properties.colorTextWeak
+                                titleColor: Properties.colorTextWeak
                                 min: calculation.histogramXMin
                                 max: calculation.histogramXMax
                                 tickInterval: (max - min) / 6
@@ -1062,8 +1082,8 @@ ApplicationWindow {
                                     Rectangle {
                                         color:
                                             outside ?
-                                                properties.colorStrokeStrong :
-                                                properties.colorBrand
+                                                Properties.colorStrokeStrong :
+                                                Properties.colorBrand
                                         anchors {
                                             fill: parent
                                             bottomMargin: 1
@@ -1080,7 +1100,7 @@ ApplicationWindow {
 
                                 Behavior on valuesMultiplier {
                                     NumberAnimation {
-                                        duration: properties.animationDuration
+                                        duration: Properties.animationDuration
                                         easing.type: Easing.InOutQuad
                                     }
                                 }
@@ -1095,14 +1115,14 @@ ApplicationWindow {
                                     plotAreaBackgroundVisible: false
 
                                     axisX.labelTextColor:
-                                        properties.colorTextWeak
+                                        Properties.colorTextWeak
                                     axisX.mainColor:
-                                        properties.colorStrokeStrong
-                                    axisX.mainWidth: properties.borderWidth
-                                    axisX.subColor: properties.colorStrokeStrong
+                                        Properties.colorStrokeStrong
+                                    axisX.mainWidth: Properties.borderWidth
+                                    axisX.subColor: Properties.colorStrokeStrong
                                     axisXLabelFont.family: window.font.family
                                     axisXLabelFont.pixelSize:
-                                        properties.fontSizeHistogram
+                                        Properties.fontSizeHistogram
 
                                     // Set axisY properties equal to axisX
                                     axisY.labelTextColor: axisX.labelTextColor
@@ -1119,8 +1139,8 @@ ApplicationWindow {
                             id: monteCarloBusyIndicator
 
                             anchors.centerIn: histogram
-                            anchors.verticalCenterOffset: -properties.spacingXL
-                            running: properties.outputLocked
+                            anchors.verticalCenterOffset: -Properties.spacingXL
+                            running: Properties.outputLocked
                             visible: monteCarloBusyIndicator.running
                         }
 
@@ -1131,15 +1151,15 @@ ApplicationWindow {
                                 left: parent.left
                                 right: parent.right
                                 top: histogram.bottom
-                                topMargin: -properties.spacingXL
-                                margins: properties.spacingL
+                                topMargin: -Properties.spacingXL
+                                margins: Properties.spacingL
                             }
-                            height: properties.progressBarHeight
+                            height: Properties.progressBarHeight
                             value: calculation.monteCarloConvergenceFactor
                             visible: monteCarloBusyIndicator.running
 
                             background: Rectangle {
-                                color: properties.colorStrokeWeak
+                                color: Properties.colorStrokeWeak
                                 radius: height / 2
                             }
 
@@ -1153,7 +1173,7 @@ ApplicationWindow {
                                     bottom: parent.bottom
                                 }
                                 height: parent.height
-                                color: properties.colorBrand
+                                color: Properties.colorBrand
                                 radius: height / 2
                             }
                         }

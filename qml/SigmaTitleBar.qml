@@ -14,15 +14,15 @@ Rectangle {
     property bool showCloseButton: true
     property bool showMaximizeButton: true
     property bool showMinimizeButton: true
-    property int titleBarHeight: properties.minimumTitleBarHeight
-    property int titleBarLeftMargin: properties.macOS ?
-                                         properties.titleBarTextLeftMargin :
-                                         properties.spacingM
-    property int titleBarRightMargin: properties.macOS ?
-                                         properties.titleBarTextLeftMargin :
-                                         properties.spacingM
+    property int titleBarHeight: Properties.minimumTitleBarHeight
+    property int titleBarLeftMargin: Properties.macOS ?
+                                         Properties.titleBarTextLeftMargin :
+                                         Properties.spacingM
+    property int titleBarRightMargin: Properties.macOS ?
+                                         Properties.titleBarTextLeftMargin :
+                                         Properties.spacingM
     property string title: ""
-    property int titleAlignment: properties.macOS ? Text.AlignHCenter :
+    property int titleAlignment: Properties.macOS ? Text.AlignHCenter :
                                                     Text.AlignLeft
     property list<Item> excludeItems: [
         minimizeButton,
@@ -78,16 +78,8 @@ Rectangle {
     }
     height: visible ? titleBarHeight : 0
 
-    visible: properties.macOS || properties.windows
-    color: properties.colorElevated
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
-    }
+    visible: Properties.macOS || Properties.windows
+    color: Properties.colorElevated
 
     SigmaText {
         id: title
@@ -102,12 +94,12 @@ Rectangle {
         }
         
         text: control.title
-        color: properties.macOS ? properties.colorTextWeak :
-                                  properties.colorTextStrong
-        font.family: properties.macOS ? fonts.interSemiBold.font.family :
-                                        fonts.inter.font.family
-        font.pixelSize: properties.fontSizeTitleBar
-        font.bold: properties.macOS
+        color: Properties.macOS ? Properties.colorTextWeak :
+                                  Properties.colorTextStrong
+        font.family: Properties.macOS ? Fonts.interSemiBold.font.family :
+                                        Fonts.inter.font.family
+        font.pixelSize: Properties.fontSizeTitleBar
+        font.bold: Properties.macOS
         clip: true
         elide: Text.ElideRight
         horizontalAlignment: control.titleAlignment
@@ -123,16 +115,16 @@ Rectangle {
             right: maximizeButton.left
         }
 
-        visible: properties.windows && control.showMinimizeButton
-        hoverColor: properties.colorTextHover
+        visible: Properties.windows && control.showMinimizeButton
+        hoverColor: Properties.colorTextHover
         onClicked: { Window.window.showMinimized() }
 
         Rectangle {
             anchors.centerIn: parent
-            width: properties.titleBarButtonIconWidth
-            height: properties.borderWidth
+            width: Properties.titleBarButtonIconWidth
+            height: Properties.borderWidth
 
-            color: properties.colorTextStrong
+            color: Properties.colorTextStrong
             antialiasing: true
         }
     }
@@ -146,12 +138,12 @@ Rectangle {
             right: closeButton.left
         }
 
-        property int offset: checked ? properties.borderWidth : 0
+        property int offset: checked ? Properties.borderWidth : 0
 
-        visible: properties.windows && control.showMaximizeButton
+        visible: Properties.windows && control.showMaximizeButton
         checkable: true
         checked: Window.window.visibility === Window.Maximized
-        hoverColor: properties.colorTextHover
+        hoverColor: Properties.colorTextHover
         onClicked: { captionHelper.toggleMaximize( Window.window ) }
 
         // The icon of the maximize button is drawn using 2 rounded rectangles.
@@ -162,13 +154,13 @@ Rectangle {
             anchors.centerIn: parent
             anchors.verticalCenterOffset: -maximizeButton.offset
             anchors.horizontalCenterOffset: maximizeButton.offset
-            width: properties.titleBarButtonIconWidth
+            width: Properties.titleBarButtonIconWidth
             height: width
 
             color: parent.hovered ? parent.hoverColor : control.color
-            border.width: properties.borderWidth
-            border.color: properties.colorTextStrong
-            radius: properties.radiusXS
+            border.width: Properties.borderWidth
+            border.color: Properties.colorTextStrong
+            radius: Properties.radiusXS
 
             Rectangle {
                 anchors.centerIn: parent
@@ -183,13 +175,13 @@ Rectangle {
             anchors.centerIn: parent
             anchors.verticalCenterOffset: maximizeButton.offset
             anchors.horizontalCenterOffset: -maximizeButton.offset
-            width: properties.titleBarButtonIconWidth
+            width: Properties.titleBarButtonIconWidth
             height: width
 
             color: parent.hovered ? parent.hoverColor : control.color
-            border.width: properties.borderWidth
-            border.color: properties.colorTextStrong
-            radius: properties.radiusXS
+            border.width: Properties.borderWidth
+            border.color: Properties.colorTextStrong
+            radius: Properties.radiusXS
 
             Rectangle {
                 anchors.centerIn: parent
@@ -210,17 +202,17 @@ Rectangle {
             right: parent.right
         }
 
-        visible: properties.windows && control.showCloseButton
-        text: properties.titleBarCloseIcon
-        hoverColor: properties.colorClose
-        font.family: fonts.interSemiBold.font.family
-        font.pixelSize: properties.fontSizeTitleBarCloseIcon
+        visible: Properties.windows && control.showCloseButton
+        text: Properties.titleBarCloseIcon
+        hoverColor: Properties.colorClose
+        font.family: Fonts.interSemiBold.font.family
+        font.pixelSize: Properties.fontSizeTitleBarCloseIcon
         font.bold: true
         onClicked: { Window.window.close() }
     }
 
     DragHandler {
-        enabled: properties.macOS
+        enabled: Properties.macOS
         target: null
         onActiveChanged: {
             if ( active && control.Window.window ) {
@@ -232,7 +224,7 @@ Rectangle {
     MouseArea {
         anchors.fill: parent
 
-        enabled: properties.macOS
+        enabled: Properties.macOS
         onDoubleClicked: {
             if ( control.Window.window ) {
                 captionHelper.toggleMaximize( Window.window )

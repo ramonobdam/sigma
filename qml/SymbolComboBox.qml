@@ -4,6 +4,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // ComboBox combined with a SymBolField results in a ComboBox with a button to
 // insert symbols via a popup

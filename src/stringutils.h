@@ -16,6 +16,7 @@ namespace StringUtils {
 
     constexpr QLatin1StringView csvSeparator { "," };
     constexpr QLatin1StringView endl { "\n" };
+    constexpr QLatin1StringView infinite { "infinite" };
     constexpr QLatin1StringView quote { "\"" };
 }
 

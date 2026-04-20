@@ -2,7 +2,10 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
+pragma Singleton
+
 import QtQuick
+import Sigma
 
 // Component to access the fonts used in the Sigma app
 Item {

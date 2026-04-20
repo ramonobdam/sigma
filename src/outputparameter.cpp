@@ -9,58 +9,14 @@
 #include "stringutils.h"
 #include <third_party/Eigen/Dense>
 #include <QRegularExpression>
+#include <QUuid>
+#include <QtAssert>
+#include <QtMinMax>
 #include <cmath>
 #include <deque>
 
 
-QString OutputParameter::mCombinedUncertaintyHeaderString = \
-    "Combined uncertainty:";
-QString OutputParameter::mConfidenceString = "confidence";
-QString OutputParameter::mErrorString = "error";
-QString OutputParameter::mFormulaString = "formula";
-QString OutputParameter::mMonteCarloHeaderString = "Monte Carlo simulation:";
-QString OutputParameter::mMonteCarloString = "monteCarlo";
-QString OutputParameter::mOutputParametersHeaderString = "Output parameters:";
-QString OutputParameter::mUncertaintyComponentsHeaderString = \
-    "Uncertainty components ";
-
-ModelControl<OutputParameter *> OutputParameter::mOutputModel = \
-    ModelControl<OutputParameter *>();
-
-QString OutputParameter::defaultName = "Y";
-
-QStringList OutputParameter::headerLabels {
-    "Output name",
-    "Measurement function",
-    "Unit",
-    "Level of confidence"
-};
-
-QList<int> OutputParameter::columnWidths = { 120, 180, 55, 140 };
-
-QStringList OutputParameter::resultLabels {
-    "Output name",
-    "Unit",
-    "Output estimate",
-    "Combined standard uncertainty",
-    "Effective degrees of freedom",
-    "Coverage factor",
-    "Expanded uncertainty",
-    "Level of confidence"
-};
-
-QList<int> OutputParameter::resultColumnWidths = {
-    100,
-    55,
-    120,
-    212,
-    198,
-    120,
-    155,
-    140
-};
-
-parser_t OutputParameter::parser = parser_t();
+ModelControl<OutputParameter *> OutputParameter::mOutputModel = {};
 
 
 OutputParameter::OutputParameter( QObject *parent )
@@ -73,18 +29,12 @@ OutputParameter::OutputParameter( QObject *parent )
         mMixedCopulaSampler { MixedCopulaSampler( this ) }
 {
     setNominalValue( MathConstants::nan );
+    createConnections();
 }
 
 
 OutputParameter::OutputParameter( const OutputParameter &op )
-    :   Parameter {
-            op.parent(),
-            op.getName(),
-            op.getUnit(),
-            op.getNominalValue(),
-            op.getLocked(),
-            op.getValid()
-        },
+    :   Parameter { op },
         mFormula { op.getFormula() },
         mConfidence { op.getConfidence() },
         mError { op.getError() },
@@ -98,28 +48,19 @@ OutputParameter::OutputParameter( const OutputParameter &op )
 }
 
 
-OutputParameter::~OutputParameter(){}
-
-
-OutputParameter& OutputParameter::operator= ( const OutputParameter &op ) {
-    if ( this == &op ) {
-        return *this;
+OutputParameter & OutputParameter::operator= ( const OutputParameter &op ) {
+    if ( this != &op ) {
+        Parameter::operator=( op );
+        setFormula( op.getFormula() );
+        setConfidence( op.getConfidence() );
+        setError( op.getError() );
+        setComponents( op.getComponents() );
+        setMonteCarlo( op.getMonteCarlo() );
+        setMixedCopulaSampler( op.getMixedCopulaSampler() );
+        mMonteCarlo.setOutputParameter( this );
+        mMixedCopulaSampler.setOutputParameter( this );
+        createConnections();
     }
-
-    setName( op.getName() );
-    setUnit( op.getUnit() );
-    setFormula( op.getFormula() );
-    setNominalValue( op.getNominalValue() );
-    setConfidence( op.getConfidence() );
-    setError( op.getError() );
-    setValid( op.getValid() );
-    setComponents( op.getComponents() );
-    setMonteCarlo( op.getMonteCarlo() );
-    setLocked( op.getLocked() );
-    setParent( op.parent() );
-    setMixedCopulaSampler( op.getMixedCopulaSampler() );
-    mMonteCarlo.setOutputParameter( this );
-    mMixedCopulaSampler.setOutputParameter( this );
 
     return *this;
 }
@@ -138,6 +79,11 @@ bool OutputParameter::operator!= ( const OutputParameter &op ) const {
 }
 
 
+DataType OutputParameter::OutputParameter::dataType() const {
+    return DataType::OutputParameter;
+}
+
+
 MixedCopulaSampler OutputParameter::getMixedCopulaSampler() const {
     return mMixedCopulaSampler;
 }
@@ -148,22 +94,20 @@ MonteCarlo OutputParameter::getMonteCarlo() const {
 }
 
 
-OutputParameter * OutputParameter::addToModel( const bool &resetMonteCarlo ) {
-    if ( validName( getName() ) ) {
-        compile( resetMonteCarlo );
-        return mOutputModel.appendRow( *this );
-    }
-    return nullptr;
+OutputParameter * OutputParameter::appendToModel() {
+    // Append this OutputParameter to the model if the name is valid
+    return insertIntoModel( mOutputModel.rowCount() );
 }
 
 
 QJsonObject OutputParameter::toJson() const {
     QJsonObject json {};
-    json[ mNameString ] = getName();
-    json[ mUnitString ] = getUnit();
-    json[ mFormulaString ] = getFormula();
-    json[ mConfidenceString] = getConfidence();
-    json[ mMonteCarloString ] = mMonteCarlo.toJson();
+    json[ sIdString ] = getId().toString();
+    json[ sNameString ] = getName();
+    json[ sUnitString ] = getUnit();
+    json[ sFormulaString ] = getFormula();
+    json[ sConfidenceString] = getConfidence();
+    json[ sMonteCarloString ] = mMonteCarlo.toJson();
     return json;
 }
 
@@ -173,15 +117,15 @@ QList<UncertaintyComponent> OutputParameter::getComponents() const {
 }
 
 
-QList<double> OutputParameter::getHistogramValues() {
+QList<double> OutputParameter::getHistogramValues() const {
     return mMonteCarlo.getHistogramValues();
 }
 
 
-QString OutputParameter::componentsToString() const {
+QString OutputParameter::componentsToCSVString() const {
     // Add title and header labels
     QString componentsString {
-        mUncertaintyComponentsHeaderString + getName() + ":"
+        sUncertaintyComponentsHeaderString + getName() + ":"
     };
     QString result {};
     result += StringUtils::addQuotes( componentsString ) + StringUtils::endl;
@@ -221,71 +165,62 @@ QString OutputParameter::componentsToString() const {
 }
 
 
-QString OutputParameter::getComponentContributionAsString(
-    const int &row
-) const {
+QString OutputParameter::getComponentContributionAsString( int row ) const {
     double contri { getComponentContribution( row ) };
     return StringUtils::contributionToPercentageString( contri );
 }
 
 
-QString OutputParameter::getContributionAsString(
-    const int &row,
-    const int &column
-) const {
+QString OutputParameter::getContributionAsString( int row, int column ) const {
     double contri { getContribution( row, column )};
     return StringUtils::contributionToPercentageString( contri );
 }
 
 
-QString OutputParameter::getCorrelationContributionAsString(
-    const int &row
-) const {
+QString OutputParameter::getCorrelationContributionAsString( int row ) const {
     double contri { getCorrelationContribution( row ) };
     return StringUtils::contributionToPercentageString( contri );
 }
 
 
-QString OutputParameter::getTotalContributionAsString( const int &row ) const {
+QString OutputParameter::getTotalContributionAsString( int row ) const {
     double contri { getTotalContribution( row ) };
     return StringUtils::contributionToPercentageString( contri );;
 }
 
 
-QString OutputParameter::histogramToString() const {
-    return mMonteCarlo.histogramToString();
+QString OutputParameter::histogramToCSVString() const {
+    return mMonteCarlo.histogramToCSVString();
 }
 
 
-QString OutputParameter::resultsToString() const {
+QString OutputParameter::resultsToCSVString() const {
     QStringList results { getResults( true ) };
     return results.join( StringUtils::csvSeparator );
 }
 
 
-QString OutputParameter::toString() const {
+QString OutputParameter::toCSVString() const {
     QStringList results {};
-    for ( int column { 0 }; column < staticColumnCount(); ++column ) {
+    for ( int column { 0 }; column < columnCount(); ++column ) {
         results.append( get( column, true ).toString() );
     }
     return results.join( StringUtils::csvSeparator );
 }
 
 
-QStringList OutputParameter::getMonteCarloResults( const bool &csvMode ) const {
+QStringList OutputParameter::getMonteCarloResults( bool csvMode ) const {
     QStringList results {};
     results.fill( "", MonteCarlo::headerLabels.size() );
-    if ( getValid() ) {
+    if ( mValid ) {
         results[ 0 ] = getName( csvMode );
         results[ 1 ] = getUnit( csvMode );
         results[ 2 ] = mMonteCarlo.getStatus( csvMode );
-        if ( !getLocked() && mMonteCarlo.getValid() ) {
+        if ( !mLocked && mMonteCarlo.getValid() ) {
             results[ 3 ] = mMonteCarlo.getNumericalToleranceAsString();
             results[ 4 ] = mMonteCarlo.getMeanAsString( csvMode );
             results[ 5 ] = mMonteCarlo.getStdDeviationAsString( csvMode );
-            results[ 6 ] = mMonteCarlo.getExpandedUncertaintyAsString(
-                               csvMode
-                           );
+            results[ 6 ] = mMonteCarlo.getExpandedUncertaintyAsString( csvMode);
             results[ 7 ] = getConfidenceAsString();
         }
     }
@@ -293,10 +228,10 @@ QStringList OutputParameter::getMonteCarloResults( const bool &csvMode ) const {
 }
 
 
-QStringList OutputParameter::getResults(const bool &csvMode ) const {
+QStringList OutputParameter::getResults( bool csvMode ) const {
     QStringList results {};
     results.fill( "", resultLabels.size() );
-    if ( getValid() ) {
+    if ( mValid ) {
         results[ 0 ] = getName( csvMode );
         results[ 1 ] = getUnit( csvMode );
         results[ 2 ] = getNominalValueAsString( csvMode );
@@ -330,10 +265,7 @@ QVariant OutputParameter::get( int column, bool csvMode ) const {
 }
 
 
-QVariant OutputParameter::getResult(
-    const int &column,
-    const bool &csvMode
-) const {
+QVariant OutputParameter::getResult( int column, bool csvMode ) const {
     switch( column ) {
         case 0:
             return getName( csvMode );
@@ -358,11 +290,14 @@ QVariant OutputParameter::getResult(
 
 
 QVariant OutputParameter::headerData( int column ) const {
-    return staticHeaderData( column );
+    if ( column >= 0 && column < headerLabels.size() ) {
+        return headerLabels[ column ];
+    }
+    return QVariant();
 }
 
 
-UncertaintyComponent * OutputParameter::getComponent( const int &row ) const {
+UncertaintyComponent * OutputParameter::getComponent( int row ) const {
     if ( row >= 0 && row < getNumberOfComponents() ) {
         return const_cast<UncertaintyComponent *> ( &mComponents[ row ] );
     }
@@ -375,36 +310,13 @@ bool OutputParameter::getMonteCarloValid() const {
 }
 
 
-bool OutputParameter::isInputParameterReferenced(
-    InputParameter * const &inputParameter
-) const {
-    if ( inputParameter ) {
+bool OutputParameter::isInputParameterReferenced( const QUuid &id ) const {
+    if ( !id.isNull() ) {
         for ( const UncertaintyComponent &component : mComponents ) {
-            if ( component.getInputParameter() == inputParameter )  {
+            if ( component.getInputParameterId() == id )  {
                 return true;
             }
         }
-    }
-    return false;
-}
-
-
-bool OutputParameter::updateSelectedModelRow() {
-    OutputParameter *selectedParameter { mOutputModel.getSelectedRow() };
-    if ( selectedParameter && validName( getName(), true ) ) {
-        if ( *selectedParameter != *this ) {
-            // New parameter results will be different, so recompile and update.
-            compile();
-            mOutputModel.updateSelectedRow( *this );
-        }
-        else {
-            // Parameter results will stay the same so only update name and
-            // unit.
-            selectedParameter->setName( getName() );
-            selectedParameter->setUnit( getUnit() );
-            mOutputModel.emitRowChanged( mOutputModel.selectedRow() );
-        }
-        return true;
     }
     return false;
 }
@@ -424,7 +336,7 @@ double OutputParameter::getCombinedStdUncertainty() const {
 }
 
 
-double OutputParameter::getComponentContribution( const int &row ) const {
+double OutputParameter::getComponentContribution( int row ) const {
     // The coefficient of contribution needs to be calculated based
     // on the combined uncertainty of all components. This term gives the
     // relative contribution due to the variance only.
@@ -440,10 +352,7 @@ double OutputParameter::getComponentContribution( const int &row ) const {
 }
 
 
-double OutputParameter::getContribution(
-    const int &row,
-    const int &column
-) const {
+double OutputParameter::getContribution( int row, int column ) const {
     // Return the contributions for the last 3 columns of the uncertainty
     // components table
     if ( column == UncertaintyComponent::headerLabels.size() - 3 ) {
@@ -459,7 +368,7 @@ double OutputParameter::getContribution(
 }
 
 
-double OutputParameter::getCorrelationContribution( const int &row ) const {
+double OutputParameter::getCorrelationContribution( int row ) const {
     // The coefficient of contribution needs to be calculated based
     // on the combined uncertainty of all components. This term gives the
     // contribution due to the correlations of this component and can be
@@ -516,13 +425,13 @@ double OutputParameter::getMonteCarloConvergenceFactor() const {
 }
 
 
-double OutputParameter::getTotalContribution( const int &row ) const {
+double OutputParameter::getTotalContribution( int row ) const {
     return getComponentContribution( row ) + getCorrelationContribution( row );
 }
 
 
 int OutputParameter::columnCount() const {
-    return staticColumnCount();
+    return headerLabels.size();
 }
 
 
@@ -580,7 +489,7 @@ void OutputParameter::clearComponents() {
 }
 
 
-void OutputParameter::resetResults( const bool &resetMonteCarlo ) {
+void OutputParameter::resetResults( bool resetMonteCarlo ) {
     setNominalValue( MathConstants::nan );
     setError();
     clearComponents();
@@ -627,7 +536,7 @@ void OutputParameter::setError( const QString &error ) {
 }
 
 
-void OutputParameter::setLocked( const bool &locked ) {
+void OutputParameter::setLocked( bool locked ) {
     mLocked = locked;
     emit lockedChanged();
 }
@@ -660,22 +569,44 @@ void OutputParameter::stopMonteCarlo() {
 }
 
 
+void OutputParameter::updateFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ sIdString ]; v.isString() ) {
+        setId( QUuid::fromString( v.toString() ) );
+    }
+    if ( const QJsonValue v = json[ sNameString ]; v.isString() ) {
+        setName( v.toString() );
+    }
+    if ( const QJsonValue v = json[ sUnitString ]; v.isString() ) {
+        setUnit( v.toString() );
+    }
+    if ( const QJsonValue v = json[ sFormulaString ]; v.isString() ) {
+        setFormula( v.toString() );
+    }
+    if ( const QJsonValue v = json[ sConfidenceString ]; v.isDouble() ) {
+        setConfidence( v.toDouble() );
+    }
+    if ( const QJsonValue v = json[ sMonteCarloString ]; v.isObject() ) {
+        MonteCarlo monteCarlo { MonteCarlo::fromJson( v.toObject() ) };
+        setMonteCarlo( monteCarlo );
+    }
+}
+
 QString OutputParameter::getConfidenceAsString() const {
     return QString::number( mConfidence * 100., 'f', 1 ) + "%";
 }
 
 
-QString OutputParameter::getError( const bool &csvMode ) const {
+QString OutputParameter::getError( bool csvMode ) const {
     return csvMode ? StringUtils::addQuotes( mError ) : mError;
 }
 
 
-QString OutputParameter::getFormula( const bool &csvMode ) const {
+QString OutputParameter::getFormula( bool csvMode ) const {
     return csvMode ? StringUtils::addQuotes( mFormula ) : mFormula;
 }
 
 
-QString OutputParameter::getNominalValueAsString( const bool &csvMode ) const {
+QString OutputParameter::getNominalValueAsString( bool csvMode ) const {
     // Convert possible inf and nan using conversion to std::string
     const int precision = {
         csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
@@ -695,26 +626,26 @@ double OutputParameter::getConfidence() const {
 }
 
 
-void OutputParameter::compile( const bool &resetMonteCarlo ) {
+void OutputParameter::compile( bool resetMonteCarlo ) {
     resetResults( resetMonteCarlo );
     bool valid { true };
     expression_t expression {};
 
     // Make sure that the expression (i.e. measurement formula) is not empty.
     if ( mFormula.size() == 0 ) {
-        setError( mEmptyExpressionString );
+        setError( sEmptyExpressionString );
         valid = false;
     }
 
     if ( valid ) {
         // Try to compile the expression.
-        static QRegularExpression re = QRegularExpression( mRegExErrorReplace );
+        static QRegularExpression re = QRegularExpression( sRegExErrorReplace );
         expression.register_symbol_table( InputParameter::symbolTable );
         if ( !parser.compile(mFormula.toStdWString(), expression ) ) {
             // Compilation error
             QString errorString {};
             errorString = QString::fromStdWString( parser.error() );
-            errorString = errorString.mid( mErrorCodeLength );
+            errorString = errorString.mid( sErrorCodeLength );
             errorString.replace( re, "" );
             setError( errorString );
             valid = false;
@@ -726,7 +657,7 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
         setNominalValue( expression.value() );
         if ( !std::isfinite( getNominalValue() ) ) {
             // The nominal value is invalid.
-            setError( mInvalidNominalString + getNominalValueAsString() );
+            setError( sInvalidNominalString + getNominalValueAsString() );
             valid = false;
         }
 
@@ -736,7 +667,7 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
         for ( auto &variable: variables ) {
             QString inputName { QString::fromStdWString( variable.first ) };
             InputParameter *inputParameter {
-                InputParameter::getInputParameter( inputName )
+                InputParameter::getByName( inputName )
             };
             if ( inputParameter ) {
                 UncertaintyComponent component {
@@ -787,7 +718,7 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
         qsizetype n { mComponents.size() };
         if ( valid && n > 0 ) {
             // Valid and at least one input parameter detected
-            setError( mValidExpressionString + getVariables() );
+            setError( sValidExpressionString + getVariables() );
 
             bool allNormal { allComponentsNormal() };
 
@@ -803,7 +734,10 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
                             mComponents[ j ].getInputParameter()
                         };
                         Correlation *correlation {
-                            Correlation::getCorrelation( paramI, paramJ )
+                            Correlation::getCorrelation(
+                                paramI->getId(),
+                                paramJ->getId()
+                            )
                         };
                         if ( correlation ) {
                             // Correlation is defined, store pointer to the
@@ -835,7 +769,7 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
         }
         else if ( valid ) {
             // Valid but no input parameters detected.
-            setError( mNoInputParametersString );
+            setError( sNoInputParametersString );
         }
     }
 
@@ -843,7 +777,7 @@ void OutputParameter::compile( const bool &resetMonteCarlo ) {
 }
 
 
-void OutputParameter::setConfidence( const double &confidence ) {
+void OutputParameter::setConfidence( double confidence ) {
     mConfidence = confidence;
 }
 
@@ -854,7 +788,7 @@ void OutputParameter::setFormula( const QString &formula ) {
 
 
 void OutputParameter::setToSelected() {
-    OutputParameter * const parameter { mOutputModel.getSelectedRow() };
+    const OutputParameter *parameter { mOutputModel.getSelected() };
     if ( parameter ) {
         *this = *parameter;
     }
@@ -868,82 +802,94 @@ ModelControl<OutputParameter *> * OutputParameter::getOutputModel() {
 
 OutputParameter OutputParameter::fromJson(
     const QJsonObject &json,
-    const bool &addToModel,
+    bool appendToModel,
     QObject *parent
 ) {
     OutputParameter parameter { OutputParameter( parent ) };
-    if ( const QJsonValue v = json[ mNameString ]; v.isString() ) {
-        parameter.setName( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mUnitString ]; v.isString() ) {
-        parameter.setUnit( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mFormulaString ]; v.isString() ) {
-        parameter.setFormula( v.toString() );
-    }
-    if ( const QJsonValue v = json[ mConfidenceString ]; v.isDouble() ) {
-        parameter.setConfidence( v.toDouble() );
-    }
-    if ( const QJsonValue v = json[ mMonteCarloString ]; v.isObject() ) {
-        MonteCarlo monteCarlo { MonteCarlo::fromJson( v.toObject() ) };
-        parameter.setMonteCarlo( monteCarlo );
-    }
+    parameter.updateFromJson( json );
 
-    if ( addToModel ) {
-        parameter.addToModel( false );
+    if ( appendToModel ) {
+        parameter.compile( false );
+        parameter.appendToModel();
     }
 
     return parameter;
 }
 
 
+OutputParameter * OutputParameter::getByName( const QString &name ) {
+    return mOutputModel.getByName( name );
+}
+
+
+OutputParameter * OutputParameter::getById( const QUuid &id ) {
+    return mOutputModel.getById( id );
+}
+
+
+OutputParameter * OutputParameter::getSelected() {
+    return mOutputModel.getSelected();
+}
+
 QJsonArray OutputParameter::parametersToJson() {
     QJsonArray paramArray {};
-    for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
+    for ( const OutputParameter *parameter : getAll() ) {
         paramArray.append( parameter->toJson() );
     }
     return paramArray;
 }
 
 
-QString OutputParameter::parametersToString() {
+QJsonObject OutputParameter::currentJson( const QUuid &id ) {
+    OutputParameter *parameter { getById( id ) };
+    return parameter ? parameter->toJson() : QJsonObject {};
+}
+
+
+const QList<OutputParameter *> & OutputParameter::getAll() {
+    return mOutputModel.getAllRows();
+}
+
+
+QString OutputParameter::parametersToCSVString() {
     QString result {};
-    // Add title, header labels and output parameter data.
-    result += mOutputParametersHeaderString + StringUtils::endl;
-    result += headerLabels.join( StringUtils::csvSeparator ) + StringUtils::endl;
-    for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
+    // Add title, header labels and OutputParameter data
+    result += sOutputParametersHeaderString + StringUtils::endl;
+    result += headerLabels.join( StringUtils::csvSeparator ) +
+              StringUtils::endl;
+    for ( OutputParameter *parameter : getAll() ) {
         if ( parameter) {
-            result += parameter->toString() + StringUtils::endl;
+            result += parameter->toCSVString() + StringUtils::endl;
         }
     }
     result += StringUtils::endl;
 
-    // Add title, header labels and combined uncertainty for each valid output
-    // parameter.
-    result += mCombinedUncertaintyHeaderString + StringUtils::endl;
+    // Add title, header labels and combined uncertainty for each valid
+    // OutputParameter
+    result += sCombinedUncertaintyHeaderString + StringUtils::endl;
     result += resultLabels.join( StringUtils::csvSeparator ) +
               StringUtils::endl;
-    for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
+    for ( const OutputParameter *parameter : getAll() ) {
         if ( parameter && parameter->getValid() ) {
-            result += parameter->resultsToString() + StringUtils::endl;
+            result += parameter->resultsToCSVString() + StringUtils::endl;
         }
     }
     result += StringUtils::endl;
 
-    // Add the components for each valid output parameter. This already includes
-    // a title and header labels.
-    for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
+    // Add the components for each valid OutputParameter. This already includes
+    // a title and header labels
+    for ( const OutputParameter *parameter : getAll() ) {
         if ( parameter && parameter->getValid() ) {
-            result += parameter->componentsToString() + StringUtils::endl;
+            result += parameter->componentsToCSVString() + StringUtils::endl;
         }
     }
 
     // Add title, header labels and Monte Carlo simulation results for each
-    // valid output parameter.
-    result += mMonteCarloHeaderString + StringUtils::endl;
+    // valid OutputParameter
+    result += sMonteCarloHeaderString + StringUtils::endl;
     result += MonteCarlo::headerLabels.join( StringUtils::csvSeparator ) +
               StringUtils::endl;
-    for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
+    for ( const OutputParameter *parameter : getAll() ) {
         if ( parameter && parameter->getValid() ) {
             QStringList mcResults { parameter->getMonteCarloResults( true ) };
             result += mcResults.join( StringUtils::csvSeparator ) +
@@ -952,11 +898,11 @@ QString OutputParameter::parametersToString() {
     }
     result += StringUtils::endl;
 
-    // Add title, header labels and histogram data for each valid output
-    // parameter.
-    for ( OutputParameter * &parameter : mOutputModel.getAllRows() ) {
+    // Add title, header labels and histogram data for each valid
+    // OutputParameter
+    for ( const OutputParameter *parameter : getAll() ) {
         if ( parameter && parameter->getValid() ) {
-            QString histogramString { parameter->histogramToString() };
+            QString histogramString { parameter->histogramToCSVString() };
             if ( histogramString.size() > 0 ) {
                 result += histogramString + StringUtils::endl;
             }
@@ -967,10 +913,59 @@ QString OutputParameter::parametersToString() {
 }
 
 
+QUuid OutputParameter::getSelectedId() {
+    return mOutputModel.getSelectedId();
+}
+
+
+bool OutputParameter::remove( const QUuid &id ) {
+    bool parameterRemoved { mOutputModel.removeById( id ) };
+    Q_ASSERT_X(
+        parameterRemoved,
+        "OutputParameter::remove",
+        "Parameter could not be removed"
+    );
+    return parameterRemoved;
+}
+
+
+bool OutputParameter::update( const QUuid &id, OutputParameter *parameter ) {
+    // The new name has to be valid (unique) or equal to the original parameter
+    OutputParameter *originalParameter { getById( id )};
+    Q_ASSERT_X(
+        originalParameter,
+        "OutputParameter::update",
+        "Original parameter not found"
+    );
+    if (
+        parameter &&
+        originalParameter &&
+        (
+            validName( parameter->getName(), false ) ||
+            (
+                parameter->getName().toLower() ==
+                originalParameter->getName().toLower()
+            )
+        )
+    ) {
+        bool parameterUpdated = mOutputModel.updateById( id, *parameter );
+        Q_ASSERT_X(
+            parameterUpdated,
+            "OutputParameter::update",
+            "Parameter could not be updated"
+        );
+        return parameterUpdated;
+    }
+    return false;
+}
+
+
 bool OutputParameter::validName(
     const QString &name,
-    const bool &checkCurrentSelection
+    bool checkCurrentSelection
 ) {
+    // The name has to be unique or equal to the current selected parameter when
+    // checkCurrentSelection = true
     if ( checkCurrentSelection && mOutputModel.nameIsSelected( name ) ) {
         return true;
     }
@@ -978,16 +973,50 @@ bool OutputParameter::validName(
 }
 
 
-QVariant OutputParameter::staticHeaderData( const int &column ) {
-    if ( column >= 0 && column < staticColumnCount() ) {
-        return headerLabels[ column ];
-    }
-    return QVariant();
+int OutputParameter::getRowIndex( const QUuid &id ) {
+    return mOutputModel.getRowIndex( id );
 }
 
 
-int OutputParameter::staticColumnCount() {
-    return headerLabels.size();
+int OutputParameter::getSelectedRow() {
+    return mOutputModel.selectedRow();
+}
+
+
+void OutputParameter::applyDiff( const JsonDiff &diff ) {
+    if ( diff.after.isEmpty() ) {
+        // Target state is empty — remove from model
+        bool parameterRemoved { remove( diff.objectId ) };
+        Q_ASSERT_X(
+            parameterRemoved,
+            "OutputParameter::applyDiff",
+            "After empty - Parameter could not be removed"
+        );
+    } else if ( diff.before.isEmpty() ) {
+        // Before state is empty — insert in the previous position
+        OutputParameter parameter { fromJson( diff.after, false ) };
+        bool parameterInserted = parameter.insertIntoModel( diff.row );
+        Q_ASSERT_X(
+            parameterInserted,
+            "OutputParameter::applyDiff",
+            "Before empty - Parameter could not be inserted"
+        );
+    } else {
+        // Update the existing parameter in the model
+        OutputParameter afterParam { *( getById( diff.objectId ) ) };
+        afterParam.updateFromJson( diff.after );
+        bool parameterUpdated { update( diff.objectId, &afterParam ) };
+        Q_ASSERT_X(
+            parameterUpdated,
+            "OutputParameter::applyDiff",
+            "Update - Parameter could not be updated"
+        );
+    }
+}
+
+
+void OutputParameter::clearModel() {
+    mOutputModel.clear();
 }
 
 
@@ -1001,13 +1030,42 @@ void OutputParameter::parametersFromJson(
 }
 
 
-void OutputParameter::setCollectVariables( const bool &collect ) {
+void OutputParameter::onDisplayPrecisionChanged() {
+    mOutputModel.emitAllDataChanged();
+}
+
+
+void OutputParameter::recompileAllExpressions( bool resetMonteCarlo ) {
+    const QList<OutputParameter *> &params { mOutputModel.getAllRows() };
+    for ( OutputParameter *parameter : params ) {
+        parameter->compile( resetMonteCarlo );
+        mOutputModel.emitIdChanged( parameter->getId() );
+    }
+}
+
+
+void OutputParameter::setCollectVariables( bool collect ) {
     parser.dec().collect_variables() = collect;
 }
 
 
+void OutputParameter::setSelectionLocked( bool locked ) {
+    mOutputModel.setSelectionLocked( locked );
+}
+
+
+OutputParameter * OutputParameter::insertIntoModel( int row ) {
+    // Insert this OutputParameter into the model at row if the name is valid
+    if ( validName( getName() ) ) {
+        const int boundedRow { qBound( 0, row, mOutputModel.rowCount() ) };
+        return mOutputModel.insertRow( boundedRow, *this );
+    }
+    return nullptr;
+}
+
+
 QString OutputParameter::getCombinedStdUncertaintyAsString(
-    const bool &csvMode
+    bool csvMode
 ) const {
     const int precision = {
         csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
@@ -1020,9 +1078,7 @@ QString OutputParameter::getCombinedStdUncertaintyAsString(
 }
 
 
-QString OutputParameter::getCoverageFactorAsString(
-    const bool &csvMode
-) const {
+QString OutputParameter::getCoverageFactorAsString( bool csvMode ) const {
     const int precision = {
         csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
     };
@@ -1036,13 +1092,11 @@ QString OutputParameter::getEffectiveDOFAsString() const {
     if ( DOF < MathConstants::maxInt ) {
         return QString::number( DOF, 'f', 0 );
     }
-    return InputParameter::infiniteString;
+    return StringUtils::infinite;
 }
 
 
-QString OutputParameter::getExpandedUncertaintyAsString(
-    const bool &csvMode
-) const {
+QString OutputParameter::getExpandedUncertaintyAsString( bool csvMode ) const {
     const int precision = {
         csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
     };
@@ -1057,7 +1111,7 @@ QString OutputParameter::getVariables() const {
     for ( const UncertaintyComponent &component : mComponents ) {
         variableList.append( component.getName() );
     }
-    return variableList.join( variableSeparator );
+    return variableList.join( ", " );
 }
 
 
@@ -1078,29 +1132,34 @@ bool OutputParameter::allComponentsNormal() const {
 
 
 void OutputParameter::createConnections() {
-    // Connect to Monte Carlo object
+    // Connect to the Monte Carlo object. The UniqueConnection flag is used in
+    // case the assignment operator is used and the connections already exist.
     connect(
         &mMonteCarlo,
         &MonteCarlo::started,
         this,
-        &OutputParameter::monteCarloStarted
+        &OutputParameter::monteCarloStarted,
+        Qt::UniqueConnection
     );
     connect(
         &mMonteCarlo,
         &MonteCarlo::finished,
         this,
-        &OutputParameter::monteCarloFinished
+        &OutputParameter::monteCarloFinished,
+        Qt::UniqueConnection
     );
     connect(
         &mMonteCarlo,
         &MonteCarlo::monteCarloStatusChanged,
         this,
-        &OutputParameter::monteCarloStatusChanged
+        &OutputParameter::monteCarloStatusChanged,
+        Qt::UniqueConnection
     );
     connect(
         &mMonteCarlo,
         &MonteCarlo::convergenceFactorChanged,
         this,
-        &OutputParameter::monteCarloConvergenceFactorChanged
+        &OutputParameter::monteCarloConvergenceFactorChanged,
+        Qt::UniqueConnection
     );
 }
