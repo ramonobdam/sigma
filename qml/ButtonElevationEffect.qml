@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // Component that provides the shadow effect on buttons
 ElevationEffect {

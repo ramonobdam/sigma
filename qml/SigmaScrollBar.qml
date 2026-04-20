@@ -5,12 +5,13 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import Sigma
 
 // ScrollBar component with custom styling
 ScrollBar {
     id: control
 
-    property int indicatorWidth: properties.scrollBarHeight
+    property int indicatorWidth: Properties.scrollBarHeight
 
     width: indicatorWidth
     height: indicatorWidth
@@ -24,26 +25,22 @@ ScrollBar {
         width: control.vertical ? control.indicatorWidth : 0
         height: control.horizontal ? control.indicatorWidth : 0
         radius: control.indicatorWidth / 2
-        color: control.pressed ? properties.colorDown :
+        color: control.pressed ? Properties.colorDown :
                                  (
-                                     control.hovered ? properties.colorHover :
-                                                       properties.colorBrand
+                                     control.hovered ? Properties.colorHover :
+                                                       Properties.colorBrand
                                  )
 
         Behavior on color {
             ColorAnimation {
-                duration: properties.animationDuration
+                duration: Properties.animationDuration
                 easing.type: Easing.InOutQuad
             }
         }
     }
 
     background: Rectangle {
-        color: properties.colorFill
+        color: Properties.colorFill
         radius: control.indicatorWidth / 2
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

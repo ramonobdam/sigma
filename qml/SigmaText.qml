@@ -3,20 +3,12 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Default styled text component
 Text {
-    font.family: fonts.inter.font.family
-    font.pixelSize: properties.fontSizeBody
-    //width: contentWidth
+    font.family: Fonts.inter.font.family
+    font.pixelSize: Properties.fontSizeBody
     height: contentHeight
-    color: properties.colorTextWeak
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
-    }
+    color: Properties.colorTextWeak
 }

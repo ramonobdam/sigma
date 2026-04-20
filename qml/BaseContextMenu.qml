@@ -7,6 +7,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
 import QtQuick.Effects
+import Sigma
 
 // Base Context Menu component. Its signals are connected to tableView if it is
 // defined.
@@ -14,9 +15,8 @@ Menu {
     id: control
 
     property string value
-    property string backgroundColor: properties.colorElevated
+    property string backgroundColor: Properties.colorElevated
     property TableView tableView
-    property alias properties: properties
 
     signal openRequested( edit: bool )
     signal deleteRequested()
@@ -50,7 +50,7 @@ Menu {
         clipboard.copy()
     }
 
-    width: properties.contextMenuWidth
+    width: Properties.contextMenuWidth
     padding: bg.border.width
     verticalPadding: bg.border.width
 
@@ -62,19 +62,15 @@ Menu {
         width: 0
     }
 
-    SigmaProperties {
-        id: properties
-    }
-
     background: Rectangle {
         id: bg
-        color: properties.colorElevated
-        radius: properties.radiusS
-        border.width: properties.borderWidth
-        border.color: properties.colorStrokeWeak
+        color: Properties.colorElevated
+        radius: Properties.radiusS
+        border.width: Properties.borderWidth
+        border.color: Properties.colorStrokeWeak
         layer.enabled: true
         layer.effect: RoundedElevationEffect {
-            elevation: properties.elevationElevated
+            elevation: Properties.elevationElevated
             roundedScale: Material.ExtraSmallScale
         }
     }

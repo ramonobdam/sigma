@@ -4,6 +4,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // Styled horizontal rule component for (context) menus
 MenuSeparator {
@@ -13,12 +14,8 @@ MenuSeparator {
     verticalPadding: 0
 
     contentItem: Rectangle {
-        implicitHeight: visible ? properties.borderWidth : 0
-        color: properties.colorStrokeWeak
+        implicitHeight: visible ? Properties.borderWidth : 0
+        color: Properties.colorStrokeWeak
         antialiasing: true
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

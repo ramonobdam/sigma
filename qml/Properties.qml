@@ -2,8 +2,9 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
+pragma Singleton
+
 import QtQuick
-import Sigma
 
 // Global properties and parameters of the Sigma app
 QtObject {

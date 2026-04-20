@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Sub heading used in forms with a text and sub text
 Item {
@@ -14,17 +15,13 @@ Item {
     anchors {
         left: parent.left
         right: parent.right
-        topMargin: properties.spacingL
+        topMargin: Properties.spacingL
     }
     height: label.height +
             line.anchors.topMargin +
             line.height +
             subLabel.anchors.topMargin +
             subLabel.height
-
-    SigmaProperties {
-        id: properties
-    }
 
     SigmaText {
         id: label
@@ -35,7 +32,7 @@ Item {
         }
         height: text.length > 0 ? contentHeight : 0
 
-        color: properties.colorTextStrong
+        color: Properties.colorTextStrong
         elide: Text.ElideRight
     }
 
@@ -46,11 +43,11 @@ Item {
             left: parent.left
             right: parent.right
             top: label.bottom
-            topMargin: control.text.length > 0 ? properties.spacingXS : 0
+            topMargin: control.text.length > 0 ? Properties.spacingXS : 0
         }
-        height: properties.borderWidth
+        height: Properties.borderWidth
 
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 
@@ -61,11 +58,11 @@ Item {
             left: parent.left
             right: parent.right
             top: line.bottom
-            topMargin: height > 0 ? properties.spacingS : 0
+            topMargin: height > 0 ? Properties.spacingS : 0
         }
         height: text.length > 0 ? contentHeight : 0
 
-        color: properties.colorTextWeak
+        color: Properties.colorTextWeak
         elide: Text.ElideRight
     }
 }

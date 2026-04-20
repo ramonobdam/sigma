@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // Styled card component with rounded corners, background, border and heading
 Pane {
@@ -17,22 +18,19 @@ Pane {
     anchors {
         fill: parent
     }
-    padding: properties.spacingM
+    padding: Properties.spacingM
     background: Rectangle {
-        color: properties.colorRaised
-        radius: properties.radiusM
-        border.width: properties.lightTheme ? 0 : properties.borderWidth
-        border.color: properties.colorStrokeWeak
-        layer.enabled: properties.lightTheme
+        color: Properties.colorRaised
+        radius: Properties.radiusM
+        border.width: Properties.lightTheme ? 0 : Properties.borderWidth
+        border.color: Properties.colorStrokeWeak
+        layer.enabled: Properties.lightTheme
         layer.effect: RoundedElevationEffect {
-            elevation: properties.elevationRaised
+            elevation: Properties.elevationRaised
             roundedScale: Material.ExtraSmallScale
         }
     }
 
-    SigmaProperties {
-        id: properties
-    }
 
     Item {
         id: header
@@ -42,7 +40,7 @@ Pane {
             left: parent.left
             right: parent.right
         }
-        height: heading.height + properties.spacingM
+        height: heading.height + Properties.spacingM
 
         Heading {
             id: heading

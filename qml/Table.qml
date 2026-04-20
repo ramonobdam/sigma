@@ -5,6 +5,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import Sigma
 
 // Component that combines a HorizontalHeaderView and a TableView with scroll
 FocusScope {
@@ -47,10 +48,6 @@ FocusScope {
         function onExtraRequested() { control.extraRequested() }
     }
 
-    SigmaProperties {
-        id: properties
-    }
-
     HorizontalHeaderView  {
         id: headerView
 
@@ -77,7 +74,7 @@ FocusScope {
         ScrollBar.horizontal: SigmaScrollBar {
             anchors {
                 top: parent.bottom
-                topMargin: ( properties.spacingM - indicatorWidth ) / 2
+                topMargin: ( Properties.spacingM - indicatorWidth ) / 2
                 left: parent.left
                 right: parent.right
             }
@@ -87,7 +84,7 @@ FocusScope {
                 top: parent.top
                 bottom: parent.bottom
                 left: parent.right
-                leftMargin: ( properties.spacingM - indicatorWidth ) / 2
+                leftMargin: ( Properties.spacingM - indicatorWidth ) / 2
             }
         }
 
@@ -101,7 +98,7 @@ FocusScope {
             resizableColumns: false
             selectionBehavior: TableView.SelectRows
             selectionMode: TableView.SingleSelection
-            editTriggers: properties.outputLocked ? TableView.NoEditTriggers :
+            editTriggers: Properties.outputLocked ? TableView.NoEditTriggers :
                           ( TableView.DoubleTapped | TableView.EditKeyPressed )
             boundsMovement: Flickable.StopAtBounds
         }

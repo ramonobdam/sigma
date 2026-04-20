@@ -3,22 +3,15 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Text heading component
 Text {
     height: contentHeight
-    font.family: fonts.interSemiBold.font.family
-    font.pixelSize: properties.fontSizeHeader
+    font.family: Fonts.interSemiBold.font.family
+    font.pixelSize: Properties.fontSizeHeader
     font.bold: true
-    font.letterSpacing: properties.headingLetterSpacing
-    color: properties.colorTextStrong
+    font.letterSpacing: Properties.headingLetterSpacing
+    color: Properties.colorTextStrong
     verticalAlignment: Text.AlignVCenter
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
-    }
 }

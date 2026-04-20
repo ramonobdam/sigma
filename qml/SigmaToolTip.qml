@@ -6,37 +6,34 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // ToolTip component with custom styling
 ToolTip {
     id: control
 
-    delay: properties.toolTipDelay
-    timeout: properties.toolTipTimeout
+    delay: Properties.toolTipDelay
+    timeout: Properties.toolTipTimeout
     visible: false
-    padding: properties.spacingXS
+    padding: Properties.spacingXS
 
     contentItem: SigmaText {
         text: control.text
-        color: properties.colorTextStrong
+        color: Properties.colorTextStrong
         textFormat: Text.StyledText
         wrapMode: Text.Wrap
     }
 
     background: Rectangle {
-        color: properties.colorElevated
-        border.color: properties.colorStrokeWeak
-        radius: properties.radiusS
-        opacity: properties.toolTipBackgroundOpacity
+        color: Properties.colorElevated
+        border.color: Properties.colorStrokeWeak
+        radius: Properties.radiusS
+        opacity: Properties.toolTipBackgroundOpacity
         layer.enabled: true
         layer.effect: RoundedElevationEffect {
-            elevation: properties.elevationElevated
+            elevation: Properties.elevationElevated
             roundedScale: Material.ExtraSmallScale
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }
 

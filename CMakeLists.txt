@@ -44,6 +44,11 @@ endif()
 
 target_compile_definitions( Sigma PRIVATE APP_VERSION="${PROJECT_VERSION}" )
 
+set_source_files_properties( qml/Properties.qml qml/Fonts.qml
+    PROPERTIES
+        QT_QML_SINGLETON_TYPE TRUE
+)
+
 qt_add_qml_module( Sigma
     URI Sigma
     VERSION ${PROJECT_VERSION}
@@ -69,6 +74,7 @@ qt_add_qml_module( Sigma
         qml/DeleteOutputParameterDialog.qml
         qml/DiscardUnsavedChanges.qml
         qml/FieldButton.qml
+        qml/Fonts.qml
         qml/FormSubHeading.qml
         qml/HeaderDelegate.qml
         qml/Heading.qml
@@ -82,17 +88,16 @@ qt_add_qml_module( Sigma
         qml/PrimaryButton.qml
         qml/ProjectDialog.qml
         qml/ProjectFailed.qml
+        qml/Properties.qml
         qml/RoundedRectangle.qml
         qml/SecondaryButton.qml
         qml/SettingsWindow.qml
         qml/SigmaBusyIndicator.qml
         qml/SigmaCheckBox.qml
-        qml/SigmaFonts.qml
         qml/SigmaMenu.qml
         qml/SigmaMenuBar.qml
         qml/SigmaMenuBarItem.qml
         qml/SigmaMenuBarMenuItem.qml
-        qml/SigmaProperties.qml
         qml/SigmaRadioButton.qml
         qml/SigmaRichText.qml
         qml/SigmaScrollBar.qml

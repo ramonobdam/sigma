@@ -6,26 +6,23 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // BusyIndicator with customized styling
 BusyIndicator {
     id: control
 
     contentItem: BusyIndicatorImpl {
-        implicitWidth: properties.busyIndicatorWidth
-        implicitHeight: properties.busyIndicatorWidth
-        color: properties.colorBrand
+        implicitWidth: Properties.busyIndicatorWidth
+        implicitHeight: Properties.busyIndicatorWidth
+        color: Properties.colorBrand
 
         running: control.running
         opacity: control.running ? 1 : 0
         Behavior on opacity {
             OpacityAnimator {
-                duration: properties.busyIndicatorOpacityDuration
+                duration: Properties.busyIndicatorOpacityDuration
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

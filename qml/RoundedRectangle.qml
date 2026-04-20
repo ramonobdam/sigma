@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Rectangle with optional rounded corners on only one side of the rectangle
 // (which is not possible with a regular Rectangle element)

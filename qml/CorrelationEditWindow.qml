@@ -119,7 +119,7 @@ BaseWindow {
         if ( control.paramA == control.paramB ) {
             control.valid = false
             control.unacceptableInputMessage =
-                    properties.errorIdenticalInputParam
+                    Properties.errorIdenticalInputParam
             return
         }
 
@@ -128,7 +128,7 @@ BaseWindow {
         if ( !correlation.isUnique( control.edit ) ) {
             control.valid = false
             control.unacceptableInputMessage =
-                    properties.errorCorrelationNotUnique
+                    Properties.errorCorrelationNotUnique
             return
         }
 
@@ -170,10 +170,6 @@ BaseWindow {
         id: correlation
     }
 
-    SigmaFonts {
-        id: fonts
-    }
-
     Item {
         id: container
 
@@ -182,7 +178,7 @@ BaseWindow {
             right: parent.right
             top: titleBar.bottom
             bottom: parent.bottom
-            margins: properties.spacingM
+            margins: Properties.spacingM
         }
 
         focus: true
@@ -207,14 +203,14 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             model: calculation.inputItemModel()
             enabled: count > 0
             maximumHeightPopup: horizontalRule.y - y
             onAccepted: { saveAndReturn( 0 ) }
             onActivated: { setCorrelation(); showValid() }
-            unacceptableInputMessage: properties.errorConstantParamCor
+            unacceptableInputMessage: Properties.errorConstantParamCor
 
             KeyNavigation.backtab: cancelButton
             KeyNavigation.tab: paramBCombo
@@ -240,14 +236,14 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             model: calculation.inputItemModel()
             enabled: count > 0
             maximumHeightPopup: horizontalRule.y - y
             onAccepted: { saveAndReturn( 1 ) }
             onActivated: { setCorrelation(); showValid() }
-            unacceptableInputMessage: properties.errorConstantParamCor
+            unacceptableInputMessage: Properties.errorConstantParamCor
 
             KeyNavigation.backtab: paramACombo
             KeyNavigation.tab: coefField
@@ -283,7 +279,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             validator: DoubleValidator {
                 notation: DoubleValidator.ScientificNotation
@@ -320,16 +316,16 @@ BaseWindow {
                 height: errorText.height
                 width: height
                 radius: height / 2
-                color: properties.colorTransparent
-                border.width: properties.borderWidth
-                border.color: properties.colorError500
+                color: Properties.colorTransparent
+                border.width: Properties.borderWidth
+                border.color: Properties.colorError500
 
                 Text {
                     anchors.fill: parent
 
-                    text: properties.invalidIcon
-                    font.family: fonts.fontAwesome.font.family
-                    font.pixelSize: properties.fontSizeUnacceptableInputIcon
+                    text: Properties.invalidIcon
+                    font.family: Fonts.fontAwesome.font.family
+                    font.pixelSize: Properties.fontSizeUnacceptableInputIcon
                     color: icon.border.color
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -342,7 +338,7 @@ BaseWindow {
                 anchors {
                     top: icon.top
                     left: icon.right
-                    leftMargin: properties.spacingXS
+                    leftMargin: Properties.spacingXS
                 }
 
                 text: control.unacceptableInputMessage
@@ -390,10 +386,10 @@ BaseWindow {
             anchors {
                 top: saveButton.top
                 left: saveButton.right
-                leftMargin: properties.spacingButtons
+                leftMargin: Properties.spacingButtons
             }
 
-            text: properties.buttonTextCancel
+            text: Properties.buttonTextCancel
             onClicked: { control.close() }
 
             KeyNavigation.backtab: saveButton

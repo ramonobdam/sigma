@@ -16,8 +16,8 @@ FileDialog {
 
     title: acceptLabel
     acceptLabel: ( save ? "Save" : "Open" ) + " project"
-    rejectLabel: properties.buttonTextCancel
-    defaultSuffix: properties.fileExtension
+    rejectLabel: Properties.buttonTextCancel
+    defaultSuffix: Properties.fileExtension
     nameFilters: [ defaultSuffix + " (*." + defaultSuffix + ")" ]
     onAccepted: {
         if ( save ) {
@@ -38,9 +38,5 @@ FileDialog {
                 projectFailed.show()
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

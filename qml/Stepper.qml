@@ -5,26 +5,27 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Universal
+import Sigma
 
 // Stepper component with custom styling
 SpinBox {
     id: control
 
     property int inputFieldWidth: 30
-    property int animationDuration: properties.animationDuration
+    property int animationDuration: Properties.animationDuration
     property string unacceptableInputMessage:
-        properties.unacceptableInputValueText
+        Properties.unacceptableInputValueText
     property bool showUnacceptableInputMessage: true   
-    property string backgroundColor: properties.colorElevated
+    property string backgroundColor: Properties.colorElevated
     property alias acceptableInput: textField.acceptableInput
     property alias text: textField.text
 
     editable: true
     stepSize: 1
     leftPadding: down.indicator.width -
-                 ( acceptableInput ? properties.borderWidth : 0 )
+                 ( acceptableInput ? Properties.borderWidth : 0 )
     rightPadding: up.indicator.width -
-                  ( acceptableInput ? properties.borderWidth : 0 )
+                  ( acceptableInput ? Properties.borderWidth : 0 )
     topPadding: 0
     bottomPadding: 0
     focus: true
@@ -52,8 +53,8 @@ SpinBox {
 
     up.indicator: RoundedRectangle {
         x: parent.width - width
-        width: properties.textFieldHeight
-        height: properties.textFieldHeight
+        width: Properties.textFieldHeight
+        height: Properties.textFieldHeight
         cornerSide: RoundedRectangle.Direction.Right
         radius: bg.radius
         border.width: bg.border.width
@@ -61,23 +62,23 @@ SpinBox {
             control.enabled ?
                 (
                     control.up.pressed ?
-                            properties.colorDown :
+                            Properties.colorDown :
                             (
                                 control.up.hovered ?
-                                    properties.colorHover :
-                                    properties.colorBrand
+                                    Properties.colorHover :
+                                    Properties.colorBrand
                             )
                 ) :
-                properties.colorStrokeWeak
+                Properties.colorStrokeWeak
 
         color:
             control.enabled ?
                 (
                     control.up.pressed ?
-                        properties.colorTextDown :
+                        Properties.colorTextDown :
                         (
                             control.up.hovered ?
-                                properties.colorTextHover :
+                                Properties.colorTextHover :
                                 control.backgroundColor
                         )
                 ) :
@@ -92,18 +93,18 @@ SpinBox {
 
         Text {
             anchors.fill: parent
-            text: properties.plusIcon
-            font.family: fonts.fontAwesome.font.family
-            font.pixelSize: properties.fontSizeStepperIcon
-            color: enabled ? parent.border.color : properties.colorStrokeWeak
+            text: Properties.plusIcon
+            font.family: Fonts.fontAwesome.font.family
+            font.pixelSize: Properties.fontSizeStepperIcon
+            color: enabled ? parent.border.color : Properties.colorStrokeWeak
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
     }
 
     down.indicator: RoundedRectangle {
-        width: properties.textFieldHeight
-        height: properties.textFieldHeight
+        width: Properties.textFieldHeight
+        height: Properties.textFieldHeight
         cornerSide: RoundedRectangle.Direction.Left
         radius: bg.radius
         border.width: bg.border.width
@@ -111,21 +112,21 @@ SpinBox {
             control.enabled ?
                 (
                     control.down.pressed ?
-                        properties.colorDown :
+                        Properties.colorDown :
                             (
-                                control.down.hovered ? properties.colorHover :
-                                                       properties.colorBrand
+                                control.down.hovered ? Properties.colorHover :
+                                                       Properties.colorBrand
                             )
                 ) :
-                properties.colorStrokeWeak
+                Properties.colorStrokeWeak
 
         color:
             control.enabled ?
                 (
                     control.down.pressed ?
-                        properties.colorTextDown :
+                        Properties.colorTextDown :
                         (
-                            control.down.hovered ? properties.colorTextHover :
+                            control.down.hovered ? Properties.colorTextHover :
                                                    control.backgroundColor
                         )
                 ) :
@@ -140,10 +141,10 @@ SpinBox {
 
         Text {
             anchors.fill: parent
-            text: properties.minusIcon
-            font.family: fonts.fontAwesome.font.family
-            font.pixelSize: properties.fontSizeStepperIcon
-            color: enabled ? parent.border.color : properties.colorStrokeWeak
+            text: Properties.minusIcon
+            font.family: Fonts.fontAwesome.font.family
+            font.pixelSize: Properties.fontSizeStepperIcon
+            color: enabled ? parent.border.color : Properties.colorStrokeWeak
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
@@ -151,24 +152,16 @@ SpinBox {
 
     background: Rectangle {
         id: bg
-        implicitWidth: properties.textFieldHeight * 2 + control.inputFieldWidth
-        border.width: properties.borderWidth
-        border.color: control.enabled ? properties.colorBrand :
-                                        properties.colorStrokeWeak
+        implicitWidth: Properties.textFieldHeight * 2 + control.inputFieldWidth
+        border.width: Properties.borderWidth
+        border.color: control.enabled ? Properties.colorBrand :
+                                        Properties.colorStrokeWeak
         color: control.backgroundColor
-        radius: properties.radiusS
+        radius: Properties.radiusS
 
         // Apply dropshadow on stepper background when using lightTheme.
-        layer.enabled: control.enabled && properties.lightTheme
+        layer.enabled: control.enabled && Properties.lightTheme
         layer.effect: ButtonElevationEffect {}
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 
     Item {
@@ -177,7 +170,7 @@ SpinBox {
             top: control.top
             topMargin: ( control.height - icon.height ) / 2
             left: control.right
-            leftMargin: properties.spacingM
+            leftMargin: Properties.spacingM
         }
 
         visible: control.showUnacceptableInputMessage &&
@@ -194,16 +187,16 @@ SpinBox {
 
             width: height
             radius: height / 2
-            color: properties.colorTransparent
-            border.width: properties.borderWidth
-            border.color: properties.colorError500
+            color: Properties.colorTransparent
+            border.width: Properties.borderWidth
+            border.color: Properties.colorError500
 
             Text {
                 anchors.fill: parent
 
-                text: properties.invalidIcon
-                font.family: fonts.fontAwesome.font.family
-                font.pixelSize: properties.fontSizeUnacceptableInputIcon
+                text: Properties.invalidIcon
+                font.family: Fonts.fontAwesome.font.family
+                font.pixelSize: Properties.fontSizeUnacceptableInputIcon
                 color: icon.border.color
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -216,7 +209,7 @@ SpinBox {
             anchors {
                 top: icon.top
                 left: icon.right
-                leftMargin: properties.spacingXS
+                leftMargin: Properties.spacingXS
             }
 
             text: control.unacceptableInputMessage

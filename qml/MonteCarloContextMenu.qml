@@ -25,19 +25,19 @@ BaseContextMenu {
 
     ContextMenuItem {
         text: "Run Monte Carlo simulation"
-        enabled: calculation.outputValid && !properties.outputLocked
+        enabled: calculation.outputValid && !Properties.outputLocked
         onTriggered: { calculation.runMonteCarlo() }
     }
 
     ContextMenuItem {
         text: "Stop Monte Carlo simulation"
-        enabled: calculation.outputValid && properties.outputLocked
+        enabled: calculation.outputValid && Properties.outputLocked
         onTriggered: { calculation.stopMonteCarlo() }
     }
 
     Rectangle {
-        height: properties.borderWidth
-        color: properties.colorStrokeWeak
+        height: Properties.borderWidth
+        color: Properties.colorStrokeWeak
     }
 
     ContextMenuItem {
@@ -48,13 +48,13 @@ BaseContextMenu {
     }
 
     Rectangle {
-        height: copyItem.visible ? properties.borderWidth : 0
-        color: properties.colorStrokeWeak
+        height: copyItem.visible ? Properties.borderWidth : 0
+        color: Properties.colorStrokeWeak
     }
 
     ContextMenuItem {
         text: "Export results to CSV file..."
         onTriggered: { control.extraRequested() }
-        enabled: !properties.outputLocked
+        enabled: !Properties.outputLocked
     }
 }

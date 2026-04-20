@@ -27,13 +27,13 @@ BaseDialog {
 
     title: "Delete input parameter"
     headerText: "Do you want to delete input parameter " +
-                properties.inputName +
+                Properties.inputName +
                 "?"
     subText: references.length > 0 ?
                 "It is detected in " + references :
                 "It is currently not detected in any (valid) output parameter"
 
-    primaryButton.text: properties.buttonTextDelete
+    primaryButton.text: Properties.buttonTextDelete
     primaryButton.onClicked: { control.deleteAndHide() }
     primaryButton.KeyNavigation.tab: secondaryButton
     primaryButton.KeyNavigation.backtab: secondaryButton

@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // Button component used for the popups to insert special (greek) characters or
 // mathematical operators
@@ -14,12 +15,12 @@ Button {
 
     property string toolTipText
     property string toolTipTextDisabled: toolTipText
-    property string backgroundColor: properties.colorElevated
+    property string backgroundColor: Properties.colorElevated
     property int scale: Math.ceil( text.contentWidth / height )
     property alias textColor: text.color
 
-    height: properties.buttonHeight
-    width: scale * height + ( scale - 1) * properties.spacingXXS
+    height: Properties.buttonHeight
+    width: scale * height + ( scale - 1) * Properties.spacingXXS
     focus: true
     hoverEnabled: true
 
@@ -33,7 +34,7 @@ Button {
         anchors.fill: parent
 
         text: button.text
-        color: button.down ? button.backgroundColor : properties.colorTextStrong
+        color: button.down ? button.backgroundColor : Properties.colorTextStrong
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }
@@ -42,17 +43,17 @@ Button {
         anchors.fill: parent
 
         color: mouseArea.pressed ? (
-                                        properties.lightTheme ?
-                                            properties.colorTextWeak :
-                                            properties.colorStrokeStrong
+                                        Properties.lightTheme ?
+                                            Properties.colorTextWeak :
+                                            Properties.colorStrokeStrong
                                     ) :
-                                    button.hovered ? properties.colorTextDown :
-                                                     properties.colorTextHover
-        radius: properties.radiusS - properties.borderWidth
+                                    button.hovered ? Properties.colorTextDown :
+                                                     Properties.colorTextHover
+        radius: Properties.radiusS - Properties.borderWidth
 
         Behavior on color {
             ColorAnimation {
-                duration: properties.animationDuration
+                duration: Properties.animationDuration
                 easing.type: Easing.InOutQuad
             }
         }
@@ -71,10 +72,6 @@ Button {
             event.accepted = true
             button.clicked()
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 
     SigmaToolTip {

@@ -34,7 +34,7 @@ BaseWindow {
     function save() {
         if ( control.allValid ) {
             // When Auto Save is switched on, save any unsaved changes
-            if ( autoSaveCheckBox.checked && properties.unsavedChanges ) {
+            if ( autoSaveCheckBox.checked && Properties.unsavedChanges ) {
                 calculation.saveProject()
             }
             control.hide();
@@ -92,7 +92,7 @@ BaseWindow {
             right: parent.right
             top: titleBar.bottom
             bottom: parent.bottom
-            margins: properties.spacingM        }
+            margins: Properties.spacingM        }
 
         focus: true
         Keys.onEscapePressed: { control.cancel() }
@@ -130,9 +130,9 @@ BaseWindow {
             }
 
             text: "Follow system setting (" +
-                  ( properties.systemThemeLight ? "light" : "dark") +
+                  ( Properties.systemThemeLight ? "light" : "dark") +
                   ")"
-            checked: properties.displayTheme === theme
+            checked: Properties.displayTheme === theme
             onToggled: {
                 if ( checked ) {
                     appSettings.setDisplayTheme( theme )
@@ -166,7 +166,7 @@ BaseWindow {
             }
 
             text: "Light"
-            checked: properties.displayTheme === theme
+            checked: Properties.displayTheme === theme
             onToggled: {
                 if ( checked ) {
                     appSettings.setDisplayTheme( theme )
@@ -200,7 +200,7 @@ BaseWindow {
             }
 
             text: "Dark"
-            checked: properties.displayTheme === theme
+            checked: Properties.displayTheme === theme
             onToggled: {
                 if ( checked ) {
                     appSettings.setDisplayTheme( theme )
@@ -240,7 +240,7 @@ BaseWindow {
                 left: parent.left
             }
 
-            checked: properties.autoSaveProject
+            checked: Properties.autoSaveProject
             text: "Auto Save project"
             onToggled: { appSettings.setAutoSaveProject( checked ) }
 
@@ -267,7 +267,7 @@ BaseWindow {
                 left: parent.left
             }
 
-            checked: properties.restoreLastProject
+            checked: Properties.restoreLastProject
             text: "Restore last project on startup"
             onToggled: { appSettings.setRestoreLastProject( checked ) }
 
@@ -543,10 +543,10 @@ BaseWindow {
             anchors {
                 top: saveButton.top
                 left: saveButton.right
-                leftMargin: properties.spacingButtons
+                leftMargin: Properties.spacingButtons
             }
 
-            text: properties.buttonTextCancel
+            text: Properties.buttonTextCancel
             onClicked: { control.cancel() }
 
             KeyNavigation.backtab: saveButton

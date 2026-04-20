@@ -2,6 +2,8 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
+import Sigma
+
 // Dialog to inform that saving the project failed
 BaseDialog {
     id: control
@@ -30,7 +32,7 @@ BaseDialog {
         "Please make sure the file is not locked and the disk is not full" :
         "Please make sure the selected file is readable"
 
-    primaryButton.text: properties.buttonTextOK
+    primaryButton.text: Properties.buttonTextOK
     primaryButton.onClicked: { control.hide() }
 
     secondaryButton.visible: false

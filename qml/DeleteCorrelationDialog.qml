@@ -40,7 +40,7 @@ BaseDialog {
                    + "output parameter"
                  )
 
-    primaryButton.text: properties.buttonTextDelete
+    primaryButton.text: Properties.buttonTextDelete
     primaryButton.onClicked: { control.deleteAndHide() }
     primaryButton.KeyNavigation.tab: secondaryButton
     primaryButton.KeyNavigation.backtab: secondaryButton

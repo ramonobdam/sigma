@@ -5,39 +5,40 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import Sigma
 
 // Styled TextField component
 TextField {
     id: control
 
-    property int radius: properties.radiusS
+    property int radius: Properties.radiusS
     property bool dropShadow: true
-    property string backgroundColor: properties.colorElevated
+    property string backgroundColor: Properties.colorElevated
     property bool valid: true
     property bool showUnacceptableInputMessage: true
     property bool useFieldButton: false
     property bool textSelected: selectedText.length > 0
     property bool showContextMenu: true
     property string unacceptableInputMessage:
-        properties.unacceptableInputValueText
+        Properties.unacceptableInputValueText
     property alias border: bg.border
     property alias backgroundItem: bg
 
-    height: properties.textFieldHeight
-    leftPadding: properties.spacingS
-    rightPadding: properties.spacingS
-    topPadding: properties.spacingXS
-    bottomPadding: properties.spacingXS
+    height: Properties.textFieldHeight
+    leftPadding: Properties.spacingS
+    rightPadding: Properties.spacingS
+    topPadding: Properties.spacingXS
+    bottomPadding: Properties.spacingXS
 
-    font.family: fonts.inter.font.family
-    font.pixelSize: properties.fontSizeBody
+    font.family: Fonts.inter.font.family
+    font.pixelSize: Properties.fontSizeBody
     focus: true
-    color: enabled ? properties.colorTextStrong : properties.colorStrokeWeak
-    selectionColor: properties.colorBrand
+    color: enabled ? Properties.colorTextStrong : Properties.colorStrokeWeak
+    selectionColor: Properties.colorBrand
     selectByMouse: !readOnly
     selectedTextColor: backgroundColor
-    placeholderTextColor: enabled ? properties.colorStrokeStrong :
-                                    properties.colorStrokeWeak
+    placeholderTextColor: enabled ? Properties.colorStrokeStrong :
+                                    Properties.colorStrokeWeak
 
     ContextMenu.onRequested: position => {
         if ( showContextMenu ) {
@@ -52,26 +53,26 @@ TextField {
         anchors.fill: parent
 
         color: ( control.activeFocus || control.hovered && control.enabled ) ?
-                   properties.colorTextHover :
+                   Properties.colorTextHover :
                    backgroundColor
         border.color:
             control.enabled ?
                 ( ( !control.acceptableInput || !control.valid ) ?
-                        properties.colorError500 :
+                        Properties.colorError500 :
                         (
                             control.activeFocus ?
-                                properties.colorBrand :
-                                properties.colorStrokeStrong
+                                Properties.colorBrand :
+                                Properties.colorStrokeStrong
                         )
                 ) :
-                properties.colorStrokeWeak
-        border.width: properties.borderWidth
+                Properties.colorStrokeWeak
+        border.width: Properties.borderWidth
         radius: control.radius
 
         // Apply dropshadow on background when using lightTheme.
         layer.enabled: control.dropShadow &&
                        control.enabled &&
-                       properties.lightTheme
+                       Properties.lightTheme
         layer.effect: ButtonElevationEffect {}
 
         // Left side is square when a FieldButton is used and the left border is
@@ -86,7 +87,7 @@ TextField {
                 bottom: parent.bottom
                 bottomMargin: bg.border.width
             }
-            width: properties.borderWidth
+            width: Properties.borderWidth
 
             color: bg.color
             visible: control.useFieldButton &&
@@ -137,7 +138,7 @@ TextField {
             top: control.top
             topMargin: ( control.height - icon.height ) / 2
             left: control.right
-            leftMargin: properties.spacingM
+            leftMargin: Properties.spacingM
         }
 
         visible: control.showUnacceptableInputMessage &&
@@ -153,16 +154,16 @@ TextField {
             height: errorText.height
             width: height
             radius: height / 2
-            color: properties.colorTransparent
-            border.width: properties.borderWidth
-            border.color: properties.colorError500
+            color: Properties.colorTransparent
+            border.width: Properties.borderWidth
+            border.color: Properties.colorError500
 
             Text {
                 anchors.fill: parent
 
-                text: properties.invalidIcon
-                font.family: fonts.fontAwesome.font.family
-                font.pixelSize: properties.fontSizeUnacceptableInputIcon
+                text: Properties.invalidIcon
+                font.family: Fonts.fontAwesome.font.family
+                font.pixelSize: Properties.fontSizeUnacceptableInputIcon
                 color: icon.border.color
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -175,7 +176,7 @@ TextField {
             anchors {
                 top: icon.top
                 left: icon.right
-                leftMargin: properties.spacingXS
+                leftMargin: Properties.spacingXS
             }
 
             text: control.unacceptableInputMessage
@@ -187,7 +188,7 @@ TextField {
         id: contextMenu
 
         BaseContextMenu {
-            width: properties.contextMenuWidthTextField
+            width: Properties.contextMenuWidthTextField
 
             ContextMenuItem {
                 enabled: control.canUndo
@@ -202,8 +203,8 @@ TextField {
             }
 
             Rectangle {
-                height: properties.borderWidth
-                color: properties.colorStrokeWeak
+                height: Properties.borderWidth
+                color: Properties.colorStrokeWeak
             }
 
             ContextMenuItem {
@@ -237,8 +238,8 @@ TextField {
             }
 
             Rectangle {
-                height: properties.borderWidth
-                color: properties.colorStrokeWeak
+                height: Properties.borderWidth
+                color: Properties.colorStrokeWeak
             }
 
             ContextMenuItem {
@@ -247,13 +248,5 @@ TextField {
                 onTriggered: control.selectAll()
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
     }
 }

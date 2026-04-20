@@ -5,6 +5,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import Sigma
 
 // ScrollIndicator component with custom styling
 ScrollIndicator {
@@ -21,11 +22,7 @@ ScrollIndicator {
         implicitHeight: 4
         radius: implicitWidth / 2
         opacity: 0.7
-        color: properties.colorStrokeStrong
+        color: Properties.colorStrokeStrong
         visible: control.size < 1.0
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

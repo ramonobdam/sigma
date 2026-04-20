@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Delegate component for table headers with an optional valid/invalid icon on
 // the left side
@@ -14,19 +15,11 @@ Item {
     property bool useValid: false
     property bool lastColumn: column === ( TableView.view.columns - 1 )
     property var columnWidthProvider:
-        function( column ) { return properties.defaultTableWidth }
+        function( column ) { return Properties.defaultTableWidth }
 
     implicitWidth: columnWidthProvider( column )
-    implicitHeight: properties.rowHeight + line.height
+    implicitHeight: Properties.rowHeight + line.height
     clip: true
-
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
-    }
 
     Rectangle {
         id: separatorLeft
@@ -35,13 +28,13 @@ Item {
             left: parent.left
             top: parent.top
             bottom: parent.bottom
-            topMargin: ( properties.rowHeight - properties.separatorHeight ) / 2
+            topMargin: ( Properties.rowHeight - Properties.separatorHeight ) / 2
             bottomMargin: anchors.topMargin + line.height
 
         }
-        width: properties.borderWidth
+        width: Properties.borderWidth
 
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 
@@ -54,14 +47,14 @@ Item {
             bottom: line.top
         }
         width: control.useValid ?
-                   ( properties.validIconWidth - separatorLeft.width ) :
+                   ( Properties.validIconWidth - separatorLeft.width ) :
                    0
 
         visible: control.useValid
-        text: properties.validIcon
-        font.family: fonts.fontAwesome.font.family
-        font.pixelSize: properties.fontSizeValidIcon
-        color: properties.colorTextStrong
+        text: Properties.validIcon
+        font.family: Fonts.fontAwesome.font.family
+        font.pixelSize: Properties.fontSizeValidIcon
+        color: Properties.colorTextStrong
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
     }
@@ -73,13 +66,13 @@ Item {
             left: icon.right
             top: parent.top
             bottom: parent.bottom
-            topMargin: ( properties.rowHeight - properties.separatorHeight ) / 2
+            topMargin: ( Properties.rowHeight - Properties.separatorHeight ) / 2
             bottomMargin: anchors.topMargin + line.height
         }
-        width: control.useValid ? properties.borderWidth : 0
+        width: control.useValid ? Properties.borderWidth : 0
 
         visible: control.useValid
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 
@@ -92,8 +85,8 @@ Item {
         }
 
         text: control.display
-        color: properties.colorTextStrong
-        padding: properties.spacingS
+        color: Properties.colorTextStrong
+        padding: Properties.spacingS
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignLeft
@@ -106,13 +99,13 @@ Item {
             right: parent.right
             top: parent.top
             bottom: parent.bottom
-            topMargin: ( properties.rowHeight - properties.separatorHeight ) / 2
+            topMargin: ( Properties.rowHeight - Properties.separatorHeight ) / 2
             bottomMargin: anchors.topMargin + line.height
         }
-        width: control.lastColumn ? properties.borderWidth : 0
+        width: control.lastColumn ? Properties.borderWidth : 0
 
         visible: control.lastColumn
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 
@@ -124,9 +117,9 @@ Item {
             right: parent.right
             bottom: parent.bottom
         }
-        height: properties.borderWidth
+        height: Properties.borderWidth
 
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 }

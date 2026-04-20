@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // This is a specialized version of the stepper for multiples of 10 shown in
 // scientific notation. The stepper 'value' is the exponent while number
