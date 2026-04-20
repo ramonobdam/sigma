@@ -1,5 +1,5 @@
 {
-    "Sigma version": "1.0.5",
+    "Sigma version": "1.1.0",
     "correlations": [
         {
             "Id": "{b0638a3e-cde5-4794-8c06-6c2d0d6725db}",
