@@ -397,7 +397,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Edit"
-                implicitWidth: 200
+                implicitWidth: 230
 
                 SigmaMenuBarMenuItem {
                     text: "Undo"
@@ -408,10 +408,18 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Redo"
-                    shortcut: Properties.macOs ? StandardKey.Redo :
-                                                 "Ctrl+Shift+Z"
+                    shortcut: Properties.macOs ? StandardKey.Redo : "Ctrl+Y"
                     enabled: Properties.canRedo
                     onTriggered: { redo() }
+                }
+
+                ContextMenuRule {}
+
+                SigmaMenuBarMenuItem {
+                    text: "Clear project..."
+                    shortcut: "Ctrl+Delete"
+                    onTriggered: { clearProject() }
+                    enabled: !Properties.outputLocked
                 }
             }
 
