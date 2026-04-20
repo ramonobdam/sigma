@@ -7,7 +7,7 @@
 
 // Enum with the different data types that can be stored in the Model class.
 // The DataType of the object is stored in JsonDiff to be able to undo/redo
-// changes. The registerModel() method of the UndoStack class links the DataType
+// changes. The registerModel() method of the DiffUtil class links the DataType
 // to the right Model instance.
 enum class DataType {
     InputParameter,
