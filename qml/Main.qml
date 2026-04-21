@@ -310,7 +310,7 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
                     text: Properties.macOS ? "Quit" : "Exit"
-                    shortcut: Properties.macOS ? StandardKey.Close : "Alt+F4"
+                    shortcut: StandardKey.Close
                     onTriggered: { closeWindow() }
                 }
             }
@@ -321,14 +321,14 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "New..."
-                    shortcut: Properties.macOS ? StandardKey.New : "Ctrl+N"
+                    shortcut: StandardKey.New
                     enabled: !Properties.outputLocked
                     onTriggered: { newProject() }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Open..."
-                    shortcut: Properties.macOS ? StandardKey.Open : "Ctrl+O"
+                    shortcut: StandardKey.Open
                     enabled: !Properties.outputLocked
                     onTriggered: { openProject() }
                 }
@@ -337,7 +337,7 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Save"
-                    shortcut: Properties.macOS ? StandardKey.Save : "Ctrl+S"
+                    shortcut: StandardKey.Save
                     enabled: !Properties.outputLocked &&
                              Properties.unsavedChanges
                     onTriggered: {
@@ -348,8 +348,7 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Save As..."
-                    shortcut: Properties.macOS ? StandardKey.SaveAs :
-                                                 "Ctrl+Shift+S"
+                    shortcut: StandardKey.SaveAs
                     enabled: !Properties.outputLocked
                     onTriggered: { saveProjectAs() }
                 }
@@ -401,14 +400,14 @@ ApplicationWindow {
 
                 SigmaMenuBarMenuItem {
                     text: "Undo"
-                    shortcut: Properties.macOS ? StandardKey.Undo : "Ctrl+H"
+                    shortcut: StandardKey.Undo
                     enabled: Properties.canUndo
                     onTriggered: { undo() }
                 }
 
                 SigmaMenuBarMenuItem {
                     text: "Redo"
-                    shortcut: Properties.macOS ? StandardKey.Redo : "Ctrl+Y"
+                    shortcut: StandardKey.Redo
                     enabled: Properties.canRedo
                     onTriggered: { redo() }
                 }
@@ -555,7 +554,7 @@ ApplicationWindow {
                     text: "Full Screen"
                     checkable: true
                     checked: menuBar.fullScreen
-                    shortcut: Properties.macOS ? StandardKey.FullScreen : "F11"
+                    shortcut: StandardKey.FullScreen
                     onTriggered: { captionHelper.toggleFullScreen( window ) }
                 }
             }

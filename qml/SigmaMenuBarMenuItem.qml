@@ -14,7 +14,7 @@ MenuItem {
     property int fontSize: Properties.fontSizeTitleBar
     property int animationDuration: Properties.animationDuration
     property string backgroundColor: Properties.colorElevated
-    property alias shortcut: itemAction.shortcut
+    property var shortcut: undefined
 
     implicitHeight: visible ? Properties.rowHeight : 0
     implicitWidth: parent.implicitWidth
@@ -32,6 +32,7 @@ MenuItem {
         checkable: control.checkable
         checked: control.checked
         icon: control.icon
+        shortcut: control.shortcut
         onToggled: { control.toggled() }
     }
 
@@ -103,7 +104,8 @@ MenuItem {
                 id: shortcutItem
 
                 enabled: false
-                sequence: control.shortcut
+                sequence:
+                    control.shortcut !== undefined ? [ control.shortcut ] : []
             }
         }
     }
