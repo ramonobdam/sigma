@@ -104,7 +104,7 @@ MenuItem {
                 id: shortcutItem
 
                 enabled: false
-                sequence:
+                sequences:
                     control.shortcut !== undefined ? [ control.shortcut ] : []
             }
         }
