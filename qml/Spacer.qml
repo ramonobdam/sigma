@@ -3,13 +3,10 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Spacer component for flexible (Column) layouts
 Item {
     width: parent.width
-    height: properties.spacingS
-
-    SigmaProperties {
-        id: properties
-    }
+    height: Properties.spacingS
 }

@@ -5,10 +5,9 @@
 #ifndef MONTECARLO_H
 #define MONTECARLO_H
 
-#include "settings.h"
 #include "statistics.h"
-#include "utils.h"
 #include <QJsonObject>
+#include <QLatin1StringView>
 #include <QList>
 #include <QMutex>
 #include <QObject>
@@ -21,7 +20,7 @@ class OutputParameter;
 
 // Class that performs the Monte Carlo simulation and stores the results. The
 // calculations are performed in a separate thread using QThread.
-class MonteCarlo: public QThread, private Settings, private Utils {
+class MonteCarlo: public QThread {
     Q_OBJECT
 
 public:
@@ -32,17 +31,17 @@ public:
     ~MonteCarlo();
 
     MonteCarlo( const MonteCarlo &mc, QObject *parent = nullptr );
-    MonteCarlo& operator= ( const MonteCarlo &mc );
+    MonteCarlo & operator= ( const MonteCarlo &mc );
 
     OutputParameter* getOutputParameter() const;
     QJsonObject toJson() const;
     QList<double> getHistogramValues() const;
-    QString getExpandedUncertaintyAsString( const bool &csvMode = false ) const;
-    QString getMeanAsString( const bool &csvMode = false ) const;
+    QString getExpandedUncertaintyAsString( bool csvMode = false ) const;
+    QString getMeanAsString( bool csvMode = false ) const;
     QString getNumericalToleranceAsString() const;
-    QString getStatus( const bool &csvMode = false ) const;
-    QString getStdDeviationAsString( const bool &csvMode = false ) const;
-    QString histogramToString() const;
+    QString getStatus( bool csvMode = false ) const;
+    QString getStdDeviationAsString( bool csvMode = false ) const;
+    QString histogramToCSVString() const;
     Statistics getOutputStatistics() const;
     bool getRequestStop() const;
     bool getValid() const;
@@ -59,28 +58,37 @@ public:
     int getHistogramLowerIndex() const;
     void resetResults();
     void run() override;
-    void setConvergenceFactor( const double &convergenceFactor = 0. );
-    void setHigherBound( const double &higherBound = 0. );
-    void setHistogramHigherIndex( const int &histogramHigherIndex = 0 );
-    void setHistogramLowerIndex( const int &histogramLowerIndex = -1 );
+    void setConvergenceFactor( double convergenceFactor = 0. );
+    void setHigherBound( double higherBound = 0. );
+    void setHistogramHigherIndex( int histogramHigherIndex = 0 );
+    void setHistogramLowerIndex( int histogramLowerIndex = -1 );
     void setHistogramValues( const QList<double> &values = QList<double>() );
-    void setHistogramXMax( const double &histogramXMax = 1. );
-    void setHistogramXMin( const double &histogramXMin = -1. );
-    void setHistogramYMax( const double &histogramYMax = 1. );
-    void setLowerBound( const double &lowerBound = 0. );
-    void setMean( const double &mean = 0. );
-    void setNumericalTolerance( const double &tolerance );
+    void setHistogramXMax( double histogramXMax = 1. );
+    void setHistogramXMin( double histogramXMin = -1. );
+    void setHistogramYMax( double histogramYMax = 1. );
+    void setLowerBound( double lowerBound = 0. );
+    void setMean( double mean = 0. );
+    void setNumericalTolerance( double tolerance );
     void setOutputParameter( OutputParameter *outputParameter );
     void setOutputStatistics( const Statistics &outputStat );
-    void setRequestStop( const bool &requestStop );
-    void setStatus( const QString &status = mMonteNotCarloStarted );
-    void setStdDeviation( const double &stdDeviation = 0. );
-    void setValid( const bool &valid = false );
+    void setRequestStop( bool requestStop );
+    void setStatus( const QString &status = sMonteNotCarloStarted );
+    void setStdDeviation( double stdDeviation = 0. );
+    void setValid( bool valid = false );
     void stop();
 
     static MonteCarlo fromJson( const QJsonObject &json );
 
-    static QStringList headerLabels;
+    inline static const QStringList headerLabels {
+        "Output name",
+        "Unit",
+        "Simulation status",
+        "Numerical tolerance",
+        "Output estimate",
+        "Standard uncertainty",
+        "Expanded uncertainty",
+        "Level of confidence"
+    };
 
 signals:
     void convergenceFactorChanged();
@@ -89,22 +97,7 @@ signals:
 private:
     QString getHistogramBinsAsString() const;
     QString getHistogramValuesAsString() const;
-    void calculateNumericalTolerance( const double &value, const int &digits );
-
-    const QString mConvergedString {
-        "Converged after %L1 function evaluations"
-    };
-    const QString mInvalidOutputString {
-        "Invalid output value for input parameter values: "
-    };
-    const QString mMonteCarloRunning { "Monte Carlo Simulation running" };
-    const QString mNotConvergedString {
-        "Not converged after %L1 function evaluations"
-    };
-    const QString mStoppedString { "Stopped after %L1 function evaluations" };
-
-    // Numerical tolerance reduction factor according to JCGM:101 section 8.2:
-    const double mNumericalToleranceFactor { 5. };
+    void calculateNumericalTolerance( double value, int digits );
 
     OutputParameter *mOutputParameter;
     QList<double> mHistogramValues;
@@ -125,20 +118,49 @@ private:
     int mHistogramHigherIndex;
     int mHistogramLowerIndex;
 
-    static QString mHigherBoundString;
-    static QString mHistogramHigherIndexString;
-    static QString mHistogramLowerIndexString;
-    static QString mHistogramValuesString;
-    static QString mHistogramXMaxString;
-    static QString mHistogramXMinString;
-    static QString mHistogramYMaxString;
-    static QString mLowerBoundString;
-    static QString mMeanString;
-    static QString mMonteNotCarloStarted;
-    static QString mNumericalToleranceString;
-    static QString mStatusString;
-    static QString mStdDeviationString;
-    static QString mValidString;
+    static constexpr QLatin1StringView sConvergedString {
+        "Converged after %L1 function evaluations"
+    };
+    static constexpr QLatin1StringView sInvalidOutputString {
+        "Invalid output value for input parameter values: "
+    };
+    static constexpr QLatin1StringView sMonteCarloRunning {
+        "Monte Carlo Simulation running"
+    };
+    static constexpr QLatin1StringView sNotConvergedString {
+        "Not converged after %L1 function evaluations"
+    };
+    static constexpr QLatin1StringView sStoppedString {
+        "Stopped after %L1 function evaluations"
+    };
+
+    static constexpr QLatin1StringView sHigherBoundString { "higherBound" };
+    static constexpr QLatin1StringView sHistogramHigherIndexString {
+        "histogramHigherIndex"
+    };
+    static constexpr QLatin1StringView sHistogramLowerIndexString {
+        "histogramLowerIndex"
+    };
+    static constexpr QLatin1StringView sHistogramValuesString {
+        "histogramValues"
+    };
+    static constexpr QLatin1StringView sHistogramXMaxString { "histogramXMax" };
+    static constexpr QLatin1StringView sHistogramXMinString { "histogramXMin" };
+    static constexpr QLatin1StringView sHistogramYMaxString { "histogramYMax" };
+    static constexpr QLatin1StringView sLowerBoundString { "lowerBound" };
+    static constexpr QLatin1StringView sMeanString { "mean" };
+    static constexpr QLatin1StringView sMonteNotCarloStarted {
+        "Click 'Start' to run Monte Carlo simulation"
+    };
+    static constexpr QLatin1StringView sNumericalToleranceString {
+        "numericalTolerance"
+    };
+    static constexpr QLatin1StringView sStatusString { "status" };
+    static constexpr QLatin1StringView sStdDeviationString { "stdDeviation" };
+    static constexpr QLatin1StringView sValidString { "valid" };
+
+    // Numerical tolerance reduction factor according to JCGM:101 section 8.2:
+    static constexpr double sNumericalToleranceFactor { 5. };
 };
 
 #endif // MONTECARLO_H

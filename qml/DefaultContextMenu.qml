@@ -18,13 +18,13 @@ BaseContextMenu {
     }
 
     Rectangle {
-        height: copyItem.visible ? properties.borderWidth : 0
-        color: properties.colorStrokeWeak
+        height: copyItem.visible ? Properties.borderWidth : 0
+        color: Properties.colorStrokeWeak
     }
 
     ContextMenuItem {
         text: "Export results to CSV file..."
         onTriggered: csvDialog.open()
-        enabled: !properties.outputLocked
+        enabled: !Properties.outputLocked
     }
 }

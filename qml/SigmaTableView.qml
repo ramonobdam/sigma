@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // TableView component that adds functions for setting the current index and
 // keeping track of the hovered row. Signals are emitted to request opening the

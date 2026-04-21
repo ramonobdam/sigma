@@ -17,11 +17,11 @@ BaseDialog {
 
     title: "Delete output parameter"
     headerText: "Do you want to delete output parameter " +
-                properties.outputName +
+                Properties.outputName +
                 "?"
     subText: "Results for this output parameter will be lost"
 
-    primaryButton.text: properties.buttonTextDelete
+    primaryButton.text: Properties.buttonTextDelete
     primaryButton.onClicked: { control.deleteAndHide() }
     primaryButton.KeyNavigation.tab: secondaryButton
     primaryButton.KeyNavigation.backtab: secondaryButton

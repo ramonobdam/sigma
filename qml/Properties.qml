@@ -2,8 +2,9 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
+pragma Singleton
+
 import QtQuick
-import Sigma
 
 // Global properties and parameters of the Sigma app
 QtObject {
@@ -300,6 +301,10 @@ QtObject {
     property string outputUnit: calculation.outputUnit
     property string projectFileName: calculation.projectFileName
     property url projectFilePath: calculation.projectFilePath
+
+    // Undo/redo available
+    property bool canRedo: calculation.canRedo && !outputLocked
+    property bool canUndo: calculation.canUndo && !outputLocked
 
     // OS
     property bool macOS: ( Qt.platform.os === "osx" ) ||

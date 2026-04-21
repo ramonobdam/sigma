@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Table delegate with optional valid icon on the left and color scale on the
 // right
@@ -11,10 +12,10 @@ TableDelegate {
 
     property bool useScale: false
     property bool useValid: false
-    property string icon: decoration ? properties.validIcon :
-                                       properties.invalidIcon
-    property string validColor: decoration ? properties.colorSuccess500 :
-                                             properties.colorError500
+    property string icon: decoration ? Properties.validIcon :
+                                       Properties.invalidIcon
+    property string validColor: decoration ? Properties.colorSuccess500 :
+                                             Properties.colorError500
     required property int decoration
 
     Rectangle {
@@ -25,7 +26,7 @@ TableDelegate {
             top: parent.top
             bottom: line.top
         }
-        width: control.useValid ? properties.validIconWidth : 0
+        width: control.useValid ? Properties.validIconWidth : 0
         visible: control.useValid
         color: control.validColor
 
@@ -33,8 +34,8 @@ TableDelegate {
             anchors.fill: parent
 
             text: control.icon
-            font.family: fonts.fontAwesome.font.family
-            font.pixelSize: properties.fontSizeValidIcon
+            font.family: Fonts.fontAwesome.font.family
+            font.pixelSize: Properties.fontSizeValidIcon
             color: control.backgroundColor
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
@@ -49,7 +50,7 @@ TableDelegate {
             top: parent.top
             bottom: line.top
         }
-        width: control.useValid ? properties.borderWidth : 0
+        width: control.useValid ? Properties.borderWidth : 0
 
         visible: control.useValid
         color: control.backgroundColor
@@ -64,12 +65,12 @@ TableDelegate {
             right: separatorRight.left
             top: parent.top
             bottom: line.top
-            margins: properties.spacingXXS
+            margins: Properties.spacingXXS
         }
 
-        color: properties.colorTransparent
-        radius: properties.radiusS
-        border.width: control.hasFocus ? properties.borderWidth : 0
+        color: Properties.colorTransparent
+        radius: Properties.radiusS
+        border.width: control.hasFocus ? Properties.borderWidth : 0
         border.color: control.backgroundColor
 
         SigmaText {
@@ -77,10 +78,10 @@ TableDelegate {
 
             text: control.display
             color: control.currentRow ? control.backgroundColor :
-                                        properties.colorTextWeak
+                                        Properties.colorTextWeak
             textFormat: Text.PlainText
             elide: Text.ElideRight
-            padding: properties.spacingS - textBox.anchors.margins
+            padding: Properties.spacingS - textBox.anchors.margins
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignLeft
         }
@@ -94,7 +95,7 @@ TableDelegate {
             top: parent.top
             bottom: line.top
         }
-        width: control.useScale ? properties.borderWidth : 0
+        width: control.useScale ? Properties.borderWidth : 0
 
         visible: control.useScale
         color: control.backgroundColor
@@ -109,17 +110,17 @@ TableDelegate {
             top: parent.top
             bottom: line.top
         }
-        width: control.useScale ? properties.colorScaleWidth : 0
+        width: control.useScale ? Properties.colorScaleWidth : 0
 
         visible: control.useScale
         color: (
                     control.useScale &&
                     control.display != "-" &&
                     control.decoration >= 0 &&
-                    control.decoration < properties.colorScale.length
+                    control.decoration < Properties.colorScale.length
                ) ?
-                    properties.colorScale[ control.decoration ] :
-                    properties.colorTransparent
+                    Properties.colorScale[ control.decoration ] :
+                    Properties.colorTransparent
     }
 
     Rectangle {
@@ -130,9 +131,9 @@ TableDelegate {
             right: parent.right
             bottom: parent.bottom
         }
-        height: properties.borderWidth
+        height: Properties.borderWidth
 
-        color: properties.colorStrokeWeak
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 }

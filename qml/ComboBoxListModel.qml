@@ -8,6 +8,7 @@ import QtQuick.Controls.impl
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
 import QtQuick.Effects
+import Sigma
 
 ComboBox {
     id: control
@@ -16,13 +17,13 @@ ComboBox {
     property bool valid: true
     property bool showUnacceptableInputMessage: true
     property bool useFieldButton: false
-    property string backgroundColor: properties.colorElevated
+    property string backgroundColor: Properties.colorElevated
     property string unacceptableInputMessage:
-        properties.unacceptableInputValueText
+        Properties.unacceptableInputValueText
     property int maximumLength: 20
     property int indicatorWidth: height
     property int maximumHeightPopup: 200
-    property int animationDuration: properties.animationDuration
+    property int animationDuration: Properties.animationDuration
     property alias selectedText: textField.selectedText
     property alias cursorPosition: textField.cursorPosition
 
@@ -30,11 +31,11 @@ ComboBox {
         textField.insert( position, text )
     }
 
-    height: properties.textFieldHeight
-    leftPadding: properties.spacingS
-    rightPadding: properties.spacingS
-    topPadding: properties.spacingXS
-    bottomPadding: properties.spacingXS
+    height: Properties.textFieldHeight
+    leftPadding: Properties.spacingS
+    rightPadding: Properties.spacingS
+    topPadding: Properties.spacingXS
+    bottomPadding: Properties.spacingXS
     focus: true
     selectTextByMouse: editable
     textRole: "display"
@@ -82,16 +83,16 @@ ComboBox {
         contentItem: SigmaText {
             width: parent.width
             text: model[ control.textRole ]
-            color: current ? properties.colorRaised : properties.colorTextStrong
+            color: current ? Properties.colorRaised : Properties.colorTextStrong
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
 
         background: Rectangle {
             anchors.fill: parent
-            color: current ? properties.colorBrand :
+            color: current ? Properties.colorBrand :
                              (
-                                 highlighted ? properties.colorTextHover :
+                                 highlighted ? Properties.colorTextHover :
                                                control.backgroundColor
                               )
 
@@ -118,10 +119,10 @@ ComboBox {
             anchors.fill: parent
 
             text: ( control.down && control.editable ) ?
-                      properties.crossIcon :
-                      properties.chevronDownIcon
-            font.family: fonts.fontAwesome.font.family
-            font.pixelSize: properties.fontSizeComboBoxIcon
+                      Properties.crossIcon :
+                      Properties.chevronDownIcon
+            font.family: Fonts.fontAwesome.font.family
+            font.pixelSize: Properties.fontSizeComboBoxIcon
 
             // When the ComboBox is not editable, the complete control is a
             // button.
@@ -129,10 +130,10 @@ ComboBox {
                 control.editable ? hoverHandler.hovered : control.hovered
 
             color: enabled ? (
-                                 indicatorHovered ? properties.colorHover :
-                                                    properties.colorBrand
+                                 indicatorHovered ? Properties.colorHover :
+                                                    Properties.colorBrand
                              ) :
-                             properties.colorStrokeWeak
+                             Properties.colorStrokeWeak
 
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
@@ -203,7 +204,7 @@ ComboBox {
         // Apply dropshadow on background when using lightTheme.
         layer.enabled: control.dropShadow &&
                        control.enabled &&
-                       properties.lightTheme
+                       Properties.lightTheme
         layer.effect: ButtonElevationEffect {}
 
         Rectangle {
@@ -238,27 +239,27 @@ ComboBox {
 
             anchors.fill: parent
 
-            radius: properties.radiusS
+            radius: Properties.radiusS
             color: (
                        control.activeFocus ||
                        ( control.hovered && control.enabled )
-                   ) ? properties.colorTextHover :  control.backgroundColor
+                   ) ? Properties.colorTextHover :  control.backgroundColor
 
             border.width:
                 ( !control.editable && control.down ) ? 0 :
-                                                        properties.borderWidth
+                                                        Properties.borderWidth
             border.color:
                 control.enabled ?
                     (
                         ( !control.acceptableInput || !control.valid ) ?
-                            properties.colorError500 :
+                            Properties.colorError500 :
                             (
                                 control.activeFocus ?
-                                    properties.colorBrand :
-                                    properties.colorStrokeStrong
+                                    Properties.colorBrand :
+                                    Properties.colorStrokeStrong
                             )
                     ) :
-                    properties.colorStrokeWeak
+                    Properties.colorStrokeWeak
 
             // Left side is square when a FieldButton is used and the left border is
             // hidden when the input is valid/acceptable.
@@ -273,7 +274,7 @@ ComboBox {
                     bottom: parent.bottom
                     bottomMargin: bg.border.width
                 }
-                width: properties.borderWidth
+                width: Properties.borderWidth
                 color: bg.color
                 visible: control.useFieldButton &&
                          control.valid &&
@@ -296,7 +297,7 @@ ComboBox {
                 )
 
         padding: popupBg.border.width
-        topPadding: control.editable ? properties.borderWidth :
+        topPadding: control.editable ? Properties.borderWidth :
                                        popupBg.border.width
 
         // Default transitions are disabled
@@ -346,13 +347,13 @@ ComboBox {
 
             cornerSide: control.editable ? RoundedRectangle.Down :
                                            RoundedRectangle.All
-            radius: properties.radiusS
-            color: properties.colorElevated
-            border.width: properties.lightTheme ? 0 : properties.borderWidth
-            border.color: properties.colorStrokeWeak
+            radius: Properties.radiusS
+            color: Properties.colorElevated
+            border.width: Properties.lightTheme ? 0 : Properties.borderWidth
+            border.color: Properties.colorStrokeWeak
             layer.enabled: control.dropShadow &&
                            control.enabled &&
-                           properties.lightTheme
+                           Properties.lightTheme
             layer.effect: ButtonElevationEffect {}
 
             // 'Hide' top border when editable
@@ -373,21 +374,13 @@ ComboBox {
         }
     }
 
-    SigmaProperties {
-        id: properties
-    }
-
-    SigmaFonts {
-        id: fonts
-    }
-
     Item {
         // Unacceptable input message
         anchors {
             top: control.top
             topMargin: ( control.height - icon2.height ) / 2
             left: control.right
-            leftMargin: properties.spacingM
+            leftMargin: Properties.spacingM
         }
         visible: control.showUnacceptableInputMessage &&
                  ( !control.acceptableInput || !control.valid )
@@ -401,15 +394,15 @@ ComboBox {
             height: errorText.height
             width: height
             radius: height / 2
-            color: properties.colorTransparent
-            border.width: properties.borderWidth
-            border.color: properties.colorError500
+            color: Properties.colorTransparent
+            border.width: Properties.borderWidth
+            border.color: Properties.colorError500
 
             Text {
                 anchors.fill: parent
-                text: properties.invalidIcon
-                font.family: fonts.fontAwesome.font.family
-                font.pixelSize: properties.fontSizeUnacceptableInputIcon
+                text: Properties.invalidIcon
+                font.family: Fonts.fontAwesome.font.family
+                font.pixelSize: Properties.fontSizeUnacceptableInputIcon
                 color: icon2.border.color
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -421,7 +414,7 @@ ComboBox {
             anchors {
                 top: icon2.top
                 left: icon2.right
-                leftMargin: properties.spacingXS
+                leftMargin: Properties.spacingXS
             }
             text: control.unacceptableInputMessage
             color: icon2.border.color

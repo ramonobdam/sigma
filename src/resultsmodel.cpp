@@ -15,8 +15,8 @@ ResultsModel::~ResultsModel() {}
 QVariant ResultsModel::data( const QModelIndex &index, int role ) const {
     int row { index.row() };
     int column { index.column() };
-    if ( !index.isValid() || row >= rowCount( QModelIndex() ) ||
-        column >= columnCount( QModelIndex() ) ) {
+    if ( !index.isValid() || row >= rowCount() ||
+        column >= columnCount() ) {
         return QVariant();
     }
 
@@ -30,10 +30,16 @@ QVariant ResultsModel::data( const QModelIndex &index, int role ) const {
 
 
 QVariant ResultsModel::headerData(
-    int section, Qt::Orientation orientation,
+    int section,
+    Qt::Orientation orientation,
     int role
     ) const {
-    if ( role == Qt::DisplayRole && orientation == Qt::Horizontal ) {
+    if (
+        role == Qt::DisplayRole &&
+        orientation == Qt::Horizontal &&
+        section >= 0 &&
+        section < columnCount()
+    ) {
         return OutputParameter::resultLabels[ section ];
     }
     return QVariant();
@@ -46,6 +52,7 @@ int ResultsModel::columnCount( const QModelIndex &parent ) const {
 
 
 int ResultsModel::rowCount( const QModelIndex &parent ) const {
+    // The combined uncertainty results have only one row
     OutputParameter *parameter { getOutputParameter() };
     if ( parameter && parameter->getValid() ) {
         return 1;

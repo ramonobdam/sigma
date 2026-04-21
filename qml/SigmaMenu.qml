@@ -7,24 +7,25 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
 import QtQuick.Effects
+import Sigma
 
 // Menu component with custom styling for the menu bar
 Menu {
     id: control
 
-    implicitWidth: properties.contextMenuWidth
+    implicitWidth: Properties.contextMenuWidth
     padding: bg.border.width
     verticalPadding: bg.border.width
 
     background: Rectangle {
         id: bg
-        color: properties.colorElevated
-        radius: properties.radiusS
-        border.width: properties.borderWidth
-        border.color: properties.colorStrokeWeak
+        color: Properties.colorElevated
+        radius: Properties.radiusS
+        border.width: Properties.borderWidth
+        border.color: Properties.colorStrokeWeak
         layer.enabled: true
         layer.effect: RoundedElevationEffect {
-            elevation: properties.elevationElevated
+            elevation: Properties.elevationElevated
             roundedScale: Material.ExtraSmallScale
         }
     }
@@ -66,9 +67,5 @@ Menu {
             layer.enabled: true
             layer.smooth: true
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

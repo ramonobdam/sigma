@@ -18,15 +18,15 @@ ApplicationSettings::~ApplicationSettings() {
 }
 
 
-void ApplicationSettings::emitAllSettingsChanged() {
+void ApplicationSettings::notifyAllChanged() {
     emit autoSaveProjectChanged();
+    emit csvPrecisionChanged();
     emit displayPrecisionChanged();
     emit displayThemeChanged();
     emit lastProjectFilePathChanged();
     emit monteCarloBatchSizeChanged();
     emit monteCarloDigitsChanged();
-    emit monteCarloMaxNumBatchesChanged();
-    emit restoreLastProjectChanged();
+    emit monteCarloMaxNumOfBatchesChanged();
     emit restoreLastProjectChanged();
 }
 
@@ -36,55 +36,55 @@ void ApplicationSettings::load() {
     // method can be used.
     Settings::setCSVPrecision(
         mPersistentSettings.value(
-            mCSVPrecisionString,
+            sCSVPrecisionString,
             getDefaultCSVPrecision()
         ).toInt()
     );
     Settings::setDisplayPrecision(
         mPersistentSettings.value(
-           mDisplayPrecisionString,
+           sDisplayPrecisionString,
            getDefaultDisplayPrecision()
         ).toInt()
     );
     Settings::setDisplayTheme(
         mPersistentSettings.value(
-            mDisplayThemeString,
+            sDisplayThemeString,
             getDefaultDisplayTheme()
         ).value<DisplayTheme>()
     );
     Settings::setMonteCarloBatchSize(
         mPersistentSettings.value(
-            mMonteCarloBatchSizeString,
+            sMonteCarloBatchSizeString,
             getDefaultMonteCarloBatchSize()
         ).toInt()
     );
-    Settings::setMonteCarloMaxNumBatches(
+    Settings::setMonteCarloMaxOfNumBatches(
         mPersistentSettings.value(
-           mMonteCarloMaxNumOfBatchesString,
+           sMonteCarloMaxNumOfBatchesString,
            getDefaultMonteCarloMaxNumOfBatches()
         ).toInt()
     );
     Settings::setMonteCarloDigits(
         mPersistentSettings.value(
-            mMonteCarloDigitsString,
+            sMonteCarloDigitsString,
             getDefaultMonteCarloDigits()
         ).toInt()
     );
     Settings::setLastProjectFilePath(
         mPersistentSettings.value(
-            mLastProjectFilePathString,
+            sLastProjectFilePathString,
             getLastProjectFilePath()
         ).value<QUrl>()
     );
     Settings::setAutoSaveProject(
         mPersistentSettings.value(
-            mAutoSaveProjectString,
+            sAutoSaveProjectString,
             getAutoSaveProject()
         ).toBool()
     );
     Settings::setRestoreLastProject(
         mPersistentSettings.value(
-            mRestoreLastProjectString,
+            sRestoreLastProjectString,
             getRestoreLastProject()
         ).toBool()
     );
@@ -93,64 +93,68 @@ void ApplicationSettings::load() {
 
 void ApplicationSettings::save() {
     mPersistentSettings.setValue(
-        mCSVPrecisionString,
+        sCSVPrecisionString,
         getCSVPrecision()
     );
     mPersistentSettings.setValue(
-        mDisplayPrecisionString,
+        sDisplayPrecisionString,
         getDisplayPrecision()
     );
     mPersistentSettings.setValue(
-        mDisplayThemeString,
+        sDisplayThemeString,
         getDisplayTheme()
     );
     mPersistentSettings.setValue(
-        mMonteCarloBatchSizeString,
+        sMonteCarloBatchSizeString,
         getMonteCarloBatchSize()
     );
     mPersistentSettings.setValue(
-        mMonteCarloMaxNumOfBatchesString,
+        sMonteCarloMaxNumOfBatchesString,
         getMonteCarloMaxNumOfBatches()
     );
     mPersistentSettings.setValue(
-        mMonteCarloDigitsString,
+        sMonteCarloDigitsString,
         getMonteCarloDigits()
     );
     mPersistentSettings.setValue(
-        mLastProjectFilePathString,
+        sLastProjectFilePathString,
         getLastProjectFilePath()
     );
     mPersistentSettings.setValue(
-        mAutoSaveProjectString,
+        sAutoSaveProjectString,
         getAutoSaveProject()
     );
     mPersistentSettings.setValue(
-        mRestoreLastProjectString,
+        sRestoreLastProjectString,
         getRestoreLastProject()
     );
     mPersistentSettings.sync();
 }
 
 
-void ApplicationSettings::setAutoSaveProject( const bool &autoSaveProject ) {
+void ApplicationSettings::setAutoSaveProject( bool autoSaveProject ) {
+    if ( getAutoSaveProject() == autoSaveProject ) return;
     Settings::setAutoSaveProject( autoSaveProject );
     emit autoSaveProjectChanged();
 }
 
 
-void ApplicationSettings::setCSVPrecision( const int &csvPrecision ) {
+void ApplicationSettings::setCSVPrecision( int csvPrecision ) {
+    if ( getCSVPrecision() == csvPrecision ) return;
     Settings::setCSVPrecision( csvPrecision );
     emit csvPrecisionChanged();
 }
 
 
-void ApplicationSettings::setDisplayPrecision( const int &numberOfDigits ) {
+void ApplicationSettings::setDisplayPrecision( int numberOfDigits ) {
+    if ( getDisplayPrecision() == numberOfDigits ) return;
     Settings::setDisplayPrecision( numberOfDigits );
     emit displayPrecisionChanged();
 }
 
 
-void ApplicationSettings::setDisplayTheme(const DisplayTheme &theme) {
+void ApplicationSettings::setDisplayTheme( DisplayTheme theme) {
+    if ( getDisplayTheme() == theme ) return;
     Settings::setDisplayTheme( theme );
     emit displayThemeChanged();
 }
@@ -159,34 +163,35 @@ void ApplicationSettings::setDisplayTheme(const DisplayTheme &theme) {
 void ApplicationSettings::setLastProjectFilePath(
     const QUrl &lastProjectFilePath
 ) {
+    if ( getLastProjectFilePath() == lastProjectFilePath ) return;
     Settings::setLastProjectFilePath( lastProjectFilePath );
     emit lastProjectFilePathChanged();
 }
 
 
-void ApplicationSettings::setMonteCarloBatchSize( const int &batchSize ) {
+void ApplicationSettings::setMonteCarloBatchSize( int batchSize ) {
+    if ( getMonteCarloBatchSize() == batchSize ) return;
     Settings::setMonteCarloBatchSize( batchSize );
     emit monteCarloBatchSizeChanged();
 }
 
 
-void ApplicationSettings::setMonteCarloDigits( const int &numberOfDigits ) {
+void ApplicationSettings::setMonteCarloDigits( int numberOfDigits ) {
+    if ( getMonteCarloDigits() == numberOfDigits ) return;
     Settings::setMonteCarloDigits( numberOfDigits );
     emit monteCarloDigitsChanged();
 }
 
 
-void ApplicationSettings::setMonteCarloMaxNumBatches(
-    const int &maxNumOfBatches
-) {
-    Settings::setMonteCarloMaxNumBatches( maxNumOfBatches );
-    emit monteCarloMaxNumBatchesChanged();
+void ApplicationSettings::setMonteCarloMaxOfNumBatches( int maxNumOfBatches ) {
+    if ( getMonteCarloMaxNumOfBatches() == maxNumOfBatches ) return;
+    Settings::setMonteCarloMaxOfNumBatches( maxNumOfBatches );
+    emit monteCarloMaxNumOfBatchesChanged();
 }
 
 
-void ApplicationSettings::setRestoreLastProject(
-    const bool &restoreLastProject
-) {
+void ApplicationSettings::setRestoreLastProject( bool restoreLastProject ) {
+    if ( getRestoreLastProject() == restoreLastProject ) return;
     Settings::setRestoreLastProject( restoreLastProject );
     emit restoreLastProjectChanged();
 }
@@ -194,5 +199,5 @@ void ApplicationSettings::setRestoreLastProject(
 
 void ApplicationSettings::setToDefaults() {
     Settings::setToDefaults();
-    emitAllSettingsChanged();
+    notifyAllChanged();
 }

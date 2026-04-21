@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 import QtQuick
+import Sigma
 
 // Rich text component for HTML content. Hyperlinks are styled, open on
 // activation and show the 'PointingHandCursor' on hover.

@@ -5,6 +5,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import Sigma
 
 // Component used for the Monte Carlo results table right column (i.e. values)
 Item {
@@ -21,7 +22,7 @@ Item {
     anchors {
         left: parent.left
         right: parent.right
-        leftMargin: -properties.spacingM / 2
+        leftMargin: -Properties.spacingM / 2
     }
     height: text.contentHeight + line.height
 
@@ -38,10 +39,6 @@ Item {
         }
     }
 
-    SigmaProperties {
-        id: properties
-    }
-
     SigmaText {
         id: text
 
@@ -53,14 +50,14 @@ Item {
         }
 
         text: control.text
-        padding: properties.spacingS
+        padding: Properties.spacingS
         elide: maximumLineCount === 1 ? Text.ElideRight : Text.ElideNone
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignLeft
         maximumLineCount: 1
         wrapMode: Text.WordWrap
         lineHeightMode: Text.FixedHeight
-        lineHeight: properties.rowHeight
+        lineHeight: Properties.rowHeight
     }
 
     Rectangle {
@@ -72,8 +69,8 @@ Item {
             bottom: parent.bottom
         }
 
-        height: properties.borderWidth
-        color: properties.colorStrokeWeak
+        height: Properties.borderWidth
+        color: Properties.colorStrokeWeak
         antialiasing: true
     }
 }

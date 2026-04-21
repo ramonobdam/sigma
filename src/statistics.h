@@ -14,15 +14,11 @@ class Statistics {
 
 public:
     Statistics(
-        const double &p = 0.,
+        double p = 0.,
         const std::vector<double> &q = std::vector<double>()
     );
-    Statistics( const Statistics &stat );
-    ~Statistics();
 
-    Statistics& operator= ( const Statistics &stat );
-
-    QList<double> getHistogramValues() const;
+    const QList<double> &getHistogramValues() const;
     double getHigherBound() const;
     double getHistogramXMax() const;
     double getHistogramXMin() const;
@@ -35,15 +31,16 @@ public:
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
     int getNumberOfSamples() const;
-    std::vector<double> getSamples() const;
-    void addSample( const double &sample );
+    const std::vector<double> &getSamples() const;
+    void addSample( double sample );
     void addSamples( const std::vector<double> &q );
-    void calculate( const bool &calculateHistogram = false );
+    void calculate( bool calculateHistogram = false );
     void clearSamples();
-    void setP( const double &p );
+    void setP( double p );
 
 private:
-    const int mNumBins { 71 };
+    static constexpr int sNumBins { 71 };
+
     QList<double> mHistogramValues;
     double mHigherBound;
     double mHistogramXMax;

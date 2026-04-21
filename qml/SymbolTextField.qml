@@ -4,6 +4,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // TextField combined with a SymBolField results in a TextField with a button to
 // insert symbols via a popup

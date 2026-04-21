@@ -6,14 +6,15 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
+import Sigma
 
 // SplitView component with custom styling
 SplitView {
     id: control
 
-    property int handleWidth: properties.spacingM
-    property int indicatorThickness: properties.splitHandleIndicatorThickness
-    property int animationDuration: properties.animationDuration
+    property int handleWidth: Properties.spacingM
+    property int indicatorThickness: Properties.splitHandleIndicatorThickness
+    property int animationDuration: Properties.animationDuration
 
     handle: Item {
         id: handle
@@ -29,7 +30,7 @@ SplitView {
         Rectangle {
             property int margin:
                 ( control.handleWidth - control.indicatorThickness ) / 2
-            property int spacing: properties.radiusM
+            property int spacing: Properties.radiusM
 
             anchors {
                 fill: parent
@@ -38,24 +39,24 @@ SplitView {
                 topMargin: orientation === Qt.Horizontal ? spacing : margin
                 bottomMargin: orientation === Qt.Horizontal ? spacing : margin
             }
-            color: handle.hovered ? properties.colorStrokeWeak :
-                                    properties.colorBase
+            color: handle.hovered ? Properties.colorStrokeWeak :
+                                    Properties.colorBase
         }
 
         Rectangle {
             id: indicator
 
             property int length:
-                handle.pressed ? properties.splitHandleIndicatorInitialLength *
-                                 properties.splitHandleIndicatorScaleFactor :
-                                 properties.splitHandleIndicatorInitialLength
+                handle.pressed ? Properties.splitHandleIndicatorInitialLength *
+                                 Properties.splitHandleIndicatorScaleFactor :
+                                 Properties.splitHandleIndicatorInitialLength
 
             color: handle.pressed ?
-                       properties.colorDown :
+                       Properties.colorDown :
                        (
                            handle.hovered ?
-                               properties.colorHover :
-                               properties.colorBrand
+                               Properties.colorHover :
+                               Properties.colorBrand
                        )
             width: orientation === Qt.Horizontal ? control.indicatorThickness :
                                                    length
@@ -79,9 +80,5 @@ SplitView {
                 }
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

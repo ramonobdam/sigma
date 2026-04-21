@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.0.5 LANGUAGES CXX )
+project( Sigma VERSION 1.1.0 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -44,6 +44,11 @@ endif()
 
 target_compile_definitions( Sigma PRIVATE APP_VERSION="${PROJECT_VERSION}" )
 
+set_source_files_properties( qml/Properties.qml qml/Fonts.qml
+    PROPERTIES
+        QT_QML_SINGLETON_TYPE TRUE
+)
+
 qt_add_qml_module( Sigma
     URI Sigma
     VERSION ${PROJECT_VERSION}
@@ -69,6 +74,7 @@ qt_add_qml_module( Sigma
         qml/DeleteOutputParameterDialog.qml
         qml/DiscardUnsavedChanges.qml
         qml/FieldButton.qml
+        qml/Fonts.qml
         qml/FormSubHeading.qml
         qml/HeaderDelegate.qml
         qml/Heading.qml
@@ -82,17 +88,16 @@ qt_add_qml_module( Sigma
         qml/PrimaryButton.qml
         qml/ProjectDialog.qml
         qml/ProjectFailed.qml
+        qml/Properties.qml
         qml/RoundedRectangle.qml
         qml/SecondaryButton.qml
         qml/SettingsWindow.qml
         qml/SigmaBusyIndicator.qml
         qml/SigmaCheckBox.qml
-        qml/SigmaFonts.qml
         qml/SigmaMenu.qml
         qml/SigmaMenuBar.qml
         qml/SigmaMenuBarItem.qml
         qml/SigmaMenuBarMenuItem.qml
-        qml/SigmaProperties.qml
         qml/SigmaRadioButton.qml
         qml/SigmaRichText.qml
         qml/SigmaScrollBar.qml
@@ -121,12 +126,19 @@ qt_add_qml_module( Sigma
         src/budgetmodel.h
         src/correlation.cpp
         src/correlation.h
+        src/data.cpp
+        src/data.h
+        src/datatype.h
+        src/diffutil.cpp
+        src/diffutil.h
         src/distribution.cpp
         src/distribution.h
         src/inputparameter.cpp
         src/inputparameter.h
+        src/jsondiff.h
         src/lockableitemselectionmodel.cpp
         src/lockableitemselectionmodel.h
+        src/mathconstants.h
         src/mixedcopulasampler.cpp
         src/mixedcopulasampler.h
         src/model.hpp
@@ -139,18 +151,21 @@ qt_add_qml_module( Sigma
         src/outputparameter.h
         src/parameter.cpp
         src/parameter.h
+        src/record.h
         src/resultsmodel.cpp
         src/resultsmodel.h
         src/settings.cpp
         src/settings.h
         src/statistics.cpp
         src/statistics.h
+        src/stringutils.cpp
+        src/stringutils.h
+        src/transaction.h src/transaction.cpp
         src/uncertaintycalculation.cpp
         src/uncertaintycalculation.h
         src/uncertaintycomponent.cpp
         src/uncertaintycomponent.h
-        src/utils.cpp
-        src/utils.h
+        src/undostack.h src/undostack.cpp
         src/windowscaptionhelper.cpp
         src/windowscaptionhelper.h
     RESOURCES

@@ -2,8 +2,12 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
+#include "datatype.h"
 #include "montecarlo.h"
+#include "settings.h"
+#include "stringutils.h"
 #include "uncertaintycalculation.h"
+#include "undostack.h"
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QDebug>
@@ -17,19 +21,19 @@
 #include <QTextStream>
 
 
-UncertaintyCalculation::UncertaintyCalculation( QObject *parent )
-    :   QObject { parent },
-        mCorrelationModel { Correlation::getCorrelationModel() },
-        mInputParametersModel { InputParameter::getInputModel() },
-        mOutputParametersModel { OutputParameter::getOutputModel() },
+UncertaintyCalculation::UncertaintyCalculation(
+    QObject *parent,
+    ApplicationSettings *appSettings
+)   :   QObject { parent },
         mUnitsModel { QStringListModel( this ) },
         mDistributionModel { QStringListModel( this ) },
         mBudgetModel { BudgetModel( this ) },
         mResultsModel { ResultsModel ( this) },
-        mUnits { mDefaultUnits },
+        mUnits { sDefaultUnits },
         mProjectFilePath {},
         mUnsavedChanges {},
-        mOutputRow { -1 }
+        mDiffUtil {},
+        mAppSettings { appSettings }
 {
     mUnitsModel.setStringList( mUnits );
     mUnitsModel.sort( 0 );
@@ -39,65 +43,9 @@ UncertaintyCalculation::UncertaintyCalculation( QObject *parent )
     InputParameter::addConstantsToSymbolTable();
     OutputParameter::setCollectVariables( true );
 
-    mBudgetModel.setOutputParameterModel( mOutputParametersModel );
-    mResultsModel.setOutputParameterModel( mOutputParametersModel );
+    createConnections();
 
-    // Create connections to the input and output model.
-    connect(
-        mOutputParametersModel->selectionModel(),
-        &QItemSelectionModel::currentRowChanged,
-        this,
-        &UncertaintyCalculation::setOutputRow
-    );
-    connect(
-        mInputParametersModel->selectionModel(),
-        &QItemSelectionModel::currentRowChanged,
-        this,
-        &UncertaintyCalculation::inputParameterChanged
-    );
-}
-
-
-UncertaintyCalculation::~UncertaintyCalculation(){}
-
-
-Correlation * UncertaintyCalculation::getSelectedCorrelation() const {
-    if ( mCorrelationModel ) {
-        return mCorrelationModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
-InputParameter * UncertaintyCalculation::getSelectedInputParameter(
-) const {
-    if ( mInputParametersModel ) {
-        return mInputParametersModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
-OutputParameter * UncertaintyCalculation::getSelectedOutputParameter(
-) const {
-    if ( mOutputParametersModel ) {
-        return mOutputParametersModel->getSelectedRow();
-    }
-    return nullptr;
-}
-
-
-QStringList UncertaintyCalculation::getDistributionStrings() const {
-    QStringList distributionList {};
-    QList<Distribution::Type> distributions {
-        Distribution::getDistributions()
-    };
-    for ( Distribution::Type &distribution : distributions ) {
-        distributionList.append(
-            Distribution::distributionToString( distribution )
-        );
-    }
-    return distributionList;
+    registerDiffUtilDataTypeMethods();
 }
 
 
@@ -131,9 +79,7 @@ QList<int> UncertaintyCalculation::getResultsColumnWidths() const {
 }
 
 
-QString UncertaintyCalculation::getMonteCarloHeader(
-    const int &column
-) const {
+QString UncertaintyCalculation::getMonteCarloHeader( int column ) const {
     if ( column >= 0 && column < MonteCarlo::headerLabels.size() ) {
         return MonteCarlo::headerLabels[ column ];
     }
@@ -147,7 +93,7 @@ QString UncertaintyCalculation::getNewInputParameterName() const {
     do {
         num++;
         newName = InputParameter::defaultName + QString::number( num );
-    } while ( !validInputName( newName ) && num < maxNameAttempts );
+    } while ( !validInputName( newName ) && num < sMaxNameAttempts );
     return newName;
 }
 
@@ -158,7 +104,7 @@ QString UncertaintyCalculation::getNewOutputParameterName() const {
     do {
         num++;
         newName = OutputParameter::defaultName + QString::number( num );
-    } while ( !validOutputName( newName ) && num < maxNameAttempts );
+    } while ( !validOutputName( newName ) && num < sMaxNameAttempts );
     return newName;
 }
 
@@ -167,7 +113,7 @@ QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
     // Return a string that lists the OutputParameters that are referenced by
     // both InputParameters of the selected correlation
     QString string {};
-    Correlation * const correlation { getSelectedCorrelation() };
+    const Correlation *correlation { Correlation::getSelected() };
     if ( correlation ) {
         InputParameter *paramA { correlation->getInputParameterA() };
         InputParameter *paramB { correlation->getInputParameterB() };
@@ -187,9 +133,9 @@ QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
 
 QString UncertaintyCalculation::getSelectedInputParameterReferences(
 ) const {
-    // Return a string that lists the OutputParameters that are referenced by
-    // the selected InputParameter
-    InputParameter * const inputParameter { getSelectedInputParameter() };
+    // Return a string that lists the OutputParameters that are referencing the
+    // selected InputParameter
+    const InputParameter *inputParameter { InputParameter::getSelected() };
     QStringList references { getInputParameterReferences( inputParameter ) };
     return outputParameterReferencesToString( references );
 }
@@ -206,16 +152,20 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     QString path { url.toLocalFile() };
     QFile loadFile( path );
     if ( !url.isLocalFile() || !loadFile.open( QIODevice::ReadOnly ) ) {
-        qDebug() << QString( mLoadFailedString ).arg( path );
+        qDebug() << QString( sLoadFailedString ).arg( path );
         resetProjectFilePath();
         return false;
     }
     QByteArray projectData = loadFile.readAll();
     QJsonDocument projectDoc( QJsonDocument::fromJson( projectData ) );
     clearProject( false );  // Currently open project should not be saved
-    parametersFromJson( projectDoc.object() );
+    projectFromJson( projectDoc.object() );
     setProjectFilePath( url );
     setUnsavedChanges( false );
+
+    // Remove transactions from the previous project
+    UndoStack::instance().clear();
+
     return true;
 }
 
@@ -227,11 +177,11 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
         !url.isLocalFile() ||
         !csvFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qDebug() << QString( mCSVFailedString ).arg( path );
+        qDebug() << QString( sCSVFailedString ).arg( path );
         return false;
     }
     QTextStream out( &csvFile );
-    out << projectToString();
+    out << projectToCSVString();
     csvFile.commit();
     return true;
 }
@@ -253,11 +203,11 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
         !url.isLocalFile() ||
         !saveFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qDebug() << QString( mSaveFailedString ).arg( path );
+        qDebug() << QString( sSaveFailedString ).arg( path );
         resetProjectFilePath();
         return false;
     }
-    QJsonObject project { parametersToJson() };
+    QJsonObject project { projectToJson() };
     saveFile.write( QJsonDocument( project ).toJson() );
     saveFile.commit();
     setProjectFilePath( url );
@@ -289,34 +239,34 @@ const BudgetModel * UncertaintyCalculation::budgetItemModel() const {
 
 const QItemSelectionModel * UncertaintyCalculation::correlationSelectionModel(
 ) const {
-    return mCorrelationModel->selectionModel();
+    return Correlation::getCorrelationModel()->selectionModel();
 }
 
 
 const QItemSelectionModel * UncertaintyCalculation::inputSelectionModel(
 ) const {
-    return mInputParametersModel->selectionModel();
+    return InputParameter::getInputModel()->selectionModel();
 }
 
 
 const QItemSelectionModel * UncertaintyCalculation::outputSelectionModel(
 ) const {
-    return mOutputParametersModel->selectionModel();
+    return OutputParameter::getOutputModel()->selectionModel();
 }
 
 
 const QObject * UncertaintyCalculation::correlationItemModel() const {
-    return mCorrelationModel->itemModel();
+    return Correlation::getCorrelationModel()->itemModel();
 }
 
 
 const QObject * UncertaintyCalculation::inputItemModel() const {
-    return mInputParametersModel->itemModel();
+    return InputParameter::getInputModel()->itemModel();
 }
 
 
 const QObject * UncertaintyCalculation::outputItemModel() const {
-    return mOutputParametersModel->itemModel();
+    return OutputParameter::getOutputModel()->itemModel();
 }
 
 
@@ -335,36 +285,82 @@ const ResultsModel * UncertaintyCalculation::resultsItemModel() const {
 }
 
 
-void UncertaintyCalculation::addCorrelation( Correlation *correlation ) {
-    if ( correlation && correlation->addToModel() ) {
-        // Recompile expressions that use both correlated InputParameters
-        recompileExpressions(
-            false,
-            correlation->getInputParameterA(),
-            correlation->getInputParameterB()
-        );
-        setUnsavedChanges( true );
+void UncertaintyCalculation::addCorrelation( const Correlation *correlation ) {
+    if ( correlation ) {
+        Correlation newCorrelation { *correlation };
+        newCorrelation.resetId();   // Fresh Id in the model
+        Correlation *addedCorrelation { newCorrelation.appendToModel() };
+        if ( addedCorrelation ) {
+            DiffUtil diffUtil {};
+            diffUtil.takeSnapshotOfNewObject( addedCorrelation );
+
+            // Recompile expressions that use both correlated InputParameters
+            // when the new correlation is not zero
+            if ( addedCorrelation->getCorrelation() != 0. ) {
+                recompileExpressions(
+                    diffUtil,
+                    false,
+                    addedCorrelation->getInputParameterAId(),
+                    addedCorrelation->getInputParameterBId()
+                );
+            }
+
+            diffUtil.commitChanges(
+                "add correlation between " +
+                addedCorrelation->getInputParameterNameA() +
+                " & " +
+                addedCorrelation->getInputParameterNameB()
+            );
+
+            setUnsavedChanges( true );
+        }
     }
 }
 
 
-void UncertaintyCalculation::addInputParameter( InputParameter *parameter ) {
-    if ( parameter && parameter->addToModel() ) {
-        recompileExpressions( true );
-        setUnsavedChanges( true );
+void UncertaintyCalculation::addInputParameter(
+    const InputParameter *parameter
+) {
+    if ( parameter ) {
+        InputParameter newParameter { *parameter };
+        newParameter.resetId();   // Fresh Id in the model
+        InputParameter *addedParameter { newParameter.appendToModel() };
+        if ( addedParameter ) {
+            DiffUtil diffUtil {};
+            diffUtil.takeSnapshotOfNewObject( addedParameter );
+
+            recompileExpressions( diffUtil, true );
+
+            diffUtil.commitChanges(
+                "add input parameter " + addedParameter->getName()
+            );
+
+            setUnsavedChanges( true );
+        }
     }
 }
 
 
-void UncertaintyCalculation::addOutputParameter( OutputParameter *parameter ) {
+void UncertaintyCalculation::addOutputParameter(
+    const OutputParameter *parameter
+) {
     if ( parameter ) {
         OutputParameter newParameter { *parameter };
+        // Fresh Id in the model, compile expression and unclock
+        newParameter.resetId();
+        newParameter.compile();
+        newParameter.setLocked( false );
+        OutputParameter *addedParameter { newParameter.appendToModel() };
+        if ( addedParameter ) {
+            DiffUtil diffUtil {};
+            diffUtil.takeSnapshotOfNewObject( addedParameter );
 
-        // The signals of the OutputParameter are connected to its parent on
-        // construction, so its parent is set to this object.
-        newParameter.setParent( this );
+            diffUtil.commitChanges(
+                "add output parameter " + addedParameter->getName()
+            );
 
-        if ( newParameter.addToModel() ) {
+            connectToOutputParameter( addedParameter );
+
             setUnsavedChanges( true );
         }
     }
@@ -380,181 +376,331 @@ void UncertaintyCalculation::addUnit( const QString &name ) {
 }
 
 
-void UncertaintyCalculation::clearProject( const bool &unsavedChanges ) {
-    emitOutputModelsAboutToBeReset();
-    mOutputParametersModel->clear();
-    mCorrelationModel->clear();
-    mInputParametersModel->clear();
-    emit inputParameterChanged();
-    InputParameter::clearSymbolTable();
-    InputParameter::addConstantsToSymbolTable();
-    emitOutputModelsReset();
-    setOutputRow();
-    setUnsavedChanges( unsavedChanges );
-}
-
-
 void UncertaintyCalculation::newProject() {
     clearProject();
     resetProjectFilePath();
+
+    // Remove transactions from the previous project
+    UndoStack::instance().clear();
 }
 
 
 void UncertaintyCalculation::removeCorrelation() {
-    Correlation * const correlation { getSelectedCorrelation() };
-    if ( correlation ) {
-        // Store referenced InputParameters and correlation coefficient
-        InputParameter *paramA { correlation->getInputParameterA() };
-        InputParameter *paramB { correlation->getInputParameterB() };
-        double correlationCoeff { correlation->getCorrelation() };
-        if ( Correlation::removeSelectedModelRow() ) {
-            // Recompile the expressions that referenced the InputParameters of
-            // the deleted correlation when their correlation was not zero
-            if ( correlationCoeff != 0 ) {
-                recompileExpressions( false, paramA, paramB );
+    QUuid id { Correlation::getSelectedId() };
+    if ( !id.isNull() ) {
+        Correlation *correlation { Correlation::getById( id ) };
+        if ( correlation ) {
+            DiffUtil diffUtil {};
+            diffUtil.takeSnapshot( correlation );
+
+            // Store needed data before removal
+            QUuid paramAId { correlation->getInputParameterAId() };
+            QUuid paramBId { correlation->getInputParameterBId() };
+            const double correlationCoeff { correlation->getCorrelation() };
+            const QString nameA { correlation->getInputParameterNameA() };
+            const QString nameB { correlation->getInputParameterNameB() };
+
+            if ( Correlation::remove( id ) ) {
+                // Recompile the expressions that referenced the InputParameters
+                // of the deleted correlation when their correlation was not
+                // zero
+                if ( correlationCoeff != 0. ) {
+                    recompileExpressions( diffUtil, false, paramAId, paramBId );
+                }
+
+                diffUtil.commitChanges(
+                    "delete correlation between " + nameA + " & " + nameB
+                );
+
+                setUnsavedChanges( true );
             }
-            setUnsavedChanges( true );
         }
     }
 }
 
 
 void UncertaintyCalculation::removeInputParameter() {
-    InputParameter *deletedParameter {
-        InputParameter::removeSelectedModelRow()
-    };
-    if ( deletedParameter ) {
-        recompileExpressions( false, deletedParameter );
-        setUnsavedChanges( true );
+    QUuid id { InputParameter::getSelectedId() };
+    if ( !id.isNull() ) {
+        InputParameter *parameter { InputParameter::getById( id ) };
+        if ( parameter ) {
+            DiffUtil diffUtil {};
+            diffUtil.takeSnapshot( parameter );
+
+            // Store needed data before removal
+            const QString name { parameter->getName() };
+            const QUuid id { parameter->getId() };
+            if ( InputParameter::remove( id ) ) {
+                // Remove correlations that reference the deleted InputParameter
+                const QList<Correlation *> &correlations {
+                    Correlation::getCorrelationsForInputParameter( id )
+                };
+                for ( Correlation *correlation: correlations ) {
+                    diffUtil.takeSnapshot( correlation );
+                    Correlation::remove( correlation->getId() );
+                }
+
+                // Recompile the expressions that reference the deleted
+                // InputParameter
+                recompileExpressions( diffUtil, false, id );
+
+                diffUtil.commitChanges( "delete input parameter " + name );
+
+                setUnsavedChanges( true );
+            }
+        }
     }
 }
 
 
 void UncertaintyCalculation::removeOutputParameter() {
-    if ( mOutputParametersModel->removeSelectedRow() ) {
-        setUnsavedChanges( true );
+    QUuid id { OutputParameter::getSelectedId() };
+    if ( !id.isNull() ) {
+        OutputParameter *parameter { OutputParameter::getById( id ) };
+        if ( parameter ) {
+            DiffUtil diffUtil {};
+            diffUtil.takeSnapshot( parameter );
+
+            // Store needed data before removal
+            const QString name { parameter->getName() };
+            if ( OutputParameter::remove( id ) ) {
+                diffUtil.commitChanges( "delete output parameter " + name );
+
+                emitAllResultsChanged();
+
+                setUnsavedChanges( true );
+            }
+        }
     }
 }
 
 
-void UncertaintyCalculation::resetDisplay() {
-    mInputParametersModel->emitAllDataChanged();
-    mOutputParametersModel->emitAllDataChanged();
-    mBudgetModel.emitAllDataChanged();
-    mResultsModel.emitAllDataChanged();
-    emitAllResultsChanged();
-}
-
-
 void UncertaintyCalculation::runMonteCarlo() {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
-    if ( parameter ) {
+    OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter && !parameter->getLocked() ) {
+        mDiffUtil.takeSnapshot( parameter );
         parameter->startMonteCarlo();
+        // Note that commitChanges() is called in onMonteCarloFinished()
     }
 }
 
 
 void UncertaintyCalculation::stopMonteCarlo() {
-    OutputParameter *parameter { getSelectedOutputParameter() };
-    if ( parameter ) {
+    OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter && parameter->getLocked() ) {
         parameter->stopMonteCarlo();
+        // Note that commitChanges() is called in onMonteCarloFinished()
     }
 }
 
 
-void UncertaintyCalculation::updateCorrelation( Correlation *correlation ) {
-    if ( correlation ) {
+void UncertaintyCalculation::updateCorrelation(
+    const Correlation *correlation
+) {
+    QUuid id { Correlation::getSelectedId() };
+    Correlation *originalCorrelation { Correlation::getById( id ) };
+    if ( correlation && originalCorrelation ) {
+        Correlation newCorrelation { *correlation };
+        newCorrelation.setId( id );   // Keep the existing id in the model
+
         bool recompile { true };
-        Correlation * const selectedCorrelation { getSelectedCorrelation() };
-        // Store the InputParameters that are currently referenced
-        InputParameter *originalParamA { correlation->getInputParameterA() };
-        InputParameter *originalParamB { correlation->getInputParameterB() };
-        if ( selectedCorrelation && *selectedCorrelation == *correlation ) {
+        if ( *originalCorrelation == newCorrelation ) {
             // Existing and new Correlation are equal numerically, no need to
             // recompile.
             recompile = false;
         }
-        emitOutputModelsAboutToBeReset();
-        Correlation *updatedCorrelation {
-            correlation->updateSelectedModelRow()
-        };
-        emitOutputModelsReset();
-        emit resultsChanged();
-        if ( updatedCorrelation && recompile ) {
+
+        // Store the needed data before updating
+        QUuid originalParamAId { originalCorrelation->getInputParameterAId() };
+        QUuid originalParamBId { originalCorrelation->getInputParameterBId() };
+        QString originalNameA { originalCorrelation->getInputParameterNameA() };
+        QString originalNameB { originalCorrelation->getInputParameterNameB() };
+
+        DiffUtil diffUtil {};
+        diffUtil.takeSnapshot( originalCorrelation );
+
+        Correlation::update( id, &newCorrelation );
+
+        if ( recompile ) {
             // Recompile to check the original InputParameters
-            recompileExpressions( false, originalParamA, originalParamB );
+            recompileExpressions(
+                diffUtil,
+                false,
+                originalParamAId,
+                originalParamBId
+            );
             // Recompile to check the new InputParameters
             recompileExpressions(
+                diffUtil,
                 false,
-                updatedCorrelation->getInputParameterA(),
-                updatedCorrelation->getInputParameterB()
+                newCorrelation.getInputParameterAId(),
+                newCorrelation.getInputParameterBId()
             );
         }
+
+        diffUtil.commitChanges(
+            "update correlation between " +
+            originalNameA +
+            " & " +
+            originalNameB
+        );
+
         setUnsavedChanges( true );
     }
 }
 
 
-void UncertaintyCalculation::updateInputParameter( InputParameter *parameter) {
-    if ( parameter ) {
+void UncertaintyCalculation::updateInputParameter(
+    const InputParameter *parameter
+) {
+    QUuid id { InputParameter::getSelectedId() };
+    InputParameter *originalParameter { InputParameter::getById( id ) };
+    if ( parameter && originalParameter ) {
+        InputParameter newParameter { *parameter };
+        newParameter.setId( id );   // Keep the existing id in the model
+
         bool recompile { true };
-        const InputParameter *selectedInputParameter {
-            getSelectedInputParameter()
-        };
-        if ( selectedInputParameter && *selectedInputParameter == *parameter ) {
+        if ( *originalParameter == newParameter ) {
             // Existing and new InputParameter are equal numerically, no need to
-            // recompile.
+            // recompile the OutputParameters.
             recompile = false;
         }
-        emitOutputModelsAboutToBeReset();
-        InputParameter *updatedParameter {
-            parameter->updateSelectedModelRow()
-        };
-        emitOutputModelsReset();
-        emit resultsChanged();
-        if ( updatedParameter && recompile ) {
-            recompileExpressions( true, updatedParameter );
+
+        // Store the needed data before updating
+        QString originalName { originalParameter->getName() };
+
+        DiffUtil diffUtil {};
+        diffUtil.takeSnapshot( originalParameter );
+
+        InputParameter::update( id, &newParameter);
+
+        if ( recompile ) {
+            // All invalid expressions are recompiled plus any that reference
+            // the updated InputParameter
+            recompileExpressions( diffUtil, true, id );
         }
+
+        diffUtil.commitChanges( "update input parameter " + originalName );
+
         setUnsavedChanges( true );
     }
 }
 
 
 void UncertaintyCalculation::updateOutputParameter(
-    OutputParameter *parameter
+    const OutputParameter *parameter
 ) {
-    if ( parameter ) {
+    QUuid id { OutputParameter::getSelectedId() };
+    OutputParameter *originalParameter { OutputParameter::getById( id ) };
+    if ( parameter && originalParameter ) {
         OutputParameter newParameter { *parameter };
+        newParameter.setId( id );   // Keep the existing id in the model
 
-        // The signals of the OutputParameter are connected to its parent on
-        // construction, so its parent is set to this object.
-        newParameter.setParent( this );
+        if ( *originalParameter != newParameter ) {
+            // Existing and new OutputParameter are not equal numerically,
+            // use the new one and recompile
+            newParameter.compile();
+        }
+        else {
+            // Results are identical, use originalParameter with new name and
+            // new unit to keep any available Monte Carlo results
+            newParameter = *originalParameter;
+            newParameter.setName( parameter->getName() );
+            newParameter.setUnit( parameter->getUnit() );
+        }
 
-        emitOutputModelsAboutToBeReset();
-        newParameter.updateSelectedModelRow();
-        emitOutputModelsReset();
+        // Store the needed data before updating
+        QString originalName { originalParameter->getName() };
+
+        DiffUtil diffUtil {};
+        diffUtil.takeSnapshot( originalParameter );
+
+        OutputParameter::update( id, &newParameter);
         emitAllResultsChanged();
+
+        diffUtil.commitChanges( "update output parameter " + originalName );
+
         setUnsavedChanges( true );
+    }
+}
+
+
+void UncertaintyCalculation::userClearProject() {
+    // The project is cleared by the user and can be undone
+
+    // Take snapshot and remove all objects. Note that the objects are removed
+    // individually in this case to maintain the row order on undo.
+    DiffUtil diffUtil {};
+
+    for ( const InputParameter *inputParameter : InputParameter::getAll() ) {
+        diffUtil.takeSnapshot( inputParameter );
+        InputParameter::remove( inputParameter->getId() );
+    }
+
+    for ( const OutputParameter *outputParameter : OutputParameter::getAll() ) {
+        diffUtil.takeSnapshot( outputParameter );
+        OutputParameter::remove( outputParameter->getId() );
+    }
+
+    for ( const Correlation *correlation : Correlation::getAll() ) {
+        diffUtil.takeSnapshot( correlation );
+        Correlation::remove( correlation->getId() );
+    }
+
+    diffUtil.commitChanges( "clear project" );
+
+    setUnsavedChanges( true );
+}
+
+
+void UncertaintyCalculation::undo() {
+    if ( !getOutputLocked() ) {
+        UndoStack::instance().undo();
+    }
+}
+
+
+void UncertaintyCalculation::redo() {
+    if ( !getOutputLocked() ) {
+        UndoStack::instance().redo();
     }
 }
 
 
 void UncertaintyCalculation::lockItemSelectionModels() {
     bool locked { getOutputLocked() };
-    mInputParametersModel->setSelectionLocked( locked );
-    mOutputParametersModel->setSelectionLocked( locked );
+    InputParameter::setSelectionLocked( locked );
+    OutputParameter::setSelectionLocked( locked );
+    Correlation::setSelectionLocked( locked );
     emit outputLockedChanged();
 }
 
 
-void UncertaintyCalculation::setOutputRow() {
-    const int row { mOutputParametersModel->selectedRow() };
-    if ( row != mOutputRow ) {
-        mOutputRow = row;
-        mBudgetModel.setOutputRow( row );
-        mResultsModel.setOutputRow( row );
-        emitAllResultsChanged();
+void UncertaintyCalculation::onMonteCarloFinished() {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    QString name { parameter ? " " + parameter->getName() : "" };
+    mDiffUtil.commitChanges( "run monte carlo" + name );
+}
+
+
+void UncertaintyCalculation::onTransactionApplied() {
+    // Connect to restored OutputParameters
+    const QList<OutputParameter *> &parameters { OutputParameter::getAll() };
+    for ( OutputParameter *parameter : parameters ) {
+        connectToOutputParameter( parameter );
     }
+
+    // Re-establish live pointers in Correlations from stored Ids
+    Correlation::reconnectAllCorrelations();
+
+    // Recompile all OutputParameters without resetting Monte Carlo results
+    OutputParameter::recompileAllExpressions( false );
+
+    // Notify the UI that the data of this object has changed
+    emitAllResultsChanged();
+    emit inputParameterChanged();
+
+    setUnsavedChanges( true );
 }
 
 
@@ -563,18 +709,18 @@ void UncertaintyCalculation::unsavedChanges() {
 }
 
 
-QJsonObject UncertaintyCalculation::parametersToJson() const {
+QJsonObject UncertaintyCalculation::projectToJson() const {
     QJsonObject json {};
-    json[ mVersionString ] = QCoreApplication::applicationVersion();
-    json[ mInputParametersString ] = InputParameter::parametersToJson();
-    json[ mCorrelationsString ] = Correlation::correlationsToJson();
-    json[ mOutputParametersString ] = OutputParameter::parametersToJson();
+    json[ sVersionString ] = QCoreApplication::applicationVersion();
+    json[ sInputParametersString ] = InputParameter::parametersToJson();
+    json[ sCorrelationsString ] = Correlation::correlationsToJson();
+    json[ sOutputParametersString ] = OutputParameter::parametersToJson();
     return json;
 }
 
 
 QList<double> UncertaintyCalculation::getHistogramValues() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramValues();
     }
@@ -584,7 +730,7 @@ QList<double> UncertaintyCalculation::getHistogramValues() const {
 
 QString UncertaintyCalculation::getInputName() const
 {
-    const InputParameter *parameter { getSelectedInputParameter() };
+    const InputParameter *parameter { InputParameter::getSelected() };
     if ( parameter ) {
         return parameter->getName();
     }
@@ -593,7 +739,7 @@ QString UncertaintyCalculation::getInputName() const
 
 
 QString UncertaintyCalculation::getOutputName() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter ) {
         return parameter->getName();
     }
@@ -602,7 +748,7 @@ QString UncertaintyCalculation::getOutputName() const {
 
 
 QString UncertaintyCalculation::getOutputUnit() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter ) {
         return parameter->getUnit();
     }
@@ -639,46 +785,61 @@ QString UncertaintyCalculation::outputParameterReferencesToString(
 }
 
 
-QString UncertaintyCalculation::projectToString() const {
+QString UncertaintyCalculation::projectToCSVString() const {
     QString result {};
     // Add version number
-    result += "Sigma version: " + QCoreApplication::applicationVersion() + endl;
+    result += "Sigma version: " +
+              QCoreApplication::applicationVersion() +
+              StringUtils::endl;
 
     // Add project title
     QString project { getProjectFileName() };
     if ( project.size() > 0 ) {
-        result += addQuotes( "Project: " + project ) + endl;
+        result += StringUtils::addQuotes( "Project: " + project ) +
+                  StringUtils::endl;
     }
 
     // Add input, correlation and output parameter data
-    result += endl;
-    result += InputParameter::parametersToString() + endl;
-    if ( mCorrelationModel->rowCount() > 0 ) {
-        result += Correlation::correlationsToString() + endl;
+    result += StringUtils::endl;
+    result += InputParameter::parametersToCSVString() + StringUtils::endl;
+    if ( Correlation::getAll().size() > 0 ) {
+        result += Correlation::correlationsToCSVString() + StringUtils::endl;
     }
-    result += OutputParameter::parametersToString();
+    result += OutputParameter::parametersToCSVString();
 
     return result;
 }
 
 
+QStringList UncertaintyCalculation::getDistributionStrings() const {
+    QStringList distributionList {};
+    QList<Distribution::Type> distributions {
+        Distribution::getDistributions()
+    };
+    for ( Distribution::Type &distribution : distributions ) {
+        distributionList.append(
+            Distribution::distributionToString( distribution )
+        );
+    }
+    return distributionList;
+}
+
+
 QStringList UncertaintyCalculation::getInputParameterReferences(
-    InputParameter * const &inputParameter
+    const InputParameter *inputParameter
 ) const {
-    // Return a list of OutputParameter names that references this
+    // Return a list of OutputParameter names that reference this
     // InputParameter
     QStringList references {};
     if ( inputParameter ) {
-        int rows { mOutputParametersModel->rowCount() };
-        for ( int row { 0 }; row < rows; ++row ) {
-            OutputParameter *outputParameter {
-                mOutputParametersModel->getRow( row )
-            };
+        for ( const OutputParameter *outputParam : OutputParameter::getAll() ) {
             if (
-                outputParameter &&
-                outputParameter->isInputParameterReferenced( inputParameter )
+                outputParam &&
+                outputParam->isInputParameterReferenced(
+                    inputParameter->getId()
+                )
             ) {
-                references.append( outputParameter->getName() );
+                references.append( outputParam->getName() );
             }
         }
     }
@@ -689,7 +850,7 @@ QStringList UncertaintyCalculation::getInputParameterReferences(
 QStringList UncertaintyCalculation::getMonteCarloResults() const {
     QStringList results {};
     results.fill( "", MonteCarlo::headerLabels.size() );
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter ) {
         return parameter->getMonteCarloResults();
     }
@@ -702,8 +863,18 @@ QUrl UncertaintyCalculation::getProjectFilePath() const {
 }
 
 
+bool UncertaintyCalculation::canRedo() const {
+    return UndoStack::instance().canRedo();
+}
+
+
+bool UncertaintyCalculation::canUndo() const {
+    return UndoStack::instance().canUndo();
+}
+
+
 bool UncertaintyCalculation::getHistogramValid() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() && !parameter->getLocked() ) {
         return parameter->getMonteCarloValid();
     }
@@ -712,7 +883,7 @@ bool UncertaintyCalculation::getHistogramValid() const {
 
 
 bool UncertaintyCalculation::getOutputLocked() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter ) {
         return parameter->getLocked();
     }
@@ -721,7 +892,7 @@ bool UncertaintyCalculation::getOutputLocked() const {
 
 
 bool UncertaintyCalculation::getOutputValid() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter ) {
         return parameter->getValid();
     }
@@ -735,7 +906,7 @@ bool UncertaintyCalculation::getUnsavedChanges() const {
 
 
 double UncertaintyCalculation::getHistogramXMax() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramXMax();
     }
@@ -744,7 +915,7 @@ double UncertaintyCalculation::getHistogramXMax() const {
 
 
 double UncertaintyCalculation::getHistogramXMin() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramXMin();
     }
@@ -753,7 +924,7 @@ double UncertaintyCalculation::getHistogramXMin() const {
 
 
 double UncertaintyCalculation::getHistogramYMax() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramYMax();
     }
@@ -762,7 +933,7 @@ double UncertaintyCalculation::getHistogramYMax() const {
 
 
 double UncertaintyCalculation::getMonteCarloConvergenceFactor() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getMonteCarloConvergenceFactor();
     }
@@ -771,7 +942,7 @@ double UncertaintyCalculation::getMonteCarloConvergenceFactor() const {
 
 
 int UncertaintyCalculation::getHistogramHigherIndex() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramHigherIndex();
     }
@@ -780,7 +951,7 @@ int UncertaintyCalculation::getHistogramHigherIndex() const {
 
 
 int UncertaintyCalculation::getHistogramLowerIndex() const {
-    OutputParameter * const parameter { getSelectedOutputParameter() };
+    const OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && parameter->getValid() ) {
         return parameter->getHistogramLowerIndex();
     }
@@ -788,41 +959,159 @@ int UncertaintyCalculation::getHistogramLowerIndex() const {
 }
 
 
+void UncertaintyCalculation::clearProject( bool unsavedChanges ) {
+    OutputParameter::clearModel();
+    Correlation::clearModel();
+    InputParameter::clearModel();
+    emit inputParameterChanged();
+    setUnsavedChanges( unsavedChanges );
+}
+
+
+void UncertaintyCalculation::connectToOutputParameter(
+    const OutputParameter *parameter
+){
+    // Connect the signals of the OutputParameter to this object's signals and
+    // slots
+    if ( parameter ) {
+        connect(
+            parameter,
+            &OutputParameter::monteCarloStarted,
+            this,
+            &UncertaintyCalculation::histogramValuesChanged,
+            Qt::UniqueConnection
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloFinished,
+            this,
+            &UncertaintyCalculation::histogramValuesChanged,
+            Qt::UniqueConnection
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloStatusChanged,
+            this,
+            &UncertaintyCalculation::monteCarloResultsListChanged,
+            Qt::UniqueConnection
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloConvergenceFactorChanged,
+            this,
+            &UncertaintyCalculation::monteCarloConvergenceFactorChanged,
+            Qt::UniqueConnection
+        );
+        connect(
+            parameter,
+            &OutputParameter::lockedChanged,
+            this,
+            &UncertaintyCalculation::lockItemSelectionModels,
+            Qt::UniqueConnection
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloStarted,
+            this,
+            &UncertaintyCalculation::unsavedChanges,
+            Qt::UniqueConnection
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloFinished,
+            this,
+            &UncertaintyCalculation::unsavedChanges,
+            Qt::UniqueConnection
+        );
+        connect(
+            parameter,
+            &OutputParameter::monteCarloFinished,
+            this,
+            &UncertaintyCalculation::onMonteCarloFinished,
+            Qt::UniqueConnection
+        );
+    }
+}
+
+
+void UncertaintyCalculation::createConnections() {
+    // Create connections to the input and output model
+    connect(
+        InputParameter::getInputModel()->selectionModel(),
+        &QItemSelectionModel::currentRowChanged,
+        this,
+        &UncertaintyCalculation::inputParameterChanged
+    );
+    connect(
+        OutputParameter::getOutputModel()->selectionModel(),
+        &QItemSelectionModel::currentRowChanged,
+        this,
+        &UncertaintyCalculation::emitAllResultsChanged
+    );
+
+    // Create connections to the undostack
+    connect(
+        &UndoStack::instance(),
+        &UndoStack::transactionApplied,
+        this,
+        &UncertaintyCalculation::onTransactionApplied
+    );
+    connect(
+        &UndoStack::instance(),
+        &UndoStack::canUndoChanged,
+        this,
+        &UncertaintyCalculation::canUndoChanged
+    );
+    connect(
+        &UndoStack::instance(),
+        &UndoStack::canRedoChanged,
+        this,
+        &UncertaintyCalculation::canRedoChanged
+    );
+
+    // Create connection to the application settings
+    connect(
+        mAppSettings,
+        &ApplicationSettings::displayPrecisionChanged,
+        this,
+        &UncertaintyCalculation::resetDisplay
+    );
+}
+
+
 void UncertaintyCalculation::emitAllResultsChanged() {
-    emit resultsChanged();
-    emit monteCarloResultsListChanged();
-    emit monteCarloValuesChanged();
-    emit monteCarloConvergenceFactorChanged();
+    // Notify that properties are updated
+    emit resultsChanged();              // outputName, outputUnit, outputValid
+    emit monteCarloResultsListChanged();        // monteCarloResultsList
+    emit histogramValuesChanged();              // histogram related properties
+    emit monteCarloConvergenceFactorChanged();  // monteCarloConvergenceFactor
 }
 
 
-void UncertaintyCalculation::emitOutputModelsAboutToBeReset() {
-    mBudgetModel.emitModelAboutToBeReset();
-    mResultsModel.emitModelAboutToBeReset();
-}
-
-
-void UncertaintyCalculation::emitOutputModelsReset() {
-    mBudgetModel.emitModelReset();
-    mResultsModel.emitModelReset();
-}
-
-
-void UncertaintyCalculation::parametersFromJson( const QJsonObject &json ) {
-    if ( const QJsonValue v = json[ mInputParametersString ]; v.isArray() ) {
+void UncertaintyCalculation::projectFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ sInputParametersString ]; v.isArray() ) {
         const QJsonArray paramArray { v.toArray() };
         InputParameter::parametersFromJson( paramArray, this );
     }
 
-    if ( const QJsonValue v = json[ mCorrelationsString ]; v.isArray() ) {
+    if ( const QJsonValue v = json[ sCorrelationsString ]; v.isArray() ) {
         const QJsonArray correlationsArray { v.toArray() };
         Correlation::correlationsFromJson( correlationsArray, this );
     }
 
-    if ( const QJsonValue v = json[ mOutputParametersString ]; v.isArray() ) {
+    if ( const QJsonValue v = json[ sOutputParametersString ]; v.isArray() ) {
         const QJsonArray paramArray { v.toArray() };
         OutputParameter::parametersFromJson( paramArray, this );
+
+        // Create connections between the new OutputParameters and this object's
+        // signals and slots
+        for ( const OutputParameter *param : OutputParameter::getAll() ) {
+            connectToOutputParameter( param );
+        }
     }
+
+    // Connect the new Correlation objects to their InputParameters
+    Correlation::reconnectAllCorrelations();
 
     updateUnits();
 
@@ -831,58 +1120,114 @@ void UncertaintyCalculation::parametersFromJson( const QJsonObject &json ) {
 
 
 void UncertaintyCalculation::recompileExpressions(
+    DiffUtil &diffUtil,
     const bool recompileInvalidExpressions,
-    InputParameter *inputParameterA,
-    InputParameter *inputParameterB
+    const QUuid inputParamAId,
+    const QUuid inputParamBId
 ) {
     // Recompile invalid expressions, when recompileInvalidExpressions = true,
-    // or expressions that reference inputParameterA (when inputParameterB is
-    // null_ptr) or both inputParameterA and inputParameterB. So valid
-    // parameters that do not reference the inputParameter(s) are left
-    // untouched.
-    int rows { mOutputParametersModel->rowCount() };
-    for ( int row { 0 }; row < rows; ++row ) {
-        OutputParameter *outputParameter {
-            mOutputParametersModel->getRow( row )
-        };
+    // or expressions that reference inputParamAId (when inputParamBId.isNull()
+    // ) or both inputParamAId and inputParamBId. So valid parameters that do
+    // not reference the InputParameter(s) are left untouched.
+    // The passed DiffUtil will be used to take snapshots of the before state of
+    // recompiled parameters.
+    for ( OutputParameter *outputParameter : OutputParameter::getAll() ) {
         if ( outputParameter && (
             ( recompileInvalidExpressions && !outputParameter->getValid() ) ||
                 (
-                    outputParameter->isInputParameterReferenced( inputParameterA ) &&
-                    !inputParameterB
+                    outputParameter->isInputParameterReferenced( inputParamAId ) &&
+                    inputParamBId.isNull()
                 ) ||
                 (
-                    outputParameter->isInputParameterReferenced( inputParameterA ) &&
-                    outputParameter->isInputParameterReferenced( inputParameterB )
+                    outputParameter->isInputParameterReferenced( inputParamAId ) &&
+                    outputParameter->isInputParameterReferenced( inputParamBId )
                 )
             )
         ) {
-            emitOutputModelsAboutToBeReset();
-            outputParameter->compile();
-            mOutputParametersModel->emitRowChanged( row );
-            emitOutputModelsReset();
+            diffUtil.takeSnapshot( outputParameter );
+
+            OutputParameter updatedOutputParameter { *outputParameter };
+            updatedOutputParameter.compile();
+
+            OutputParameter::update(
+                outputParameter->getId(),
+                &updatedOutputParameter
+            );
+
             emitAllResultsChanged();
         }
     }
 }
 
 
+void UncertaintyCalculation::registerDiffUtilDataTypeMethods() {
+    // Register the methods needed for applying transactions for each Data type
+    // with DiffUtil
+    DiffUtil::registerApplyDiff(
+        DataType::InputParameter,
+        &InputParameter::applyDiff
+    );
+    DiffUtil::registerApplyDiff(
+        DataType::OutputParameter,
+        &OutputParameter::applyDiff
+    );
+    DiffUtil::registerApplyDiff(
+        DataType::Correlation,
+        &Correlation::applyDiff
+    );
+
+    DiffUtil::registerCurrentJson(
+        DataType::InputParameter,
+        &InputParameter::currentJson
+    );
+    DiffUtil::registerCurrentJson(
+        DataType::OutputParameter,
+        &OutputParameter::currentJson
+        );
+    DiffUtil::registerCurrentJson(
+        DataType::Correlation,
+        &Correlation::currentJson
+    );
+
+    DiffUtil::registerGetRowIndex(
+        DataType::InputParameter,
+        &InputParameter::getRowIndex
+    );
+    DiffUtil::registerGetRowIndex(
+        DataType::OutputParameter,
+        &OutputParameter::getRowIndex
+    );
+    DiffUtil::registerGetRowIndex(
+        DataType::Correlation,
+        &Correlation::getRowIndex
+    );
+}
+
+
+void UncertaintyCalculation::resetDisplay() {
+    InputParameter::onDisplayPrecisionChanged();
+    OutputParameter::onDisplayPrecisionChanged();
+    Correlation::onDisplayPrecisionChanged();
+    emitAllResultsChanged();
+}
+
+
 void UncertaintyCalculation::resetProjectFilePath() {
     mProjectFilePath.clear();
     emit projectFilePathChanged();
-    setLastProjectFilePath( mProjectFilePath );
+    Settings::setLastProjectFilePath( mProjectFilePath );
 }
 
 
 void UncertaintyCalculation::setProjectFilePath( const QUrl &projectFilePath ) {
     mProjectFilePath = projectFilePath;
     emit projectFilePathChanged();
-    setLastProjectFilePath( mProjectFilePath );
+    Settings::setLastProjectFilePath( mProjectFilePath );
 }
 
 
-void UncertaintyCalculation::setUnsavedChanges( const bool &unsavedChanges ) {
-    if ( unsavedChanges && getAutoSaveProject() ) {
+void UncertaintyCalculation::setUnsavedChanges( bool unsavedChanges ) {
+    if ( unsavedChanges && Settings::getAutoSaveProject() ) {
         // Auto Save the changes.
         saveProject();
         return;
@@ -894,10 +1239,10 @@ void UncertaintyCalculation::setUnsavedChanges( const bool &unsavedChanges ) {
 
 void UncertaintyCalculation::updateUnits() {
     // Add units of the parameters to the list of units.
-    for ( InputParameter * &parameter : mInputParametersModel->getAllRows() ) {
+    for ( const InputParameter *parameter : InputParameter::getAll() ) {
         addUnit( parameter->getUnit() );
     }
-    for ( OutputParameter* &parameter : mOutputParametersModel->getAllRows() ) {
+    for ( const OutputParameter *parameter : OutputParameter::getAll() ) {
         addUnit( parameter->getUnit() );
     }
 }

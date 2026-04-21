@@ -4,6 +4,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import Sigma
 
 // Base component that can be combined with an input field to add a button and
 // popup to insert symbols or operators
@@ -19,7 +20,6 @@ FocusScope {
     property alias symbolPopup: popup
     property alias buttonIcon: fieldButton.buttonIcon
     property alias buttonFont: fieldButton.font
-    property alias properties: properties
 
     function insertAtCursor( text ) {
         // Insert text at the cursor position or replace the
@@ -43,7 +43,7 @@ FocusScope {
         }
     }
 
-    width: properties.fieldWidth
+    width: Properties.fieldWidth
     height: childrenRect.height
     focus: true
 
@@ -89,10 +89,10 @@ FocusScope {
         x: 0
         y: parent.height
         padding: bg.border.width
-        width: ( properties.buttonHeight + flowContainer.spacing ) * columns +
+        width: ( Properties.buttonHeight + flowContainer.spacing ) * columns +
                flowContainer.spacing +
                padding * 2
-        height: ( properties.buttonHeight + flowContainer.spacing ) * rows +
+        height: ( Properties.buttonHeight + flowContainer.spacing ) * rows +
                 flowContainer.spacing +
                 padding * 2
         popupType: Popup.Item
@@ -101,11 +101,11 @@ FocusScope {
         background: Rectangle {
             id: bg
 
-            radius: properties.radiusS
-            color: properties.colorElevated
-            border.width: properties.lightTheme ? 0 : properties.borderWidth
-            border.color: properties.colorStrokeWeak
-            layer.enabled: properties.lightTheme
+            radius: Properties.radiusS
+            color: Properties.colorElevated
+            border.width: Properties.lightTheme ? 0 : Properties.borderWidth
+            border.color: Properties.colorStrokeWeak
+            layer.enabled: Properties.lightTheme
             layer.effect: ButtonElevationEffect {}
         }
 
@@ -113,7 +113,7 @@ FocusScope {
             id: flowContainer
 
             anchors.fill: parent
-            padding: properties.spacingXXS
+            padding: Properties.spacingXXS
             spacing: padding
 
             Instantiator {
@@ -126,9 +126,5 @@ FocusScope {
                 }
             }
         }
-    }
-
-    SigmaProperties {
-        id: properties
     }
 }

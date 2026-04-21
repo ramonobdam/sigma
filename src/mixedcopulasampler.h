@@ -9,7 +9,6 @@
 #include <third_party/Eigen/Dense>
 #include <random>
 #include <vector>
-#include <functional>
 
 // Forward declaration of OutputParameter (to avoid recursion loop)
 class OutputParameter;
@@ -23,7 +22,7 @@ public:
     MixedCopulaSampler( OutputParameter *parameter );
 
     OutputParameter *getOutputParameter() const;
-    void addVariable( const Distribution::InvCDF &invCDF );
+    void addVariable( Distribution::InvCDF invCDF );
     void clear();
     void setLatentCorrelation( const Eigen::MatrixXd &rho );
     void setRandomSymbolValues() const;
@@ -37,7 +36,7 @@ private:
     OutputParameter *mOutputParameter;
     bool mReady;
 
-    static std::mt19937 mGenerator;
+    inline static std::mt19937 sGenerator {};
 };
 
 #endif // MIXEDCOPULASAMPLER_H

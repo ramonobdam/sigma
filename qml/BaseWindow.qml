@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Window
+import Sigma
 
 // Base window component with integrated titlebar on MacOS
 Window {
@@ -16,11 +17,11 @@ Window {
     property var settingsObject: null
     property bool persistentPosition: true
     property int titleBarHeightWindow:
-        Math.max( SafeArea.margins.top, properties.minimumTitleBarHeight )
-    property int topLabelSpacing: properties.spacingL
-    property int bottomLabelSpacing: properties.spacingXS
-    property int interLabelSpacing: properties.spacingS
-    property int interFieldSpacing: properties.spacingM
+        Math.max( SafeArea.margins.top, Properties.minimumTitleBarHeight )
+    property int topLabelSpacing: Properties.spacingL
+    property int bottomLabelSpacing: Properties.spacingXS
+    property int interLabelSpacing: Properties.spacingS
+    property int interFieldSpacing: Properties.spacingM
     property alias titleBar: titleBar
     readonly property list<int> position: [ control.x, control.y ]
 
@@ -133,14 +134,11 @@ Window {
     minimumWidth: width
     minimumHeight: height
     modality: Qt.ApplicationModal
-    flags: properties.windowFlags
+    flags: Properties.windowFlags
 
-    title: properties.macOS ? "" : windowTitle
-    color: properties.colorElevated
+    title: Properties.macOS ? "" : windowTitle
+    color: Properties.colorElevated
 
-    SigmaProperties {
-        id: properties
-    }
 
     SigmaTitleBar {
         id: titleBar

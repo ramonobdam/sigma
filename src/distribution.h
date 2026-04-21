@@ -5,13 +5,9 @@
 #ifndef DISTRIBUTION_H
 #define DISTRIBUTION_H
 
-#include "utils.h"
 #include <QList>
 #include <QString>
 #include <functional>
-
-// Forward declaration of InputParameter (to avoid recursion loop)
-class InputParameter;
 
 // Namespace with distribution type enumerator and probability distribution
 // related functions
@@ -28,11 +24,11 @@ namespace Distribution {
     using InvCDF = std::function<double( double )>;
 
     InvCDF getInvCDF(
-        const Type &distribution,
-        const double &mean,
-        const double &stdDev,
-        const int &dof,
-        const bool &dofInfinite
+        Type distribution,
+        double mean,
+        double stdDev,
+        int dof,
+        bool dofInfinite
     );
     InvCDF invCDFArcsine( double mean, double halfWidth );
     InvCDF invCDFConstant( double mean );
@@ -41,9 +37,9 @@ namespace Distribution {
     InvCDF invCDFTriangular( double mean, double halfWidth );
     InvCDF invCDFUniform( double mean, double halfWidth );
     QList<Type> getDistributions();
-    QString distributionToString( const Type &distribution );
+    QString distributionToString( Type distribution );
     Type stringToDistribution( const QString &distributionString );
-    double invCDFStandardNormal( const double &p );
+    double invCDFStandardNormal( double p );
     double normalCDF( double z );
 }
 

@@ -24,7 +24,7 @@ BaseDialog {
         // Save project and hide the dialog
         control.hide()
         control.closeWindow = ( control.mode === DiscardUnsavedChanges.Close )
-        if ( properties.filePathNotEmpty ) {
+        if ( Properties.filePathNotEmpty ) {
             control.transientParent.saveProject( control.closeWindow )
         }
         else {
@@ -62,15 +62,15 @@ BaseDialog {
 
     title: "Save project" +
            (
-               properties.filePathNotEmpty ?
-                   (" '" + properties.projectFileName + "'") :
+               Properties.filePathNotEmpty ?
+                   (" '" + Properties.projectFileName + "'") :
                    ""
            ) +
            "?"
     headerText:
         "Save " +
-        ( properties.filePathNotEmpty ?
-            ( "the changes to project '" + properties.projectFileName + "'" ) :
+        ( Properties.filePathNotEmpty ?
+            ( "the changes to project '" + Properties.projectFileName + "'" ) :
             "the current project" )
         + "?"
     subText: "Your changes will be lost if you don't save them"
@@ -85,7 +85,7 @@ BaseDialog {
     secondaryButton.KeyNavigation.tab: tertiaryButton
     secondaryButton.KeyNavigation.backtab: primaryButton
 
-    tertiaryButton.text: properties.buttonTextCancel
+    tertiaryButton.text: Properties.buttonTextCancel
     tertiaryButton.onClicked: { control.cancel() }
     tertiaryButton.KeyNavigation.tab: primaryButton
     tertiaryButton.KeyNavigation.backtab: secondaryButton

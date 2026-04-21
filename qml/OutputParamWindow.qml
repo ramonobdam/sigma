@@ -64,7 +64,6 @@ BaseWindow {
 
     function addParam() {
         // Add a new OutputParameter
-        param.setLocked( false );
         control.setParam()
         calculation.addOutputParameter( param )
     }
@@ -187,10 +186,6 @@ BaseWindow {
         id: param
     }
 
-    SigmaFonts {
-        id: fonts
-    }
-
     Item {
         id: container
 
@@ -199,7 +194,7 @@ BaseWindow {
             right: parent.right
             top: titleBar.bottom
             bottom: parent.bottom
-            margins: properties.spacingM
+            margins: Properties.spacingM
         }
 
         focus: true
@@ -224,7 +219,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             unacceptableInputMessage: "Enter a valid output name"
             maximumLength: 50
@@ -259,9 +254,9 @@ BaseWindow {
             }
             width: 398
 
-            buttonIcon: properties.calculatorIcon
-            buttonFont.family: fonts.fontAwesome.font.family
-            buttonFont.pixelSize: properties.fontSizeComboBoxIcon
+            buttonIcon: Properties.calculatorIcon
+            buttonFont.family: Fonts.fontAwesome.font.family
+            buttonFont.pixelSize: Properties.fontSizeComboBoxIcon
             maximumLength: 1000
             textField.onAccepted: { control.saveAndReturn( 1 ) }
             buttonList: ListModel {
@@ -310,7 +305,7 @@ BaseWindow {
             anchors {
                 verticalCenter: formulaField.verticalCenter
                 left: formulaField.right
-                leftMargin: properties.spacingButtons
+                leftMargin: Properties.spacingButtons
             }
 
             text: "Evaluate"
@@ -346,18 +341,18 @@ BaseWindow {
                 width: height
 
                 radius: height / 2
-                color: properties.colorTransparent
-                border.width: properties.borderWidth
-                border.color: control.valid ? properties.colorSuccess500 :
-                                              properties.colorError500
+                color: Properties.colorTransparent
+                border.width: Properties.borderWidth
+                border.color: control.valid ? Properties.colorSuccess500 :
+                                              Properties.colorError500
 
                 Text {
                     anchors.fill: parent
 
-                    text: control.valid ? properties.validIcon :
-                                          properties.invalidIcon
-                    font.family: fonts.fontAwesome.font.family
-                    font.pixelSize: properties.fontSizeUnacceptableInputIcon
+                    text: control.valid ? Properties.validIcon :
+                                          Properties.invalidIcon
+                    font.family: Fonts.fontAwesome.font.family
+                    font.pixelSize: Properties.fontSizeUnacceptableInputIcon
                     color: icon.border.color
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -370,7 +365,7 @@ BaseWindow {
                 anchors {
                     top: icon.top
                     left: icon.right
-                    leftMargin: properties.spacingXS
+                    leftMargin: Properties.spacingXS
                     right: parent.right
                 }
 
@@ -400,7 +395,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             model: calculation.inputItemModel()
             currentIndex: 0
@@ -422,7 +417,7 @@ BaseWindow {
             anchors {
                 verticalCenter: paramCombo.verticalCenter
                 left: paramCombo.right
-                leftMargin: properties.spacingButtons
+                leftMargin: Properties.spacingButtons
             }
 
             text: "Insert"
@@ -454,7 +449,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             model: calculation.unitsModel()
             editable: true
@@ -498,7 +493,7 @@ BaseWindow {
                 topMargin: control.bottomLabelSpacing
                 left: parent.left
             }
-            width: properties.fieldWidth
+            width: Properties.fieldWidth
 
             validator: DoubleValidator {
                             notation: DoubleValidator.StandardNotation
@@ -548,10 +543,10 @@ BaseWindow {
             anchors {
                 top: saveButton.top
                 left: saveButton.right
-                leftMargin: properties.spacingButtons
+                leftMargin: Properties.spacingButtons
             }
 
-            text: properties.buttonTextCancel
+            text: Properties.buttonTextCancel
             onClicked: { control.close() }
 
             KeyNavigation.backtab: saveButton

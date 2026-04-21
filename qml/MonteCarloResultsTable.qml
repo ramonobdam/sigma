@@ -22,9 +22,9 @@ SplitView {
     height: rightColumn.implicitHeight
 
     handle: Rectangle {
-        implicitWidth: properties.spacingM
+        implicitWidth: Properties.spacingM
         implicitHeight: control.height
-        color: properties.colorTransparent
+        color: Properties.colorTransparent
     }
 
     Component.onCompleted: restoreState( settings.svMonte )
@@ -38,16 +38,12 @@ SplitView {
         property var svMonte
     }
 
-    SigmaProperties {
-        id: properties
-    }
-
     Column {
         id: leftColumn
 
         spacing: 0
-        SplitView.minimumWidth: properties.minWidthMonteCarloTableHeader
-        SplitView.preferredWidth: properties.minWidthMonteCarloTableHeader
+        SplitView.minimumWidth: Properties.minWidthMonteCarloTableHeader
+        SplitView.preferredWidth: Properties.minWidthMonteCarloTableHeader
 
         MonteCarloResultsHeader {
             height: mCRE1.height
@@ -94,7 +90,7 @@ SplitView {
         id: rightColumn
 
         spacing: 0
-        SplitView.minimumWidth:  properties.minWidthMonteCarloTableHeader
+        SplitView.minimumWidth:  Properties.minWidthMonteCarloTableHeader
         SplitView.fillWidth: true
 
         MonteCarloResultsElement {

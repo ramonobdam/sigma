@@ -5,39 +5,14 @@
 #include "third_party/exprtk/exprtk.hpp"
 #include "montecarlo.h"
 #include "outputparameter.h"
+#include "settings.h"
+#include "stringutils.h"
 #include <QJsonArray>
 #include <QJsonValue>
+#include <QLocale>
 #include <cmath>
 #include <numeric>
 #include <vector>
-
-
-QString MonteCarlo::mHigherBoundString = "higherBound";
-QString MonteCarlo::mHistogramHigherIndexString = "histogramHigherIndex";
-QString MonteCarlo::mHistogramLowerIndexString = "histogramLowerIndex";
-QString MonteCarlo::mHistogramValuesString = "histogramValues";
-QString MonteCarlo::mHistogramXMaxString = "histogramXMax";
-QString MonteCarlo::mHistogramXMinString = "histogramXMin";
-QString MonteCarlo::mHistogramYMaxString = "histogramYMax";
-QString MonteCarlo::mLowerBoundString = "lowerBound";
-QString MonteCarlo::mMeanString = "mean";
-QString MonteCarlo::mMonteNotCarloStarted = \
-    "Click 'Start' to run Monte Carlo simulation";
-QString MonteCarlo::mNumericalToleranceString = "numericalTolerance";
-QString MonteCarlo::mStatusString = "status";
-QString MonteCarlo::mStdDeviationString = "stdDeviation";
-QString MonteCarlo::mValidString = "valid";
-
-QStringList MonteCarlo::headerLabels = {
-    "Output name",
-    "Unit",
-    "Simulation status",
-    "Numerical tolerance",
-    "Output estimate",
-    "Standard uncertainty",
-    "Expanded uncertainty",
-    "Level of confidence"
-};
 
 
 MonteCarlo::MonteCarlo( OutputParameter *outputParameter, QObject *parent )
@@ -92,28 +67,27 @@ MonteCarlo::MonteCarlo( const MonteCarlo &mc, QObject *parent )
 {}
 
 
-MonteCarlo& MonteCarlo::operator= ( const MonteCarlo &mc ) {
-    if ( this == &mc ) {
-        return *this;
+MonteCarlo & MonteCarlo::operator= ( const MonteCarlo &mc ) {
+    if ( this != &mc ) {
+        setOutputParameter( mc.getOutputParameter() );
+        setMean( mc.getMean() );
+        setStdDeviation( mc.getStdDeviation() );
+        setLowerBound( mc.getLowerBound() );
+        setHigherBound( mc.getHigherBound() );
+        setStatus( mc.getStatus() );
+        setValid( mc.getValid() );
+        setOutputStatistics( mc.getOutputStatistics() );
+        setConvergenceFactor( mc.getConvergenceFactor() );
+        setNumericalTolerance( mc.getNumericalTolerance() );
+        setHistogramValues( mc.getHistogramValues() );
+        setHistogramXMin( mc.getHistogramXMin() );
+        setHistogramXMax( mc.getHistogramXMax() );
+        setHistogramYMax( mc.getHistogramYMax() );
+        setHistogramLowerIndex( mc.getHistogramLowerIndex() );
+        setHistogramHigherIndex( mc.getHistogramHigherIndex() );
+        setRequestStop( mc.getRequestStop() );
+        setParent( mc.parent() );
     }
-    setOutputParameter( mc.getOutputParameter() );
-    setMean( mc.getMean() );
-    setStdDeviation( mc.getStdDeviation() );
-    setLowerBound( mc.getLowerBound() );
-    setHigherBound( mc.getHigherBound() );
-    setStatus( mc.getStatus() );
-    setValid( mc.getValid() );
-    setOutputStatistics( mc.getOutputStatistics() );
-    setConvergenceFactor( mc.getConvergenceFactor() );
-    setNumericalTolerance( mc.getNumericalTolerance() );
-    setHistogramValues( mc.getHistogramValues() );
-    setHistogramXMin( mc.getHistogramXMin() );
-    setHistogramXMax( mc.getHistogramXMax() );
-    setHistogramYMax( mc.getHistogramYMax() );
-    setHistogramLowerIndex( mc.getHistogramLowerIndex() );
-    setHistogramHigherIndex( mc.getHistogramHigherIndex() );
-    setRequestStop( mc.getRequestStop() );
-    setParent( mc.parent() );
     return *this;
 }
 
@@ -130,19 +104,19 @@ QJsonObject MonteCarlo::toJson() const {
     }
 
     QJsonObject json {};
-    json[ mNumericalToleranceString ] = getNumericalTolerance();
-    json[ mMeanString ] = getMean();
-    json[ mStdDeviationString ] = getStdDeviation();
-    json[ mLowerBoundString ] = getLowerBound();
-    json[ mHigherBoundString ] = getHigherBound();
-    json[ mStatusString ] = getStatus();
-    json[ mValidString ] = getValid();
-    json[ mHistogramXMinString ] = getHistogramXMin();
-    json[ mHistogramXMaxString ] = getHistogramXMax();
-    json[ mHistogramYMaxString ] = getHistogramYMax();
-    json[ mHistogramLowerIndexString ] = getHistogramLowerIndex();
-    json[ mHistogramHigherIndexString ] = getHistogramHigherIndex();
-    json[ mHistogramValuesString ] = valuesArray;
+    json[ sNumericalToleranceString ] = getNumericalTolerance();
+    json[ sMeanString ] = getMean();
+    json[ sStdDeviationString ] = getStdDeviation();
+    json[ sLowerBoundString ] = getLowerBound();
+    json[ sHigherBoundString ] = getHigherBound();
+    json[ sStatusString ] = getStatus();
+    json[ sValidString ] = getValid();
+    json[ sHistogramXMinString ] = getHistogramXMin();
+    json[ sHistogramXMaxString ] = getHistogramXMax();
+    json[ sHistogramYMaxString ] = getHistogramYMax();
+    json[ sHistogramLowerIndexString ] = getHistogramLowerIndex();
+    json[ sHistogramHigherIndexString ] = getHistogramHigherIndex();
+    json[ sHistogramValuesString ] = valuesArray;
 
     return json;
 }
@@ -153,58 +127,69 @@ QList<double> MonteCarlo::getHistogramValues() const {
 }
 
 
-QString MonteCarlo::getExpandedUncertaintyAsString(
-    const bool &csvMode
-) const {
+QString MonteCarlo::getExpandedUncertaintyAsString( bool csvMode ) const {
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
     double lower { getLowerBound() - getMean() };
     double higher { getHigherBound() - getMean() };
     QString result {
-        formatNumber( lower, csvMode ) +
-        ", +"
-        + formatNumber( higher, csvMode )
+        StringUtils::doubleToString( lower, precision ) +
+        ", +" +
+        StringUtils::doubleToString( higher, precision )
     };
-    return csvMode ? addQuotes( result ) : result;
+    return csvMode ? StringUtils::addQuotes( result ) : result;
 }
 
 
-QString MonteCarlo::getMeanAsString( const bool &csvMode ) const {
-    return formatNumber( getMean(), csvMode );
+QString MonteCarlo::getMeanAsString( bool csvMode ) const {
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
+    return StringUtils::doubleToString( getMean(), precision );
 }
 
 
 QString MonteCarlo::getNumericalToleranceAsString() const {
-    return QString::number(
+    return StringUtils::doubleToString(
         getNumericalTolerance(),
-        'g',
-        getMonteCarloDigits()
+        Settings::getMonteCarloDigits()
     );
 }
 
 
-QString MonteCarlo::getStatus( const bool &csvMode ) const {
-    return csvMode ? addQuotes ( mStatus ) : mStatus;
+QString MonteCarlo::getStatus( bool csvMode ) const {
+    return csvMode ? StringUtils::addQuotes ( mStatus ) : mStatus;
 }
 
 
-QString MonteCarlo::getStdDeviationAsString( const bool &csvMode ) const {
-    return formatNumber( getStdDeviation(), csvMode );
+QString MonteCarlo::getStdDeviationAsString( bool csvMode ) const {
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+
+    return StringUtils::doubleToString( getStdDeviation(), precision );
 }
 
 
-QString MonteCarlo::histogramToString() const {
+QString MonteCarlo::histogramToCSVString() const {
     QString result {};
     if ( mHistogramValues.size() > 0 ) {
         OutputParameter *outputParameter { getOutputParameter() };
         if ( outputParameter ) {
-            result += addQuotes(
+            result += StringUtils::addQuotes(
                 "Histogram " + outputParameter->getName() + ":"
             );
-            result += endl;
-            result += "Bins:" + mCSVSeparator + getHistogramBinsAsString();
-            result += endl;
-            result += "Probabilities:" + mCSVSeparator;
+            result += StringUtils::endl;
+            result += "Bins:" +
+                      StringUtils::csvSeparator +
+                      getHistogramBinsAsString();
+            result += StringUtils::endl;
+            result += "Probabilities:" + StringUtils::csvSeparator;
             result += getHistogramValuesAsString();
-            result += endl;
+            result += StringUtils::endl;
         }
     }
     return result;
@@ -314,13 +299,13 @@ void MonteCarlo::run() {
 
             // Settings are stored localy to make sure they don't change during
             // the simulation
-            int hMax { getMonteCarloMaxNumOfBatches() };
-            int maxBatchSize { getMonteCarloBatchSize() };
-            int monteCarloDigits { getMonteCarloDigits() };
+            int hMax { Settings::getMonteCarloMaxNumOfBatches() };
+            int maxBatchSize { Settings::getMonteCarloBatchSize() };
+            int monteCarloDigits { Settings::getMonteCarloDigits() };
 
             // Reset the status, results and the random value generator
             resetResults();
-            setStatus( mMonteCarloRunning );
+            setStatus( sMonteCarloRunning );
             MixedCopulaSampler::resetGenerator();
 
             // Get the confidence and create the Statistics objects accordingly
@@ -407,7 +392,7 @@ void MonteCarlo::run() {
                         );
                         double new_factor {
                             getNumericalTolerance() /
-                            mNumericalToleranceFactor /
+                            sNumericalToleranceFactor /
                             ( 2. * max )
                         };
                         if ( new_factor >= 1. ) {
@@ -444,17 +429,25 @@ void MonteCarlo::run() {
                     setHistogramHigherIndex (
                         mOutputStat.getHistogramHigherIndex()
                     );
-                    setStatus( mConvergedString.arg( numSamples ) );
+                    setStatus(
+                        sConvergedString.arg( QLocale().toString( numSamples ) )
+                    );
                 }
                 else if ( getRequestStop() ) {
                     // The simulation was stopped by the user
                     setValid( false );
-                    setStatus( mStoppedString.arg( numSamples ) );
+                    setStatus(
+                        sStoppedString.arg( QLocale().toString( numSamples ) )
+                    );
                 }
                 else {
                     // The simulation didn't converge
                     setValid( false );
-                    setStatus( mNotConvergedString.arg( numSamples ) );
+                    setStatus(
+                        sNotConvergedString.arg(
+                            QLocale().toString( numSamples )
+                        )
+                    );
                 }
             }
             else {
@@ -467,15 +460,19 @@ void MonteCarlo::run() {
                     QString var {
                         component.getName() +
                         " = " +
-                        formatNumber( component.getSymbolValue() )
+                        StringUtils::doubleToString(
+                            component.getSymbolValue(),
+                            Settings::getDisplayPrecision()
+                        )
                     };
                     inputValues.append( var );
                 }
-                setStatus( mInvalidOutputString + inputValues.join( ", " ) );
+                setStatus( sInvalidOutputString + inputValues.join( ", " ) );
             }
 
-            // Set the values in the symbol table back to nominal and release
-            // the locks
+            // Remove the sample data, set the values in the symbol table back
+            // to nominal and release the locks
+            mOutputStat.clearSamples();
             mOutputParameter->resetSymbolValues();
             setRequestStop( false );
             mOutputParameter->setLocked( false );
@@ -485,23 +482,23 @@ void MonteCarlo::run() {
 }
 
 
-void MonteCarlo::setConvergenceFactor( const double &convergenceFactor ) {
+void MonteCarlo::setConvergenceFactor( double convergenceFactor ) {
     mConvergenceFactor = convergenceFactor;
     emit convergenceFactorChanged();
 }
 
 
-void MonteCarlo::setHigherBound( const double &higherBound ) {
+void MonteCarlo::setHigherBound( double higherBound ) {
     mHigherBound = higherBound;
 }
 
 
-void MonteCarlo::setHistogramHigherIndex( const int &histogramHigherIndex ) {
+void MonteCarlo::setHistogramHigherIndex( int histogramHigherIndex ) {
     mHistogramHigherIndex = histogramHigherIndex;
 }
 
 
-void MonteCarlo::setHistogramLowerIndex( const int &histogramLowerIndex ) {
+void MonteCarlo::setHistogramLowerIndex( int histogramLowerIndex ) {
     mHistogramLowerIndex = histogramLowerIndex;
 }
 
@@ -511,32 +508,32 @@ void MonteCarlo::setHistogramValues( const QList<double> &values ) {
 }
 
 
-void MonteCarlo::setHistogramXMax( const double &histogramXMax ) {
+void MonteCarlo::setHistogramXMax( double histogramXMax ) {
     mHistogramXMax = histogramXMax;
 }
 
 
-void MonteCarlo::setHistogramXMin( const double &histogramXMin ) {
+void MonteCarlo::setHistogramXMin( double histogramXMin ) {
     mHistogramXMin = histogramXMin;
 }
 
 
-void MonteCarlo::setHistogramYMax( const double &histogramYMax ) {
+void MonteCarlo::setHistogramYMax( double histogramYMax ) {
     mHistogramYMax = histogramYMax;
 }
 
 
-void MonteCarlo::setLowerBound( const double &lowerBound ) {
+void MonteCarlo::setLowerBound( double lowerBound ) {
     mLowerBound = lowerBound;
 }
 
 
-void MonteCarlo::setMean( const double &mean ) {
+void MonteCarlo::setMean( double mean ) {
     mMean = mean;
 }
 
 
-void MonteCarlo::setNumericalTolerance( const double &tolerance ) {
+void MonteCarlo::setNumericalTolerance( double tolerance ) {
     mNumericalTolerance = tolerance;
 }
 
@@ -551,7 +548,7 @@ void MonteCarlo::setOutputStatistics( const Statistics &outputStat ) {
 }
 
 
-void MonteCarlo::setRequestStop( const bool &requestStop ) {
+void MonteCarlo::setRequestStop( bool requestStop ) {
     mRequestStop = requestStop;
 }
 
@@ -562,12 +559,12 @@ void MonteCarlo::setStatus( const QString &status ) {
 }
 
 
-void MonteCarlo::setStdDeviation( const double &stdDeviation ) {
+void MonteCarlo::setStdDeviation( double stdDeviation ) {
     mStdDeviation = stdDeviation;
 }
 
 
-void MonteCarlo::setValid( const bool &valid ) {
+void MonteCarlo::setValid( bool valid ) {
     mValid = valid;
 }
 
@@ -580,48 +577,48 @@ void MonteCarlo::stop() {
 MonteCarlo MonteCarlo::fromJson( const QJsonObject &json ) {
     MonteCarlo monteCarlo {};
     if (
-        const QJsonValue v = json[ mNumericalToleranceString ]; v.isDouble()
+        const QJsonValue v = json[ sNumericalToleranceString ]; v.isDouble()
     ) {
         monteCarlo.setNumericalTolerance( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mMeanString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sMeanString ]; v.isDouble() ) {
         monteCarlo.setMean( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mStdDeviationString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sStdDeviationString ]; v.isDouble() ) {
         monteCarlo.setStdDeviation( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mLowerBoundString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sLowerBoundString ]; v.isDouble() ) {
         monteCarlo.setLowerBound( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mHigherBoundString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sHigherBoundString ]; v.isDouble() ) {
         monteCarlo.setHigherBound( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mStatusString ]; v.isString() ) {
+    if ( const QJsonValue v = json[ sStatusString ]; v.isString() ) {
         monteCarlo.setStatus( v.toString() );
     }
-    if ( const QJsonValue v = json[ mValidString ]; v.isBool() ) {
+    if ( const QJsonValue v = json[ sValidString ]; v.isBool() ) {
         monteCarlo.setValid( v.toBool() );
     }
-    if ( const QJsonValue v = json[ mHistogramXMinString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sHistogramXMinString ]; v.isDouble() ) {
         monteCarlo.setHistogramXMin( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mHistogramXMaxString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sHistogramXMaxString ]; v.isDouble() ) {
         monteCarlo.setHistogramXMax( v.toDouble() );
     }
-    if ( const QJsonValue v = json[ mHistogramYMaxString ]; v.isDouble() ) {
+    if ( const QJsonValue v = json[ sHistogramYMaxString ]; v.isDouble() ) {
         monteCarlo.setHistogramYMax( v.toDouble() );
     }
     if (
-        const QJsonValue v = json[ mHistogramLowerIndexString ]; v.isDouble()
+        const QJsonValue v = json[ sHistogramLowerIndexString ]; v.isDouble()
     ) {
         monteCarlo.setHistogramLowerIndex( v.toInt() );
     }
     if (
-        const QJsonValue v = json[ mHistogramHigherIndexString ]; v.isDouble()
+        const QJsonValue v = json[ sHistogramHigherIndexString ]; v.isDouble()
     ) {
         monteCarlo.setHistogramHigherIndex( v.toInt() );
     }
-    if ( const QJsonValue v = json[ mHistogramValuesString ]; v.isArray() ) {
+    if ( const QJsonValue v = json[ sHistogramValuesString ]; v.isArray() ) {
         const QJsonArray jsonValues { v.toArray() };
         QList<double> histogramValues {};
         for ( const QJsonValue &value : jsonValues ) {
@@ -634,6 +631,8 @@ MonteCarlo MonteCarlo::fromJson( const QJsonObject &json ) {
 
 
 QString MonteCarlo::getHistogramBinsAsString() const {
+    const int precision { Settings::getCSVPrecision() };
+
     qsizetype numOfBins { mHistogramValues.size() };
     QStringList formattedValues {};
     double binSize {
@@ -641,25 +640,28 @@ QString MonteCarlo::getHistogramBinsAsString() const {
     };
     for ( int i { 0 }; i < numOfBins; ++i ) {
         double value { mHistogramXMin + binSize * i };
-        formattedValues.append( formatNumber ( value, true ) );
+        formattedValues.append(
+            StringUtils::doubleToString( value, precision )
+        );
     }
-    return formattedValues.join( mCSVSeparator );
+    return formattedValues.join( StringUtils::csvSeparator );
 }
 
 
 QString MonteCarlo::getHistogramValuesAsString() const {
+    const int precision { Settings::getCSVPrecision() };
+
     QStringList formattedValues {};
     for ( const double &value : mHistogramValues ) {
-        formattedValues.append( formatNumber( value, true ) );
+        formattedValues.append(
+            StringUtils::doubleToString( value, precision )
+        );
     }
-    return formattedValues.join( mCSVSeparator );
+    return formattedValues.join( StringUtils::csvSeparator );
 }
 
 
-void MonteCarlo::calculateNumericalTolerance(
-    const double &value,
-    const int &digits
-) {
+void MonteCarlo::calculateNumericalTolerance( double value, int digits ) {
     // Calculate the numerical tolerance according to section 7.9.2 oj JCGM:101
     if ( std::abs( value ) > 0. ) {
 
