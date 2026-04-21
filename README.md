@@ -25,6 +25,7 @@ Why a tool for interactive measurement uncertainty analysis?
 - The sensitivity coefficients are calculated automatically based on the partial derivatives of the measurement function
 - The combined uncertainty and the components of the uncertainty budget are instantly displayed in the interface. The critical components can quickly be observed by a color scale.
 - Monte Carlo simulation is available for more complex models. The visualization of the simulation output values provides insight into the probability distribution of the output parameter.
+- All changes are undoable, including Monte Carlo simulation results
 - Calculation projects can easily be saved or exported
 
 ## Architecture
