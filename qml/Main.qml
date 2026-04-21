@@ -294,6 +294,7 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
                     text: "Settings..."
+                    shortcut: StandardKey.Preferences
                     onTriggered: { openSettings() }
                 }
 
