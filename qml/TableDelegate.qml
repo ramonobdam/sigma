@@ -22,6 +22,8 @@ Rectangle {
     property bool hasFocus: current &&
                             tv.activeFocus &&
                             !Properties.outputLocked
+
+    property bool enableContextMenu: true
     property bool enableHover: true
     property bool currentRow: tv.currentRow === row
     property bool hoveredRow: tv.hoveredRow === row
@@ -40,9 +42,11 @@ Rectangle {
     clip: true
 
     ContextMenu.onRequested: position => {
-        tv.setCurrent( row, column )
-        let menu = contextMenu.createObject( control, { value: display } )
-        menu.popup( position )
+        if ( control.enableContextMenu ) {
+            tv.setCurrent( row, column )
+            let menu = contextMenu.createObject( control, { value: display } )
+            menu.popup( position )
+        }
     }
 
     HoverHandler {
