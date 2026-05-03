@@ -153,17 +153,11 @@ BaseWindow {
             model: calculation.correlationItemModel()
             selectionModel: calculation.correlationSelectionModel()
             headerDelegate: HeaderDelegate {
-                columnWidthProvider:
-                    function( column ) {
-                        return control.getCorrelationColumnWidth( column )
-                    }
+                columnWidthProvider: control.getCorrelationColumnWidth
             }
             delegate: DefaultTableDelegate {
                 backgroundColor: control.color
-                columnWidthProvider:
-                    function( column ) {
-                        return control.getCorrelationColumnWidth( column )
-                    }
+                columnWidthProvider: control.getCorrelationColumnWidth
                 TableView.editDelegate: Component {
                     Item {
                         Component.onCompleted: { openCorrelation( true ) }
