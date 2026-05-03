@@ -71,6 +71,7 @@ int main( int argc, char *argv[] ) {
         calculation->budgetItemModel(),
         calculation->distributionsModel(),
         calculation->unitsModel(),
+        calculation->undoHistoryModel(),
         calculation->inputSelectionModel(),
         calculation->outputSelectionModel(),
         calculation->correlationSelectionModel()
