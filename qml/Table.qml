@@ -12,6 +12,7 @@ FocusScope {
     id: control
 
     property bool empty: rows === 0
+    property alias resizableColumns: headerView.resizableColumns
     property alias headerDelegate: headerView.delegate
     property alias model: tableView.model
     property alias delegate: tableView.delegate
@@ -27,6 +28,7 @@ FocusScope {
     property alias label: tableView.label
     property alias parameter: tableView.parameter
     property alias extra: tableView.extra
+    property alias showHeader: headerView.visible
 
     signal openRequested( edit: bool )
     signal deleteRequested()
@@ -56,6 +58,7 @@ FocusScope {
             left: parent.left
             right: parent.right
         }
+        implicitHeight: visible ? contentHeight : 0
         clip: true
         resizableColumns: true
         syncView: tableView
