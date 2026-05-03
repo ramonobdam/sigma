@@ -401,7 +401,7 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Edit"
-                implicitWidth: 230
+                implicitWidth: 250
 
                 SigmaMenuBarMenuItem {
                     text: Properties.buttonTextUndo
