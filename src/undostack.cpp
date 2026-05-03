@@ -6,6 +6,14 @@
 #include "undostack.h"
 
 
+QString UndoStack::getLabelAt( int index ) const {
+    if ( index >= 0 && index < mStack.size() ) {
+        return mStack[ index ].getLabel();
+    }
+    return "";
+}
+
+
 bool UndoStack::canRedo() const {
     return mCursor < mStack.size();
 }
@@ -16,11 +24,23 @@ bool UndoStack::canUndo() const {
 }
 
 
+int UndoStack::getCursor() const {
+    return mCursor;
+}
+
+
+int UndoStack::getStackSize() const {
+    return mStack.size();
+}
+
+
 void UndoStack::clear() {
     mStack.clear();
     mCursor = 0;
     emit canUndoChanged();
     emit canRedoChanged();
+    emit cursorChanged();
+    emit stackSizeChanged();
 }
 
 
@@ -32,6 +52,8 @@ void UndoStack::pushTransaction( const Transaction &transaction ) {
     ++mCursor;
     emit canUndoChanged();
     emit canRedoChanged();
+    emit cursorChanged();
+    emit stackSizeChanged();
 }
 
 
@@ -44,6 +66,36 @@ void UndoStack::redo() {
     ++mCursor;
     emit canUndoChanged();
     emit canRedoChanged();
+    emit cursorChanged();
+}
+
+
+void UndoStack::restoreState( int index ) {
+    // Apply transactions to restore the state at index
+    if ( index < 0 || index > mStack.size() ) return;
+    if ( index == mCursor ) return;
+
+    // Apply transactions silently — block signals
+    blockSignals( true );
+
+    if ( index < mCursor ) {
+        // Undo down to index
+        while ( mCursor > index ) {
+            undo();
+        }
+    } else {
+        // Redo up to index
+        while ( mCursor < index ) {
+            redo();
+        }
+    }
+
+    // Emit all signals once after all transactions are applied
+    blockSignals( false );
+    emit canUndoChanged();
+    emit canRedoChanged();
+    emit cursorChanged();
+    emit transactionApplied();
 }
 
 
@@ -56,6 +108,7 @@ void UndoStack::undo() {
     applyTransaction( mStack[ mCursor ], Direction::Undo );
     emit canUndoChanged();
     emit canRedoChanged();
+    emit cursorChanged();
 }
 
 

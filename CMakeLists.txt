@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.1.0 LANGUAGES CXX )
+project( Sigma VERSION 1.2.0 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -73,6 +73,7 @@ qt_add_qml_module( Sigma
         qml/DeleteInputParameterDialog.qml
         qml/DeleteOutputParameterDialog.qml
         qml/DiscardUnsavedChanges.qml
+        qml/UndoHistoryWindow.qml
         qml/FieldButton.qml
         qml/Fonts.qml
         qml/FormSubHeading.qml
@@ -165,6 +166,8 @@ qt_add_qml_module( Sigma
         src/uncertaintycalculation.h
         src/uncertaintycomponent.cpp
         src/uncertaintycomponent.h
+        src/undohistorymodel.cpp
+        src/undohistorymodel.h
         src/undostack.h src/undostack.cpp
         src/windowscaptionhelper.cpp
         src/windowscaptionhelper.h

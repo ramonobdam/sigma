@@ -13,7 +13,8 @@
 #include "modelcontrol.hpp"
 #include "outputparameter.h"
 #include "resultsmodel.h"
-#include <QAbstractItemModel>
+#include "undohistorymodel.h"
+#include <QAbstractTableModel>
 #include <QItemSelectionModel>
 #include <QJsonObject>
 #include <QLatin1StringView>
@@ -66,12 +67,13 @@ public:
     Q_INVOKABLE const QItemSelectionModel *correlationSelectionModel() const;
     Q_INVOKABLE const QItemSelectionModel *inputSelectionModel() const;
     Q_INVOKABLE const QItemSelectionModel *outputSelectionModel() const;
-    Q_INVOKABLE const QObject *correlationItemModel() const;
-    Q_INVOKABLE const QObject *inputItemModel() const;
-    Q_INVOKABLE const QObject *outputItemModel() const;
+    Q_INVOKABLE const QAbstractTableModel *correlationItemModel() const;
+    Q_INVOKABLE const QAbstractTableModel *inputItemModel() const;
+    Q_INVOKABLE const QAbstractTableModel *outputItemModel() const;
     Q_INVOKABLE const QStringListModel *distributionsModel() const;
     Q_INVOKABLE const QStringListModel *unitsModel() const;
     Q_INVOKABLE const ResultsModel *resultsItemModel() const;
+    Q_INVOKABLE const UndoHistoryModel *undoHistoryModel() const;
     Q_INVOKABLE void addCorrelation( const Correlation *correlation );
     Q_INVOKABLE void addInputParameter( const InputParameter *parameter );
     Q_INVOKABLE void addOutputParameter( const OutputParameter *parameter );
@@ -80,6 +82,7 @@ public:
     Q_INVOKABLE void removeCorrelation();
     Q_INVOKABLE void removeInputParameter();
     Q_INVOKABLE void removeOutputParameter();
+    Q_INVOKABLE void restoreState( int index );
     Q_INVOKABLE void runMonteCarlo();
     Q_INVOKABLE void stopMonteCarlo();
     Q_INVOKABLE void updateCorrelation( const Correlation *correlation );
@@ -184,6 +187,11 @@ public:
         READ getHistogramLowerIndex
         NOTIFY histogramValuesChanged
     )
+    Q_PROPERTY(
+        int undoCursor
+        READ getUndoCursor
+        NOTIFY undoCursorChanged
+    )
 
 public slots:
     void lockItemSelectionModels();
@@ -202,6 +210,7 @@ signals:
     void outputLockedChanged();
     void projectFilePathChanged();
     void resultsChanged();
+    void undoCursorChanged();
     void unsavedChangesChanged();
 
 private:
@@ -233,6 +242,7 @@ private:
     double getMonteCarloConvergenceFactor() const;
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
+    int getUndoCursor() const;
     void clearProject( bool unsavedChanges = true );
     void connectToOutputParameter( const OutputParameter *parameter);
     void createConnections();
@@ -314,6 +324,7 @@ private:
     QStringListModel mUnitsModel;
     QUrl mProjectFilePath;
     ResultsModel mResultsModel;
+    UndoHistoryModel mUndoHistoryModel;
     bool mUnsavedChanges;
 };
 

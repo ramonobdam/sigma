@@ -256,6 +256,8 @@ QtObject {
     property string buttonTextCancel: "Cancel"
     property string buttonTextClose: "Close"
     property string buttonTextOK: "OK"
+    property string buttonTextUndo: "Undo"
+    property string buttonTextRedo: "Redo"
     property string tipNewInputParameter: "Add new input parameter"
     property string tipNewOutputParameter: "Add new output parameter"
     property string tipEditInputParameter: "Edit selected input parameter"
