@@ -10,6 +10,7 @@
 #include "transaction.h"
 #include <QList>
 #include <QObject>
+#include <QString>
 
 // UndoStack singleton that stores transactions and can undo/redo them.
 // Undo/redo applies transactions by dispatching each JsonDiff to
@@ -22,11 +23,15 @@ class UndoStack : public QObject {
     Q_OBJECT
 
 public:
+    QString getLabelAt( int index ) const;
     bool canRedo() const;
     bool canUndo() const;
+    int getCursor() const;
+    int getStackSize() const;
     void clear();
     void pushTransaction( const Transaction &transaction );
     void redo();
+    void restoreState( int index );
     void undo();
 
     static UndoStack &instance();
@@ -34,6 +39,8 @@ public:
 signals:
     void canUndoChanged();
     void canRedoChanged();
+    void cursorChanged();
+    void stackSizeChanged();
     void transactionApplied();
 
 private:
