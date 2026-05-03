@@ -29,6 +29,7 @@ UncertaintyCalculation::UncertaintyCalculation(
         mDistributionModel { QStringListModel( this ) },
         mBudgetModel { BudgetModel( this ) },
         mResultsModel { ResultsModel ( this) },
+        mUndoHistoryModel { UndoHistoryModel( this ) },
         mUnits { sDefaultUnits },
         mProjectFilePath {},
         mUnsavedChanges {},
@@ -255,17 +256,17 @@ const QItemSelectionModel * UncertaintyCalculation::outputSelectionModel(
 }
 
 
-const QObject * UncertaintyCalculation::correlationItemModel() const {
+const QAbstractTableModel * UncertaintyCalculation::correlationItemModel() const {
     return Correlation::getCorrelationModel()->itemModel();
 }
 
 
-const QObject * UncertaintyCalculation::inputItemModel() const {
+const QAbstractTableModel * UncertaintyCalculation::inputItemModel() const {
     return InputParameter::getInputModel()->itemModel();
 }
 
 
-const QObject * UncertaintyCalculation::outputItemModel() const {
+const QAbstractTableModel * UncertaintyCalculation::outputItemModel() const {
     return OutputParameter::getOutputModel()->itemModel();
 }
 
@@ -282,6 +283,11 @@ const QStringListModel * UncertaintyCalculation::unitsModel() const {
 
 const ResultsModel * UncertaintyCalculation::resultsItemModel() const {
     return &mResultsModel;
+}
+
+
+const UndoHistoryModel * UncertaintyCalculation::undoHistoryModel() const {
+    return &mUndoHistoryModel;
 }
 
 
@@ -306,7 +312,7 @@ void UncertaintyCalculation::addCorrelation( const Correlation *correlation ) {
             }
 
             diffUtil.commitChanges(
-                "add correlation between " +
+                "Add correlation between " +
                 addedCorrelation->getInputParameterNameA() +
                 " & " +
                 addedCorrelation->getInputParameterNameB()
@@ -332,7 +338,7 @@ void UncertaintyCalculation::addInputParameter(
             recompileExpressions( diffUtil, true );
 
             diffUtil.commitChanges(
-                "add input parameter " + addedParameter->getName()
+                "Add input parameter " + addedParameter->getName()
             );
 
             setUnsavedChanges( true );
@@ -356,7 +362,7 @@ void UncertaintyCalculation::addOutputParameter(
             diffUtil.takeSnapshotOfNewObject( addedParameter );
 
             diffUtil.commitChanges(
-                "add output parameter " + addedParameter->getName()
+                "Add output parameter " + addedParameter->getName()
             );
 
             connectToOutputParameter( addedParameter );
@@ -409,7 +415,7 @@ void UncertaintyCalculation::removeCorrelation() {
                 }
 
                 diffUtil.commitChanges(
-                    "delete correlation between " + nameA + " & " + nameB
+                    "Delete correlation between " + nameA + " & " + nameB
                 );
 
                 setUnsavedChanges( true );
@@ -444,7 +450,7 @@ void UncertaintyCalculation::removeInputParameter() {
                 // InputParameter
                 recompileExpressions( diffUtil, false, id );
 
-                diffUtil.commitChanges( "delete input parameter " + name );
+                diffUtil.commitChanges( "Delete input parameter " + name );
 
                 setUnsavedChanges( true );
             }
@@ -464,7 +470,7 @@ void UncertaintyCalculation::removeOutputParameter() {
             // Store needed data before removal
             const QString name { parameter->getName() };
             if ( OutputParameter::remove( id ) ) {
-                diffUtil.commitChanges( "delete output parameter " + name );
+                diffUtil.commitChanges( "Delete output parameter " + name );
 
                 emitAllResultsChanged();
 
@@ -472,6 +478,10 @@ void UncertaintyCalculation::removeOutputParameter() {
             }
         }
     }
+}
+
+void UncertaintyCalculation::restoreState( int index ) {
+    UndoStack::instance().restoreState( index );
 }
 
 
@@ -539,7 +549,7 @@ void UncertaintyCalculation::updateCorrelation(
         }
 
         diffUtil.commitChanges(
-            "update correlation between " +
+            "Update correlation between " +
             originalNameA +
             " & " +
             originalNameB
@@ -580,7 +590,7 @@ void UncertaintyCalculation::updateInputParameter(
             recompileExpressions( diffUtil, true, id );
         }
 
-        diffUtil.commitChanges( "update input parameter " + originalName );
+        diffUtil.commitChanges( "Update input parameter " + originalName );
 
         setUnsavedChanges( true );
     }
@@ -618,7 +628,7 @@ void UncertaintyCalculation::updateOutputParameter(
         OutputParameter::update( id, &newParameter);
         emitAllResultsChanged();
 
-        diffUtil.commitChanges( "update output parameter " + originalName );
+        diffUtil.commitChanges( "Update output parameter " + originalName );
 
         setUnsavedChanges( true );
     }
@@ -647,7 +657,7 @@ void UncertaintyCalculation::userClearProject() {
         Correlation::remove( correlation->getId() );
     }
 
-    diffUtil.commitChanges( "clear project" );
+    diffUtil.commitChanges( "Clear project" );
 
     setUnsavedChanges( true );
 }
@@ -679,7 +689,7 @@ void UncertaintyCalculation::lockItemSelectionModels() {
 void UncertaintyCalculation::onMonteCarloFinished() {
     const OutputParameter *parameter { OutputParameter::getSelected() };
     QString name { parameter ? " " + parameter->getName() : "" };
-    mDiffUtil.commitChanges( "run monte carlo" + name );
+    mDiffUtil.commitChanges( "Run Monte Carlo simulation" + name );
 }
 
 
@@ -959,6 +969,11 @@ int UncertaintyCalculation::getHistogramLowerIndex() const {
 }
 
 
+int UncertaintyCalculation::getUndoCursor() const {
+    return UndoStack::instance().getCursor();
+}
+
+
 void UncertaintyCalculation::clearProject( bool unsavedChanges ) {
     OutputParameter::clearModel();
     Correlation::clearModel();
@@ -1067,6 +1082,12 @@ void UncertaintyCalculation::createConnections() {
         &UndoStack::canRedoChanged,
         this,
         &UncertaintyCalculation::canRedoChanged
+    );
+    connect(
+        &UndoStack::instance(),
+        &UndoStack::cursorChanged,
+        this,
+        &UncertaintyCalculation::undoCursorChanged
     );
 
     // Create connection to the application settings
