@@ -156,6 +156,10 @@ ApplicationWindow {
         aboutWindow.show()
     }
 
+    function openUndoHistory() {
+        undoHistoryWindow.show()
+    }
+
     function undo() {
         calculation.undo()
     }
@@ -400,17 +404,26 @@ ApplicationWindow {
                 implicitWidth: 230
 
                 SigmaMenuBarMenuItem {
-                    text: "Undo"
+                    text: Properties.buttonTextUndo
                     shortcut: StandardKey.Undo
                     enabled: Properties.canUndo
                     onTriggered: { undo() }
                 }
 
                 SigmaMenuBarMenuItem {
-                    text: "Redo"
+                    text: Properties.buttonTextRedo
                     shortcut: StandardKey.Redo
                     enabled: Properties.canRedo
                     onTriggered: { redo() }
+                }
+
+                ContextMenuRule {}
+
+                SigmaMenuBarMenuItem {
+                    text: "Undo history..."
+                    shortcut: "Ctrl+Shift+H"
+                    enabled: !Properties.outputLocked
+                    onTriggered: { openUndoHistory() }
                 }
 
                 ContextMenuRule {}
@@ -684,16 +697,10 @@ ApplicationWindow {
                             model: calculation.inputItemModel()
                             selectionModel: calculation.inputSelectionModel()
                             headerDelegate: HeaderDelegate {
-                                columnWidthProvider:
-                                    function( column ) {
-                                        return getInputColumnWidth( column )
-                                    }
+                                columnWidthProvider: window.getInputColumnWidth
                             }
                             delegate: DefaultTableDelegate {
-                                columnWidthProvider:
-                                    function( column ) {
-                                        return getInputColumnWidth( column )
-                                    }
+                                columnWidthProvider: window.getInputColumnWidth
                                 TableView.editDelegate: Component {
                                     Item {
                                         Component.onCompleted:
@@ -776,19 +783,13 @@ ApplicationWindow {
                                 // (in)valid icon
                                 useValid: column === 0
 
-                                columnWidthProvider:
-                                    function( column ) {
-                                        return getOutputColumnWidth( column )
-                                }
+                                columnWidthProvider: window.getOutputColumnWidth
                             }
                             delegate: DefaultTableDelegate {
                                 // The first column table delegate shows the
                                 // (in)valid icon
                                 useValid: column === 0
-                                columnWidthProvider:
-                                    function( column ) {
-                                        return getOutputColumnWidth( column )
-                                    }
+                                columnWidthProvider: window.getOutputColumnWidth
                                 TableView.editDelegate: Component {
                                     Item {
                                         Component.onCompleted:
@@ -842,16 +843,10 @@ ApplicationWindow {
                         model: calculation.resultsItemModel()
                         delegate: DefaultTableDelegate {
                             enableHover: false
-                            columnWidthProvider:
-                                function( column ) {
-                                    return getResultsColumnWidth( column )
-                                }
+                            columnWidthProvider: window.getResultsColumnWidth
                         }
                         headerDelegate: HeaderDelegate {
-                            columnWidthProvider:
-                                function( column ) {
-                                    return getResultsColumnWidth( column )
-                                }
+                            columnWidthProvider: window.getResultsColumnWidth
                         }
                         extra: "Export results to CSV file..."
                         onExtraRequested: { openCSV() }
@@ -888,16 +883,11 @@ ApplicationWindow {
                             useScale:
                                 column === budgetTable.tableView.columns - 1
                             enableHover: false
-                            columnWidthProvider:
-                                function( column ) {
-                                    return window.getBudgetColumnWidth( column )
-                                }
+                            columnWidthProvider: window.getBudgetColumnWidth
                         }
                         headerDelegate: HeaderDelegate {
-                            columnWidthProvider:
-                                function( column ) {
-                                    return window.getBudgetColumnWidth( column )
-                                }
+                            columnWidthProvider: window.getBudgetColumnWidth
+
                         }
                         extra: "Export results to CSV file..."
                         onExtraRequested: { openCSV() }
@@ -1228,6 +1218,10 @@ ApplicationWindow {
 
     AboutWindow {
         id: aboutWindow
+    }
+
+    UndoHistoryWindow {
+        id: undoHistoryWindow
     }
 
     ProjectDialog {
