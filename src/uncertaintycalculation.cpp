@@ -314,7 +314,7 @@ void UncertaintyCalculation::addCorrelation( const Correlation *correlation ) {
             diffUtil.commitChanges(
                 "Add correlation between " +
                 addedCorrelation->getInputParameterNameA() +
-                " & " +
+                " and " +
                 addedCorrelation->getInputParameterNameB()
             );
 
@@ -415,7 +415,7 @@ void UncertaintyCalculation::removeCorrelation() {
                 }
 
                 diffUtil.commitChanges(
-                    "Delete correlation between " + nameA + " & " + nameB
+                    "Delete correlation between " + nameA + " and " + nameB
                 );
 
                 setUnsavedChanges( true );
@@ -551,7 +551,7 @@ void UncertaintyCalculation::updateCorrelation(
         diffUtil.commitChanges(
             "Update correlation between " +
             originalNameA +
-            " & " +
+            " and " +
             originalNameB
         );
 
