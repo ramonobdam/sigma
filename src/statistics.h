@@ -9,7 +9,9 @@
 #include <vector>
 
 // The Statistics class stores samples and determines the statistics of the set.
-// The samples can also be binned in a histogram.
+// The samples can also be binned in a histogram. To improve performance, the
+// statistics are calculated lazily only when requested and the stored
+// statistics are no longer valid because the data set has changed.
 class Statistics {
 
 public:
@@ -18,30 +20,41 @@ public:
         const std::vector<double> &q = std::vector<double>()
     );
 
-    const QList<double> &getHistogramValues() const;
-    double getHigherBound() const;
-    double getHistogramXMax() const;
-    double getHistogramXMin() const;
-    double getHistogramYMax() const;
-    double getLowerBound() const;
-    double getMean() const;
+    const QList<double> &getHistogramValues();
+    double getHigherBound();
+    double getHistogramXMax();
+    double getHistogramXMin();
+    double getHistogramYMax();
+    double getLowerBound();
+    double getMean();
     double getP() const;
-    double getStdDev() const;
-    double getStdDevOfTheMean() const;
-    int getHistogramHigherIndex() const;
-    int getHistogramLowerIndex() const;
+    double getStdDev();
+    double getStdDevOfTheMean();
+    int getHistogramHigherIndex();
+    int getHistogramLowerIndex();
     int getNumberOfSamples() const;
     const std::vector<double> &getSamples() const;
     void addSample( double sample );
     void addSamples( const std::vector<double> &q );
-    void calculate( bool calculateHistogram = false );
     void clearSamples();
     void setP( double p );
 
 private:
     static constexpr int sNumBins { 71 };
 
+    void calculateBounds();
+    void calculateHistogram();
+    void calculateMeanAndStdDevs();
+    void resetBounds();
+    void resetHistogram();
+    void resetMeanAndStdDevs();
+    void sortSamples();
+
     QList<double> mHistogramValues;
+    bool mBoundsCalculated;
+    bool mHistogramCalculated;
+    bool mStdDevsCalculated;
+    bool mSamplesSorted;
     double mHigherBound;
     double mHistogramXMax;
     double mHistogramXMin;

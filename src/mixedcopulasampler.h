@@ -15,7 +15,10 @@ class OutputParameter;
 
 // Class that generates samples for correlated marginal distributions via
 // inverse CDFs. Dependence is modeled in a latent normal space and mapped to
-// the marginals through a Gaussian copula.
+// the marginals through a Gaussian copula in setRandomSymbolValues():
+// z ~ N(0,I) -> y = L·z ~ N(0,ρ) -> u = Φ(y) ~ Uniform -> x = F⁻¹(u) ~ Target
+// independent   correlated          correlated            correlated with
+// normals       normals             uniforms              correct marginals
 class MixedCopulaSampler {
 
 public:
