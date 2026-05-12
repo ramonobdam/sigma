@@ -7,6 +7,8 @@
 #include "outputparameter.h"
 #include "settings.h"
 #include "stringutils.h"
+#include <QDebug>
+#include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QLocale>
@@ -14,6 +16,8 @@
 #include <numeric>
 #include <vector>
 
+// Print Monte Carlo simulation timing values to console
+#define PRINT_MONTECARLO_TIMING 0   // 0 = off, 1 = on
 
 MonteCarlo::MonteCarlo( OutputParameter *outputParameter, QObject *parent )
     :   QThread { parent },
@@ -286,6 +290,16 @@ void MonteCarlo::resetResults() {
 
 void MonteCarlo::run() {
     if ( mOutputParameter ) {
+#if PRINT_MONTECARLO_TIMING
+        qDebug() << "Start Monte Carlo simulation";
+        qint64 tEvaluate {};
+        qint64 tStats {};
+        QElapsedTimer timer {};
+        QElapsedTimer startTimer {};
+        timer.start();
+        startTimer.start();
+#endif
+
         expression_t expression {};
         expression.register_symbol_table( InputParameter::symbolTable );
         if ( OutputParameter::parser.compile(
@@ -332,13 +346,17 @@ void MonteCarlo::run() {
             setValid( true );
             while (
                 !converged &&
-                !getRequestStop() &&
+                !mRequestStop &&
                 getValid() &&
                 h <= hMax
             ) {
                 // Perform a batch of M function evaluations for random values
                 // of the input parameters (i.e. components)
                 statBatch.clearSamples();
+
+#if PRINT_MONTECARLO_TIMING
+                timer.restart();
+#endif
                 for ( int i { 0 }; i < M; ++i ) {
                     mOutputParameter->setRandomSymbolValues();
                     double value { expression.value() };
@@ -352,23 +370,24 @@ void MonteCarlo::run() {
                         break;
                     }
                 }
-                if ( getValid() && !getRequestStop() ) {
-                    // Calculate the statistics of this batch and add them to
-                    // their respective general Statistics objects
-                    statBatch.calculate();
-                    statMean.addSample( statBatch.getMean() );
-                    statStdDev.addSample( statBatch.getStdDev() );
+
+#if PRINT_MONTECARLO_TIMING
+                // Time needed for function evaluations
+                qint64 dt { timer.restart() };
+                tEvaluate += dt;
+#endif
+
+                if ( getValid() && !mRequestStop ) {
+                    // Add the statistics of this batch to their respective
+                    // general Statistics objects
                     statLowerBound.addSample( statBatch.getLowerBound() );
                     statHigherBound.addSample( statBatch.getHigherBound() );
+                    statMean.addSample( statBatch.getMean() );
+                    statStdDev.addSample( statBatch.getStdDev() );
 
-                    if ( h > 0 && !getRequestStop() ) {
-                        // Calculate statistics across the batches
-                        statMean.calculate();
-                        statStdDev.calculate();
-                        statLowerBound.calculate();
-                        statHigherBound.calculate();
+                    if ( h > 0 && !mRequestStop ) {
+                        // Statistics across the all batches
                         mOutputStat.addSamples( statBatch.getSamples() );
-                        mOutputStat.calculate();
                         stdDevAllSamples = mOutputStat.getStdDev();
 
                         // Determine the new convergence factor
@@ -402,7 +421,15 @@ void MonteCarlo::run() {
                         else if ( new_factor > getConvergenceFactor() ) {
                             setConvergenceFactor( new_factor );
                         }
+
+#if PRINT_MONTECARLO_TIMING
+                        // Time needed to determine batch statistics
+                        qint64 dt { timer.restart() };
+                        tStats += dt;
+#endif
                     }
+
+
                     if ( !converged ) {
                         // Not converged yet, perform another batch
                         ++h;
@@ -410,13 +437,17 @@ void MonteCarlo::run() {
                 }
             }
             // Simulation is finished, calculate the results and set the status
+
+#if PRINT_MONTECARLO_TIMING
+            qDebug() << "Batches finished after"
+                     << startTimer.elapsed()
+                     << "ms";
+#endif
+
             if ( getValid() ) {
                 int numSamples { mOutputStat.getNumberOfSamples() };
                 if ( converged ) {
-                    // Calculate and store the statistics across all samples
-                    mOutputStat.calculate( true );
-                    setMean( mOutputStat.getMean() );
-                    setStdDeviation( mOutputStat.getStdDev() );
+                    // Store the statistics across all samples
                     setLowerBound( mOutputStat.getLowerBound() );
                     setHigherBound( mOutputStat.getHigherBound() );
                     setHistogramValues( mOutputStat.getHistogramValues() );
@@ -429,11 +460,13 @@ void MonteCarlo::run() {
                     setHistogramHigherIndex (
                         mOutputStat.getHistogramHigherIndex()
                     );
+                    setMean( mOutputStat.getMean() );
+                    setStdDeviation( mOutputStat.getStdDev() );
                     setStatus(
                         sConvergedString.arg( QLocale().toString( numSamples ) )
                     );
                 }
-                else if ( getRequestStop() ) {
+                else if ( mRequestStop ) {
                     // The simulation was stopped by the user
                     setValid( false );
                     setStatus(
@@ -477,6 +510,19 @@ void MonteCarlo::run() {
             setRequestStop( false );
             mOutputParameter->setLocked( false );
             mMutex.unlock();
+
+#if PRINT_MONTECARLO_TIMING
+            double tTotal = startTimer.elapsed();
+            qDebug() << "Total time:" << tTotal << "ms";
+            qDebug() << "Function evaluation time:"
+                     << tEvaluate << "ms"
+                     << tEvaluate / tTotal * 100
+                     << "%";
+            qDebug() << "Statistics calculation time:"
+                     << tStats << "ms"
+                     << tStats / tTotal * 100
+                     << "%\n";
+#endif
         }
     }
 }
