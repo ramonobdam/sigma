@@ -27,17 +27,21 @@ void MixedCopulaSampler::addVariable( Distribution::InvCDF invCDF ) {
     mVariables.emplace_back( std::move( invCDF ) );
 }
 
+
 void MixedCopulaSampler::clear(){
     mReady = false;
     mVariables.clear();
-    mL = Eigen::MatrixXd();
+    mL = {};
 }
 
 
 void MixedCopulaSampler::setLatentCorrelation( const Eigen::MatrixXd &rho ) {
+    // Cholesky decomposition of the correlation matrix and store the Cholesky
+    // factor L: Lower triangular matrix L, such that rho = L * LT
     Eigen::LLT<Eigen::MatrixXd> llt( rho );
     if ( llt.info() != Eigen::Success ) {
-        // Latent correlation matrix not positive definite
+        // Decomponsition failed; latent correlation matrix not positive
+        // definite
         mReady = false;
         return;
     }
@@ -52,19 +56,26 @@ void MixedCopulaSampler::setRandomSymbolValues() const {
     if ( n > 0 && mL.rows() == n && mOutputParameter && mReady ) {
         static std::normal_distribution<> N01( 0., 1. );
 
-        // Step 1: latent correlated normal
+        // Step 1: Multivariate normal sampling via Cholesky factor
         Eigen::VectorXd z( n );
-        for (int i = 0; i < n; ++i) {
+        for ( int i = 0; i < n; ++i ) {
+            // Independent standard normal samples
             z( i ) = N01( sGenerator );
         }
-        Eigen::VectorXd y = mL * z;
+        // mL * z introduces correlation structure, producing correlated normal
+        // samples
+        Eigen::VectorXd y { mL * z };
 
-        // Step 2: inverse CDF mapping
+        // Step 2: Mapping to actual marginals via Gaussian Copula
         QList<UncertaintyComponent> components {
             mOutputParameter->getComponents()
         };
         for ( int i { 0 }; i < components.size() && i < n; ++i ) {
+            // Map correlated normal to uniform samples (applying any CDF to its
+            // own distribution gives a uniform distribution)
             double u { Distribution::normalCDF( y( i ) ) };
+            // Apply the inverse CDF of the variable distribution to produce a
+            // sample from that distribution
             components[ i ].setSymbolValue( mVariables[ i ]( u ) );
         }
     }
