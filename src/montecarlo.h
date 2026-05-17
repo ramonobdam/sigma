@@ -121,9 +121,6 @@ private:
     static constexpr QLatin1StringView sConvergedString {
         "Converged after %L1 function evaluations"
     };
-    static constexpr QLatin1StringView sInvalidOutputString {
-        "Invalid output value for input parameter values: "
-    };
     static constexpr QLatin1StringView sMonteCarloRunning {
         "Monte Carlo Simulation running"
     };

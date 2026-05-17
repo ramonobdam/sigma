@@ -5,15 +5,19 @@
 #include "third_party/exprtk/exprtk.hpp"
 #include "montecarlo.h"
 #include "outputparameter.h"
+#include "samplebatch.h"
 #include "settings.h"
 #include "stringutils.h"
 #include <QDebug>
 #include <QElapsedTimer>
+#include <QFuture>
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QLocale>
+#include <QtConcurrentMap>
 #include <cmath>
 #include <numeric>
+#include <random>
 #include <vector>
 
 // Print Monte Carlo simulation timing values to console
@@ -288,6 +292,7 @@ void MonteCarlo::resetResults() {
     mOutputStat.clearSamples();
 }
 
+
 void MonteCarlo::run() {
     if ( mOutputParameter ) {
 #if PRINT_MONTECARLO_TIMING
@@ -299,231 +304,228 @@ void MonteCarlo::run() {
         timer.start();
         startTimer.start();
 #endif
+        int nThreads { QThread::idealThreadCount() };
 
-        expression_t expression {};
-        expression.register_symbol_table( InputParameter::symbolTable );
-        if ( OutputParameter::parser.compile(
-                mOutputParameter->getFormulaStdWString(),
-                expression
-             )
-        ) {
-            // The object and the OutputParameter are locked first
-            mMutex.lock();
-            mOutputParameter->setLocked( true );
+        // The object and the OutputParameter are locked first
+        mMutex.lock();
+        mOutputParameter->setLocked( true );
 
-            // Settings are stored localy to make sure they don't change during
-            // the simulation
-            int hMax { Settings::getMonteCarloMaxNumOfBatches() };
-            int maxBatchSize { Settings::getMonteCarloBatchSize() };
-            int monteCarloDigits { Settings::getMonteCarloDigits() };
+        // Settings are stored localy to make sure they don't change during the
+        // simulation
+        int hMax { Settings::getMonteCarloMaxNumOfBatches() };
+        int maxBatchSize { Settings::getMonteCarloBatchSize() };
+        int monteCarloDigits { Settings::getMonteCarloDigits() };
 
-            // Reset the status, results and the random value generator
-            resetResults();
-            setStatus( sMonteCarloRunning );
-            MixedCopulaSampler::resetGenerator();
+        // Reset the status and the results
+        resetResults();
+        setStatus( sMonteCarloRunning );
 
-            // Get the confidence and create the Statistics objects accordingly
-            double p { mOutputParameter->getConfidence() };
-            mOutputStat.setP( p );
-            Statistics statBatch { Statistics( p ) };
-            Statistics statMean { Statistics( p ) };
-            Statistics statStdDev { Statistics( p ) };
-            Statistics statLowerBound { Statistics( p ) };
-            Statistics statHigherBound { Statistics( p ) };
+        // Get the confidence and create the Statistics objects accordingly
+        const double p { mOutputParameter->getConfidence() };
+        mOutputStat.setP( p );
+        Statistics statBatch { Statistics( p ) };
+        Statistics statMean { Statistics( p ) };
+        Statistics statStdDev { Statistics( p ) };
+        Statistics statLowerBound { Statistics( p ) };
+        Statistics statHigherBound { Statistics( p ) };
 
-            // In accordance to the GUM, the batch size M is set based on
-            // maxBatchSize and the confidence p
-            int M { std::max(
-                        maxBatchSize,
-                        static_cast<int> ( std::lround( 100 / ( 1 - p ) ) )
-                    )
-            };
+        // In accordance to the GUM, the batch size M is set based on
+        // maxBatchSize and the confidence p
+        int M { std::max(
+                maxBatchSize,
+                static_cast<int> ( std::lround( 100 / ( 1 - p ) ) )
+                )
+        };
+        statBatch.reserveCapacity( M );
 
-            // Loop on the batches
-            int h { 0 };
-            bool converged { false };
-            double stdDevAllSamples {};
-            setValid( true );
-            while (
-                !converged &&
-                !mRequestStop &&
-                getValid() &&
-                h <= hMax
-            ) {
-                // Perform a batch of M function evaluations for random values
-                // of the input parameters (i.e. components)
-                statBatch.clearSamples();
+        // Loop on the batches
+        int h { 0 };
+        bool converged { false };
+        double stdDevAllSamples {};
+        mValid = true;
 
-#if PRINT_MONTECARLO_TIMING
-                timer.restart();
-#endif
-                for ( int i { 0 }; i < M; ++i ) {
-                    mOutputParameter->setRandomSymbolValues();
-                    double value { expression.value() };
-                    if ( std::isfinite( value ) ) {
-                        // Sample is valid, add to batch
-                        statBatch.addSample( value );
-                    }
-                    else {
-                        // Sample is invalid, stop the simulation
-                        setValid( false );
-                        break;
-                    }
-                }
+        // Split the batches into nThreads sub-batches
+        QList<int> subBatchIndices {};
+        QList<int> subBatchSizes {};
 
-#if PRINT_MONTECARLO_TIMING
-                // Time needed for function evaluations
-                qint64 dt { timer.restart() };
-                tEvaluate += dt;
-#endif
-
-                if ( getValid() && !mRequestStop ) {
-                    // Add the statistics of this batch to their respective
-                    // general Statistics objects
-                    statLowerBound.addSample( statBatch.getLowerBound() );
-                    statHigherBound.addSample( statBatch.getHigherBound() );
-                    statMean.addSample( statBatch.getMean() );
-                    statStdDev.addSample( statBatch.getStdDev() );
-
-                    if ( h > 0 && !mRequestStop ) {
-                        // Statistics across the all batches
-                        mOutputStat.addSamples( statBatch.getSamples() );
-                        stdDevAllSamples = mOutputStat.getStdDev();
-
-                        // Determine the new convergence factor
-                        std::vector<double> factors {};
-                        factors.push_back( statMean.getStdDevOfTheMean() );
-                        factors.push_back( statStdDev.getStdDevOfTheMean() );
-                        factors.push_back(
-                            statLowerBound.getStdDevOfTheMean()
-                        );
-                        factors.push_back(
-                            statHigherBound.getStdDevOfTheMean()
-                        );
-                        double max { *std::max_element(
-                                        factors.begin(),
-                                        factors.end()
-                                      )
-                        };
-                        calculateNumericalTolerance(
-                            stdDevAllSamples,
-                            monteCarloDigits
-                        );
-                        double new_factor {
-                            getNumericalTolerance() /
-                            sNumericalToleranceFactor /
-                            ( 2. * max )
-                        };
-                        if ( new_factor >= 1. ) {
-                            converged = true;
-                            setConvergenceFactor( 1. );
-                        }
-                        else if ( new_factor > getConvergenceFactor() ) {
-                            setConvergenceFactor( new_factor );
-                        }
-
-#if PRINT_MONTECARLO_TIMING
-                        // Time needed to determine batch statistics
-                        qint64 dt { timer.restart() };
-                        tStats += dt;
-#endif
-                    }
-
-
-                    if ( !converged ) {
-                        // Not converged yet, perform another batch
-                        ++h;
-                    }
-                }
-            }
-            // Simulation is finished, calculate the results and set the status
-
-#if PRINT_MONTECARLO_TIMING
-            qDebug() << "Batches finished after"
-                     << startTimer.elapsed()
-                     << "ms";
-#endif
-
-            if ( getValid() ) {
-                int numSamples { mOutputStat.getNumberOfSamples() };
-                if ( converged ) {
-                    // Store the statistics across all samples
-                    setLowerBound( mOutputStat.getLowerBound() );
-                    setHigherBound( mOutputStat.getHigherBound() );
-                    setHistogramValues( mOutputStat.getHistogramValues() );
-                    setHistogramXMin ( mOutputStat.getHistogramXMin() );
-                    setHistogramXMax ( mOutputStat.getHistogramXMax() );
-                    setHistogramYMax ( mOutputStat.getHistogramYMax() );
-                    setHistogramLowerIndex (
-                        mOutputStat.getHistogramLowerIndex()
-                    );
-                    setHistogramHigherIndex (
-                        mOutputStat.getHistogramHigherIndex()
-                    );
-                    setMean( mOutputStat.getMean() );
-                    setStdDeviation( mOutputStat.getStdDev() );
-                    setStatus(
-                        sConvergedString.arg( QLocale().toString( numSamples ) )
-                    );
-                }
-                else if ( mRequestStop ) {
-                    // The simulation was stopped by the user
-                    setValid( false );
-                    setStatus(
-                        sStoppedString.arg( QLocale().toString( numSamples ) )
-                    );
-                }
-                else {
-                    // The simulation didn't converge
-                    setValid( false );
-                    setStatus(
-                        sNotConvergedString.arg(
-                            QLocale().toString( numSamples )
-                        )
-                    );
-                }
+        for ( int i { 0 }; i < nThreads; ++i ) {
+            subBatchIndices.append( i );
+            if ( i < nThreads - 1 ) {
+                subBatchSizes.append( M / nThreads );
             }
             else {
-                // An invalid output value was detected
-                QStringList inputValues {};
-                QList<UncertaintyComponent> components {
-                    mOutputParameter->getComponents()
-                };
-                for ( UncertaintyComponent &component : components ) {
-                    QString var {
-                        component.getName() +
-                        " = " +
-                        StringUtils::doubleToString(
-                            component.getSymbolValue(),
-                            Settings::getDisplayPrecision()
-                        )
-                    };
-                    inputValues.append( var );
-                }
-                setStatus( sInvalidOutputString + inputValues.join( ", " ) );
+                // Put the remainder in the last batch
+                subBatchSizes.append( M - ( M / nThreads ) * i );
             }
+        }
 
-            // Remove the sample data, set the values in the symbol table back
-            // to nominal and release the locks
-            mOutputStat.clearSamples();
-            mOutputParameter->resetSymbolValues();
-            setRequestStop( false );
-            mOutputParameter->setLocked( false );
-            mMutex.unlock();
+        while ( !converged && !mRequestStop && mValid && h <= hMax ) {
+            // Perform a batch of M function evaluations for random values
+            // of the input parameters (i.e. components)
+            statBatch.clearSamples();
 
 #if PRINT_MONTECARLO_TIMING
-            double tTotal = startTimer.elapsed();
-            qDebug() << "Total time:" << tTotal << "ms";
-            qDebug() << "Function evaluation time:"
-                     << tEvaluate << "ms"
-                     << tEvaluate / tTotal * 100
-                     << "%";
-            qDebug() << "Statistics calculation time:"
-                     << tStats << "ms"
-                     << tStats / tTotal * 100
-                     << "%\n";
+            timer.restart();
 #endif
+            // Generate random seed sequence
+            std::vector<uint32_t> randomSeeds( nThreads );
+            std::seed_seq seq { static_cast<uint32_t>( h ) };
+            seq.generate( randomSeeds.begin(), randomSeeds.end() );
+
+            // Create sub-batches in parallel
+            QFuture<std::vector<double>> future = QtConcurrent::mapped(
+                subBatchIndices,
+                [ & ]( int subBatchIndex ) {
+                    SampleBatch subBatch {
+                        mOutputParameter,
+                        subBatchSizes[ subBatchIndex ],
+                        randomSeeds[ subBatchIndex ]
+                    };
+                    if ( !subBatch.generateSamples() ) {
+                        mValid = false;
+                        setStatus( subBatch.getError() );
+                    }
+                    return subBatch.getSamples();
+                }
+            );
+            future.waitForFinished();
+
+            // Combine sub-batch results
+            if ( mValid ) {
+                for ( int i { 0 }; i < future.resultCount(); ++i ) {
+                    statBatch.addSamples( future.resultAt( i ) );
+                }
+            }
+#if PRINT_MONTECARLO_TIMING
+            // Total time needed for function evaluations and storage
+            tEvaluate += timer.restart();
+#endif
+
+            if ( mValid && !mRequestStop ) {
+                // Add the statistics of this batch to their respective
+                // general Statistics objects
+                statLowerBound.addSample( statBatch.getLowerBound() );
+                statHigherBound.addSample( statBatch.getHigherBound() );
+                statMean.addSample( statBatch.getMean() );
+                statStdDev.addSample( statBatch.getStdDev() );
+
+                if ( h > 0 && !mRequestStop ) {
+                    // Statistics across the all batches
+                    mOutputStat.addSamples( statBatch.getSamples() );
+                    stdDevAllSamples = mOutputStat.getStdDev();
+
+                    // Determine the new convergence factor
+                    std::vector<double> factors {};
+                    factors.push_back( statMean.getStdDevOfTheMean() );
+                    factors.push_back( statStdDev.getStdDevOfTheMean() );
+                    factors.push_back(
+                        statLowerBound.getStdDevOfTheMean()
+                    );
+                    factors.push_back(
+                        statHigherBound.getStdDevOfTheMean()
+                    );
+                    double max { *std::max_element(
+                                    factors.begin(),
+                                    factors.end()
+                                  )
+                    };
+                    calculateNumericalTolerance(
+                        stdDevAllSamples,
+                        monteCarloDigits
+                    );
+                    double new_factor {
+                        getNumericalTolerance() /
+                        sNumericalToleranceFactor /
+                        ( 2. * max )
+                    };
+                    if ( new_factor >= 1. ) {
+                        converged = true;
+                        setConvergenceFactor( 1. );
+                    }
+                    else if ( new_factor > getConvergenceFactor() ) {
+                        setConvergenceFactor( new_factor );
+                    }
+
+#if PRINT_MONTECARLO_TIMING
+                    // Time needed to determine batch statistics
+                    tStats += timer.restart();
+#endif
+                }
+
+
+                if ( !converged ) {
+                    // Not converged yet, perform another batch
+                    ++h;
+                }
+            }
         }
+        // Simulation is finished, calculate the results and set the status
+
+#if PRINT_MONTECARLO_TIMING
+        qDebug() << "Batches finished after"
+                 << startTimer.elapsed()
+                 << "ms";
+#endif
+
+        if ( mValid ) {
+            int numSamples { mOutputStat.getNumberOfSamples() };
+            if ( converged ) {
+                // Store the statistics across all samples
+                setLowerBound( mOutputStat.getLowerBound() );
+                setHigherBound( mOutputStat.getHigherBound() );
+                setHistogramValues( mOutputStat.getHistogramValues() );
+                setHistogramXMin ( mOutputStat.getHistogramXMin() );
+                setHistogramXMax ( mOutputStat.getHistogramXMax() );
+                setHistogramYMax ( mOutputStat.getHistogramYMax() );
+                setHistogramLowerIndex (
+                    mOutputStat.getHistogramLowerIndex()
+                );
+                setHistogramHigherIndex (
+                    mOutputStat.getHistogramHigherIndex()
+                );
+                setMean( mOutputStat.getMean() );
+                setStdDeviation( mOutputStat.getStdDev() );
+                setStatus(
+                    sConvergedString.arg( QLocale().toString( numSamples ) )
+                );
+            }
+            else if ( mRequestStop ) {
+                // The simulation was stopped by the user
+                mValid = false;
+                setStatus(
+                    sStoppedString.arg( QLocale().toString( numSamples ) )
+                );
+            }
+            else {
+                // The simulation didn't converge
+                mValid = false;
+                setStatus(
+                    sNotConvergedString.arg(
+                        QLocale().toString( numSamples )
+                    )
+                );
+            }
+        }
+
+        // Remove the sample data and release the locks
+        mOutputStat.clearSamples();
+        mRequestStop = false;
+        mOutputParameter->setLocked( false );
+        mMutex.unlock();
+        emit monteCarloStatusChanged();
+
+#if PRINT_MONTECARLO_TIMING
+        double tTotal { static_cast<double> ( startTimer.elapsed() ) };
+        qDebug() << "Total time:" << tTotal << "ms";
+        qDebug() << "Function evaluation time:"
+                 << tEvaluate << "ms |"
+                 << tEvaluate / tTotal * 100
+                 << "%";
+        qDebug() << "Statistics calculation time:"
+                 << tStats << "ms |"
+                 << tStats / tTotal * 100
+                 << "%\n";
+#endif
     }
 }
 
