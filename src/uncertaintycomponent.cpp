@@ -273,6 +273,11 @@ int UncertaintyComponent::getDOF() const {
 }
 
 
+std::wstring UncertaintyComponent::getNameStdWString() const {
+    return mInputParameter ? mInputParameter->getNameStdWString() : L"";
+}
+
+
 void UncertaintyComponent::addCorrelatedComponent(
     UncertaintyComponent *component
 ) {
