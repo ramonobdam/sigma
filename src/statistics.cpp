@@ -127,11 +127,16 @@ void Statistics::clearSamples() {
     resetBounds();
     resetHistogram();
 
-    // No need to calculate when there are no samples:
+    // No need to calculate or sort when there are no samples:
     mBoundsCalculated = true;
     mHistogramCalculated = true;
     mStdDevsCalculated = true;
     mSamplesSorted = true;
+}
+
+
+void Statistics::reserveCapacity( size_t n ) {
+    mQ.reserve( n );
 }
 
 
@@ -312,6 +317,4 @@ void Statistics::sortSamples() {
 
     std::sort( mQ.begin(), mQ.end() );
     mSamplesSorted = true;
-    // Different order can produce small numerical differences
-    mStdDevsCalculated = false;
 }
