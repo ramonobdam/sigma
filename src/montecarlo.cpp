@@ -2,7 +2,6 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
-#include "third_party/exprtk/exprtk.hpp"
 #include "montecarlo.h"
 #include "outputparameter.h"
 #include "samplebatch.h"
@@ -16,7 +15,6 @@
 #include <QLocale>
 #include <QtConcurrentMap>
 #include <cmath>
-#include <numeric>
 #include <random>
 #include <vector>
 
@@ -340,8 +338,10 @@ void MonteCarlo::run() {
 
         // Loop on the batches
         int h { 0 };
+        int nSamples { 0 };
         bool converged { false };
-        double stdDevAllSamples {};
+        double meanAllSamples { 0. };
+        double stdDevAllSamples { 0. };
         mValid = true;
 
         // Split the batches into nThreads sub-batches
@@ -410,9 +410,36 @@ void MonteCarlo::run() {
                 statStdDev.addSample( statBatch.getStdDev() );
 
                 if ( h > 0 && !mRequestStop ) {
-                    // Statistics across the all batches
+                    // Statistics across all the batches
                     mOutputStat.addSamples( statBatch.getSamples() );
-                    stdDevAllSamples = mOutputStat.getStdDev();
+
+                    // Calculate the Combined (Pooled) Variance and stdDev based
+                    // on the statistics of the previous total set of samples
+                    // and the new batch. This is faster than repeatedly
+                    // calculating the stdDev for all samples.
+                    double varianceAllSamples {
+                        (
+                            ( nSamples - 1 ) * std::pow( stdDevAllSamples, 2 ) +
+                            ( M - 1 ) * std::pow( statBatch.getStdDev(), 2 ) +
+                            ( nSamples * M ) / ( nSamples + M ) *
+                            std::pow( meanAllSamples - statBatch.getMean(), 2 )
+                        )
+                        /
+                        ( nSamples + M - 1 )
+                    };
+                    stdDevAllSamples = std::sqrt( varianceAllSamples );
+
+                    // Calculate the new mean based on the previous mean and the
+                    // number of samples
+                    meanAllSamples =
+                        (
+                            nSamples * meanAllSamples +
+                            M * statBatch.getMean()
+                        )
+                        /
+                        ( nSamples + M );
+                    // Calculate the new total number of samples
+                    nSamples += M;
 
                     // Determine the new convergence factor
                     std::vector<double> factors {};
@@ -468,7 +495,6 @@ void MonteCarlo::run() {
 #endif
 
         if ( mValid ) {
-            int numSamples { mOutputStat.getNumberOfSamples() };
             if ( converged ) {
                 // Store the statistics across all samples
                 setLowerBound( mOutputStat.getLowerBound() );
@@ -486,14 +512,14 @@ void MonteCarlo::run() {
                 setMean( mOutputStat.getMean() );
                 setStdDeviation( mOutputStat.getStdDev() );
                 setStatus(
-                    sConvergedString.arg( QLocale().toString( numSamples ) )
+                    sConvergedString.arg( QLocale().toString( nSamples ) )
                 );
             }
             else if ( mRequestStop ) {
                 // The simulation was stopped by the user
                 mValid = false;
                 setStatus(
-                    sStoppedString.arg( QLocale().toString( numSamples ) )
+                    sStoppedString.arg( QLocale().toString( nSamples ) )
                 );
             }
             else {
@@ -501,7 +527,7 @@ void MonteCarlo::run() {
                 mValid = false;
                 setStatus(
                     sNotConvergedString.arg(
-                        QLocale().toString( numSamples )
+                        QLocale().toString( nSamples )
                     )
                 );
             }
