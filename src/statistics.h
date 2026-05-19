@@ -37,6 +37,7 @@ public:
     void addSample( double sample );
     void addSamples( const std::vector<double> &q );
     void clearSamples();
+    void reserveCapacity( size_t n );
     void setP( double p );
 
 private:

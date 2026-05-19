@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.2.1 LANGUAGES CXX )
+project( Sigma VERSION 1.3.0 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -140,8 +140,7 @@ qt_add_qml_module( Sigma
         src/lockableitemselectionmodel.cpp
         src/lockableitemselectionmodel.h
         src/mathconstants.h
-        src/mixedcopulasampler.cpp
-        src/mixedcopulasampler.h
+        src/mixedcopulasampler.hpp
         src/model.hpp
         src/modelcontrol.hpp
         src/montecarlo.cpp
@@ -155,6 +154,8 @@ qt_add_qml_module( Sigma
         src/record.h
         src/resultsmodel.cpp
         src/resultsmodel.h
+        src/samplebatch.cpp
+        src/samplebatch.h
         src/settings.cpp
         src/settings.h
         src/statistics.cpp

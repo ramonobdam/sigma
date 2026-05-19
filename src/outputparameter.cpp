@@ -26,7 +26,7 @@ OutputParameter::OutputParameter( QObject *parent )
         mError {},
         mComponents {},
         mMonteCarlo { MonteCarlo( this ) },
-        mMixedCopulaSampler { MixedCopulaSampler( this ) }
+        mLatentCorrelation {}
 {
     setNominalValue( MathConstants::nan );
     createConnections();
@@ -40,10 +40,9 @@ OutputParameter::OutputParameter( const OutputParameter &op )
         mError { op.getError() },
         mComponents { op.getComponents() },
         mMonteCarlo { op.getMonteCarlo() },
-        mMixedCopulaSampler { op.getMixedCopulaSampler() }
+        mLatentCorrelation { op.getLatentCorrelation() }
 {
     mMonteCarlo.setOutputParameter( this );
-    mMixedCopulaSampler.setOutputParameter( this );
     createConnections();
 }
 
@@ -56,9 +55,8 @@ OutputParameter & OutputParameter::operator= ( const OutputParameter &op ) {
         setError( op.getError() );
         setComponents( op.getComponents() );
         setMonteCarlo( op.getMonteCarlo() );
-        setMixedCopulaSampler( op.getMixedCopulaSampler() );
+        setLatentCorrelation( op.getLatentCorrelation() );
         mMonteCarlo.setOutputParameter( this );
-        mMixedCopulaSampler.setOutputParameter( this );
         createConnections();
     }
 
@@ -84,8 +82,8 @@ DataType OutputParameter::OutputParameter::dataType() const {
 }
 
 
-MixedCopulaSampler OutputParameter::getMixedCopulaSampler() const {
-    return mMixedCopulaSampler;
+Eigen::MatrixXd OutputParameter::getLatentCorrelation() const {
+    return mLatentCorrelation;
 }
 
 
@@ -479,13 +477,11 @@ std::wstring OutputParameter::getFormulaStdWString() const {
 
 void OutputParameter::addComponent( const UncertaintyComponent &component ) {
     mComponents.append( component );
-    mMixedCopulaSampler.addVariable( component.getInvCDF() );
 }
 
 
 void OutputParameter::clearComponents() {
     mComponents.clear();
-    mMixedCopulaSampler.clear();
 }
 
 
@@ -536,26 +532,19 @@ void OutputParameter::setError( const QString &error ) {
 }
 
 
+void OutputParameter::setLatentCorrelation( const Eigen::MatrixXd &rho ) {
+    mLatentCorrelation = rho;
+}
+
+
 void OutputParameter::setLocked( bool locked ) {
     mLocked = locked;
     emit lockedChanged();
 }
 
 
-void OutputParameter::setMixedCopulaSampler(
-    const MixedCopulaSampler &mixedCopulaSampler
-) {
-    mMixedCopulaSampler = mixedCopulaSampler;
-}
-
-
 void OutputParameter::setMonteCarlo( const MonteCarlo &monteCarlo ) {
     mMonteCarlo = monteCarlo;
-}
-
-
-void OutputParameter::setRandomSymbolValues() {
-    mMixedCopulaSampler.setRandomSymbolValues();
 }
 
 
@@ -723,7 +712,7 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
             bool allNormal { allComponentsNormal() };
 
             // Set latent correlation matrix
-            Eigen::MatrixXd rho = Eigen::MatrixXd::Identity( n, n );
+            mLatentCorrelation = Eigen::MatrixXd::Identity( n, n );
 
             // Determine the correlations between the components
             for ( int i { 0 }; i < n; ++i ) {
@@ -759,13 +748,11 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
                             }
 
                             // Set latent correlation matrix
-                            rho( i , j ) = c;
+                            mLatentCorrelation( i , j ) = c;
                         }
                     }
                 }
             }
-
-            mMixedCopulaSampler.setLatentCorrelation( rho );
         }
         else if ( valid ) {
             // Valid but no input parameters detected.

@@ -12,6 +12,7 @@
 #include <QStringList>
 #include <QUuid>
 #include <QVariant>
+#include <string>
 
 // UncertaintyComponent objects are used to store the pointers to the
 // InputParameters detected in the measurement formula of an OutputParameter. It
@@ -46,6 +47,7 @@ public:
     double getSymbolValue() const;
     double getWelchSatterthwaiteTerms() const;
     int getDOF() const;
+    std::wstring getNameStdWString() const;
     void addCorrelatedComponent( UncertaintyComponent *component );
     void calculateSensitivity( double stepSize, const QList<double> &values );
     void resetSymbolValue();

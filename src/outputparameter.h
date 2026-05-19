@@ -6,8 +6,8 @@
 #define OUTPUTPARAMETER_H
 
 #include "correlation.h"
+#include <third_party/Eigen/Dense>
 #include "third_party/exprtk/exprtk.hpp"
-#include "mixedcopulasampler.h"
 #include "jsondiff.h"
 #include "modelcontrol.hpp"
 #include "montecarlo.h"
@@ -30,9 +30,8 @@ typedef exprtk::parser<double> parser_t;
 // Class that stores the data of an output parameter and defines the static
 // ModelControl object that stores the output parameters. Combined uncertainty
 // and uncertainty budget results (GUM JCGM:100) are calculated using the
-// compile() method. The class contains MonteCarlo and MixedCopulaSampler
-// objects to perform the Monte Carlo simulation (GUM JCGM:101), started via
-// startMonteCarlo().
+// compile() method. The class contains a MonteCarlo object to perform the
+// Monte Carlo simulation (GUM JCGM:101), started via startMonteCarlo().
 class OutputParameter: public Parameter {
     Q_OBJECT
     QML_ELEMENT
@@ -48,7 +47,7 @@ public:
     bool operator!= ( const OutputParameter &op ) const;
 
     DataType dataType() const override;
-    MixedCopulaSampler getMixedCopulaSampler() const;
+    Eigen::MatrixXd getLatentCorrelation() const;
     MonteCarlo getMonteCarlo() const;
     OutputParameter *appendToModel();
     QJsonObject toJson() const override;
@@ -94,10 +93,9 @@ public:
     void set( int column, const QVariant &value ) override;
     void setComponents( const QList<UncertaintyComponent> &components );
     void setError( const QString &error = "" );
+    void setLatentCorrelation( const Eigen::MatrixXd &rho );
     void setLocked( bool locked ) override;
-    void setMixedCopulaSampler( const MixedCopulaSampler &mixedCopulaSampler );
     void setMonteCarlo( const MonteCarlo &monteCarlo );
-    void setRandomSymbolValues();
     void startMonteCarlo();
     void stopMonteCarlo();
     void updateFromJson( const QJsonObject &json ) override;
@@ -192,7 +190,7 @@ private:
     bool allComponentsNormal() const;
     void createConnections();
 
-    MixedCopulaSampler mMixedCopulaSampler;
+    Eigen::MatrixXd mLatentCorrelation;
     MonteCarlo mMonteCarlo;
     QList<UncertaintyComponent> mComponents;
     QString mError;
