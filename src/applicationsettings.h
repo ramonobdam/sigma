@@ -18,7 +18,6 @@ class ApplicationSettings : public QObject, public Settings {
 
 public:
     ApplicationSettings( QObject *parent = nullptr );
-    ~ApplicationSettings();
 
     Q_INVOKABLE void notifyAllChanged();
     Q_INVOKABLE void load();
@@ -30,7 +29,7 @@ public:
     Q_INVOKABLE void setLastProjectFilePath( const QUrl &lastProjectFilePath );
     Q_INVOKABLE void setMonteCarloBatchSize( int batchSize );
     Q_INVOKABLE void setMonteCarloDigits( int numberOfDigits );
-    Q_INVOKABLE void setMonteCarloMaxOfNumBatches( int maxNumOfBatches );
+    Q_INVOKABLE void setMonteCarloMaxNumOfBatches( int maxNumOfBatches );
     Q_INVOKABLE void setRestoreLastProject( bool restoreLastProject );
     Q_INVOKABLE void setToDefaults();
 
@@ -63,6 +62,56 @@ public:
         DisplayTheme displayTheme
         READ getDisplayTheme
         NOTIFY displayThemeChanged
+    )
+    Q_PROPERTY(
+        int minCSVPrecision
+        READ getMinCSVPrecision
+        CONSTANT
+    )
+    Q_PROPERTY(
+        int minDisplayPrecision
+        READ getMinDisplayPrecision
+        CONSTANT
+    )
+    Q_PROPERTY(
+        int minMonteCarloBatchSize
+        READ getMinMonteCarloBatchSize
+        CONSTANT
+    )
+    Q_PROPERTY(
+        int minMonteCarloDigits
+        READ getMinMonteCarloDigits
+        CONSTANT
+    )
+    Q_PROPERTY(
+        int minMonteCarloMaxNumOfBatches
+        READ getMinMonteCarloMaxNumOfBatches
+        CONSTANT
+    )
+    Q_PROPERTY(
+        int maxCSVPrecision
+        READ getMaxCSVPrecision
+        CONSTANT
+        )
+    Q_PROPERTY(
+        int maxDisplayPrecision
+        READ getMaxDisplayPrecision
+        CONSTANT
+        )
+    Q_PROPERTY(
+        int maxMonteCarloBatchSize
+        READ getMaxMonteCarloBatchSize
+        CONSTANT
+        )
+    Q_PROPERTY(
+        int maxMonteCarloDigits
+        READ getMaxMonteCarloDigits
+        CONSTANT
+        )
+    Q_PROPERTY(
+        int maxMonteCarloMaxNumOfBatches
+        READ getMaxMonteCarloMaxNumOfBatches
+        CONSTANT
     )
     Q_PROPERTY(
         int monteCarloBatchSize

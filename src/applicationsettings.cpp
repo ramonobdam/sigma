@@ -8,14 +8,7 @@
 ApplicationSettings::ApplicationSettings( QObject *parent )
     :   QObject { parent },
         mPersistentSettings { QSettings( this ) }
-{
-    load();
-}
-
-
-ApplicationSettings::~ApplicationSettings() {
-    save();
-}
+{}
 
 
 void ApplicationSettings::notifyAllChanged() {
@@ -58,7 +51,7 @@ void ApplicationSettings::load() {
             getDefaultMonteCarloBatchSize()
         ).toInt()
     );
-    Settings::setMonteCarloMaxOfNumBatches(
+    Settings::setMonteCarloMaxNumOfBatches(
         mPersistentSettings.value(
            sMonteCarloMaxNumOfBatchesString,
            getDefaultMonteCarloMaxNumOfBatches()
@@ -183,9 +176,9 @@ void ApplicationSettings::setMonteCarloDigits( int numberOfDigits ) {
 }
 
 
-void ApplicationSettings::setMonteCarloMaxOfNumBatches( int maxNumOfBatches ) {
+void ApplicationSettings::setMonteCarloMaxNumOfBatches( int maxNumOfBatches ) {
     if ( getMonteCarloMaxNumOfBatches() == maxNumOfBatches ) return;
-    Settings::setMonteCarloMaxOfNumBatches( maxNumOfBatches );
+    Settings::setMonteCarloMaxNumOfBatches( maxNumOfBatches );
     emit monteCarloMaxNumOfBatchesChanged();
 }
 
