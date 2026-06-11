@@ -916,6 +916,19 @@ bool OutputParameter::remove( const QUuid &id ) {
 }
 
 
+bool OutputParameter::selectRowByName( const QString &name ) {
+    OutputParameter *parameter { mOutputModel.getByName( name ) };
+    if ( parameter ) {
+        int row { getRowIndex( parameter->getId() ) };
+        if ( row >= 0 ) {
+            mOutputModel.selectRow( row );
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool OutputParameter::update( const QUuid &id, OutputParameter *parameter ) {
     // The new name has to be valid (unique) or equal to the original parameter
     OutputParameter *originalParameter { getById( id )};

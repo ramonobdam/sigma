@@ -125,6 +125,7 @@ public:
     static QString parametersToCSVString();
     static QUuid getSelectedId();
     static bool remove( const QUuid &id );
+    static bool selectRowByName( const QString &name );
     static bool update( const QUuid &id, OutputParameter *parameter );
     static bool validName(
         const QString &name,
