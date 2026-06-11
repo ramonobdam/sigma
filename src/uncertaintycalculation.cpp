@@ -10,7 +10,7 @@
 #include "undostack.h"
 #include <QByteArray>
 #include <QCoreApplication>
-#include <QDebug>
+#include <QtLogging>
 #include <QFile>
 #include <QIODeviceBase>
 #include <QJsonDocument>
@@ -50,8 +50,81 @@ UncertaintyCalculation::UncertaintyCalculation(
 }
 
 
+QJsonObject UncertaintyCalculation::projectToJson() const {
+    QJsonObject json {};
+    json[ sVersionString ] = QCoreApplication::applicationVersion();
+    json[ sInputParametersString ] = InputParameter::parametersToJson();
+    json[ sCorrelationsString ] = Correlation::correlationsToJson();
+    json[ sOutputParametersString ] = OutputParameter::parametersToJson();
+    return json;
+}
+
+
+QString UncertaintyCalculation::getProjectFileName() const {
+    return mProjectFilePath.fileName();
+}
+
+
+QStringList UncertaintyCalculation::getOutputParameterNames() const {
+    QStringList names {};
+    for ( const OutputParameter *outputParameter : OutputParameter::getAll() ) {
+        if ( outputParameter ) {
+            names.append( outputParameter->getName() );
+        }
+    }
+    return names;
+}
+
+
 QStringList UncertaintyCalculation::getUnits() const {
     return mUnits;
+}
+
+
+bool UncertaintyCalculation::getHistogramValid() const {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter && parameter->getValid() && !parameter->getLocked() ) {
+        return parameter->getMonteCarloValid();
+    }
+    return false;
+}
+
+
+bool UncertaintyCalculation::selectOutputParameterByName(
+    const QString &name
+) {
+    return OutputParameter::selectRowByName( name );
+}
+
+
+void UncertaintyCalculation::projectFromJson( const QJsonObject &json ) {
+    if ( const QJsonValue v = json[ sInputParametersString ]; v.isArray() ) {
+        const QJsonArray paramArray { v.toArray() };
+        InputParameter::parametersFromJson( paramArray, this );
+    }
+
+    if ( const QJsonValue v = json[ sCorrelationsString ]; v.isArray() ) {
+        const QJsonArray correlationsArray { v.toArray() };
+        Correlation::correlationsFromJson( correlationsArray, this );
+    }
+
+    if ( const QJsonValue v = json[ sOutputParametersString ]; v.isArray() ) {
+        const QJsonArray paramArray { v.toArray() };
+        OutputParameter::parametersFromJson( paramArray, this );
+
+        // Create connections between the new OutputParameters and this object's
+        // signals and slots
+        for ( const OutputParameter *param : OutputParameter::getAll() ) {
+            connectToOutputParameter( param );
+        }
+    }
+
+    // Connect the new Correlation objects to their InputParameters
+    Correlation::reconnectAllCorrelations();
+
+    updateUnits();
+
+    emitAllResultsChanged();
 }
 
 
@@ -153,7 +226,7 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     QString path { url.toLocalFile() };
     QFile loadFile( path );
     if ( !url.isLocalFile() || !loadFile.open( QIODevice::ReadOnly ) ) {
-        qDebug() << QString( sLoadFailedString ).arg( path );
+        qCritical() << QString( sLoadFailedString ).arg( path );
         resetProjectFilePath();
         return false;
     }
@@ -178,7 +251,7 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
         !url.isLocalFile() ||
         !csvFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qDebug() << QString( sCSVFailedString ).arg( path );
+        qCritical() << QString( sCSVFailedString ).arg( path );
         return false;
     }
     QTextStream out( &csvFile );
@@ -204,7 +277,7 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
         !url.isLocalFile() ||
         !saveFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qDebug() << QString( sSaveFailedString ).arg( path );
+        qCritical() << QString( sSaveFailedString ).arg( path );
         resetProjectFilePath();
         return false;
     }
@@ -233,60 +306,57 @@ bool UncertaintyCalculation::validOutputName(
 }
 
 
-const BudgetModel * UncertaintyCalculation::budgetItemModel() const {
+BudgetModel * UncertaintyCalculation::budgetItemModel() {
     return &mBudgetModel;
 }
 
 
-const QItemSelectionModel * UncertaintyCalculation::correlationSelectionModel(
-) const {
+QItemSelectionModel * UncertaintyCalculation::correlationSelectionModel() {
     return Correlation::getCorrelationModel()->selectionModel();
 }
 
 
-const QItemSelectionModel * UncertaintyCalculation::inputSelectionModel(
-) const {
+QItemSelectionModel * UncertaintyCalculation::inputSelectionModel() {
     return InputParameter::getInputModel()->selectionModel();
 }
 
 
-const QItemSelectionModel * UncertaintyCalculation::outputSelectionModel(
-) const {
+QItemSelectionModel * UncertaintyCalculation::outputSelectionModel() {
     return OutputParameter::getOutputModel()->selectionModel();
 }
 
 
-const QAbstractTableModel * UncertaintyCalculation::correlationItemModel() const {
+QAbstractTableModel * UncertaintyCalculation::correlationItemModel() {
     return Correlation::getCorrelationModel()->itemModel();
 }
 
 
-const QAbstractTableModel * UncertaintyCalculation::inputItemModel() const {
+QAbstractTableModel * UncertaintyCalculation::inputItemModel() {
     return InputParameter::getInputModel()->itemModel();
 }
 
 
-const QAbstractTableModel * UncertaintyCalculation::outputItemModel() const {
+QAbstractTableModel * UncertaintyCalculation::outputItemModel() {
     return OutputParameter::getOutputModel()->itemModel();
 }
 
 
-const QStringListModel * UncertaintyCalculation::distributionsModel() const {
+QStringListModel * UncertaintyCalculation::distributionsModel() {
     return &mDistributionModel;
 }
 
 
-const QStringListModel * UncertaintyCalculation::unitsModel() const {
+QStringListModel * UncertaintyCalculation::unitsModel() {
     return &mUnitsModel;
 }
 
 
-const ResultsModel * UncertaintyCalculation::resultsItemModel() const {
+ResultsModel * UncertaintyCalculation::resultsItemModel() {
     return &mResultsModel;
 }
 
 
-const UndoHistoryModel * UncertaintyCalculation::undoHistoryModel() const {
+UndoHistoryModel * UncertaintyCalculation::undoHistoryModel() {
     return &mUndoHistoryModel;
 }
 
@@ -380,7 +450,6 @@ void UncertaintyCalculation::addUnit( const QString &name ) {
         mUnitsModel.sort( 0 );
     }
 }
-
 
 void UncertaintyCalculation::newProject() {
     clearProject();
@@ -479,6 +548,7 @@ void UncertaintyCalculation::removeOutputParameter() {
         }
     }
 }
+
 
 void UncertaintyCalculation::restoreState( int index ) {
     UndoStack::instance().restoreState( index );
@@ -690,6 +760,7 @@ void UncertaintyCalculation::onMonteCarloFinished() {
     const OutputParameter *parameter { OutputParameter::getSelected() };
     QString name { parameter ? " " + parameter->getName() : "" };
     mDiffUtil.commitChanges( "Run Monte Carlo simulation" + name );
+    emit monteCarloFinished();
 }
 
 
@@ -716,16 +787,6 @@ void UncertaintyCalculation::onTransactionApplied() {
 
 void UncertaintyCalculation::unsavedChanges() {
     setUnsavedChanges( true );
-}
-
-
-QJsonObject UncertaintyCalculation::projectToJson() const {
-    QJsonObject json {};
-    json[ sVersionString ] = QCoreApplication::applicationVersion();
-    json[ sInputParametersString ] = InputParameter::parametersToJson();
-    json[ sCorrelationsString ] = Correlation::correlationsToJson();
-    json[ sOutputParametersString ] = OutputParameter::parametersToJson();
-    return json;
 }
 
 
@@ -763,11 +824,6 @@ QString UncertaintyCalculation::getOutputUnit() const {
         return parameter->getUnit();
     }
     return "";
-}
-
-
-QString UncertaintyCalculation::getProjectFileName() const {
-    return mProjectFilePath.fileName();
 }
 
 
@@ -880,15 +936,6 @@ bool UncertaintyCalculation::canRedo() const {
 
 bool UncertaintyCalculation::canUndo() const {
     return UndoStack::instance().canUndo();
-}
-
-
-bool UncertaintyCalculation::getHistogramValid() const {
-    const OutputParameter *parameter { OutputParameter::getSelected() };
-    if ( parameter && parameter->getValid() && !parameter->getLocked() ) {
-        return parameter->getMonteCarloValid();
-    }
-    return false;
 }
 
 
@@ -1106,37 +1153,6 @@ void UncertaintyCalculation::emitAllResultsChanged() {
     emit monteCarloResultsListChanged();        // monteCarloResultsList
     emit histogramValuesChanged();              // histogram related properties
     emit monteCarloConvergenceFactorChanged();  // monteCarloConvergenceFactor
-}
-
-
-void UncertaintyCalculation::projectFromJson( const QJsonObject &json ) {
-    if ( const QJsonValue v = json[ sInputParametersString ]; v.isArray() ) {
-        const QJsonArray paramArray { v.toArray() };
-        InputParameter::parametersFromJson( paramArray, this );
-    }
-
-    if ( const QJsonValue v = json[ sCorrelationsString ]; v.isArray() ) {
-        const QJsonArray correlationsArray { v.toArray() };
-        Correlation::correlationsFromJson( correlationsArray, this );
-    }
-
-    if ( const QJsonValue v = json[ sOutputParametersString ]; v.isArray() ) {
-        const QJsonArray paramArray { v.toArray() };
-        OutputParameter::parametersFromJson( paramArray, this );
-
-        // Create connections between the new OutputParameters and this object's
-        // signals and slots
-        for ( const OutputParameter *param : OutputParameter::getAll() ) {
-            connectToOutputParameter( param );
-        }
-    }
-
-    // Connect the new Correlation objects to their InputParameters
-    Correlation::reconnectAllCorrelations();
-
-    updateUnits();
-
-    emitAllResultsChanged();
 }
 
 
