@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.3.0 LANGUAGES CXX )
+project( Sigma VERSION 1.4.0 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -125,6 +125,8 @@ qt_add_qml_module( Sigma
         src/applicationsettings.h
         src/budgetmodel.cpp
         src/budgetmodel.h
+        src/commandlineinterface.cpp
+        src/commandlineinterface.h
         src/correlation.cpp
         src/correlation.h
         src/data.cpp
@@ -134,6 +136,7 @@ qt_add_qml_module( Sigma
         src/diffutil.h
         src/distribution.cpp
         src/distribution.h
+        src/exitcodes.h
         src/inputparameter.cpp
         src/inputparameter.h
         src/jsondiff.h
