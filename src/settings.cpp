@@ -5,21 +5,10 @@
 #include "settings.h"
 
 
-QUrl Settings::sLastProjectFilePath {};
-Settings::DisplayTheme Settings::sDisplayTheme {};
-bool Settings::sAutoSaveProject {};
-bool Settings::sRestoreLastProject {};
-int Settings::sCSVPrecision = {};
-int Settings::sDisplayPrecision = {};
-int Settings::sMonteCarloBatchSize = {};
-int Settings::sMonteCarloDigits = {};
-int Settings::sMonteCarloMaxNumOfBatches = {};
-
-
 Settings::Settings() {}
 
 
-Settings& Settings::operator= ( const Settings &settings ) {
+Settings & Settings::operator= ( const Settings &settings ) {
     if ( this == &settings ) {
         return *this;
     }
@@ -31,20 +20,20 @@ Settings& Settings::operator= ( const Settings &settings ) {
     setLastProjectFilePath( settings.getLastProjectFilePath() );
     setMonteCarloBatchSize( settings.getMonteCarloBatchSize() );
     setMonteCarloDigits( settings.getMonteCarloDigits() );
-    setMonteCarloMaxOfNumBatches( settings.getMonteCarloMaxNumOfBatches() );
+    setMonteCarloMaxNumOfBatches( settings.getMonteCarloMaxNumOfBatches() );
     setRestoreLastProject( settings.getRestoreLastProject() );
 
     return *this;
 }
 
 
-Settings::DisplayTheme Settings::getDisplayTheme() {
-    return sDisplayTheme;
+Settings::DisplayTheme Settings::getDefaultDisplayTheme() {
+    return sDisplayTheme.def;
 }
 
 
-Settings::DisplayTheme Settings::getDefaultDisplayTheme() {
-    return sDefaultDisplayTheme;
+Settings::DisplayTheme Settings::getDisplayTheme() {
+    return sDisplayTheme.value;
 }
 
 
@@ -54,82 +43,162 @@ QUrl Settings::getLastProjectFilePath() {
 
 
 bool Settings::getAutoSaveProject() {
-    return sAutoSaveProject;
+    return sAutoSaveProject.value;
+}
+
+
+bool Settings::getDefaultAutoSaveProject() {
+    return sAutoSaveProject.def;
+}
+
+
+bool Settings::getDefaultRestoreLastProject() {
+    return sRestoreLastProject.def;
 }
 
 
 bool Settings::getRestoreLastProject() {
-    return sRestoreLastProject;
+    return sRestoreLastProject.value;
+}
+
+
+bool Settings::setAutoSaveProject( bool autoSaveProject ) {
+    return sAutoSaveProject.set( autoSaveProject );
+}
+
+
+bool Settings::setCSVPrecision( int csvPrecision ) {
+    return sCSVPrecision.set( csvPrecision );
+}
+
+
+bool Settings::setDisplayPrecision( int numberOfDigits ) {
+    return sDisplayPrecision.set( numberOfDigits );
+}
+
+
+bool Settings::setDisplayTheme( DisplayTheme displayTheme ) {
+    return sDisplayTheme.set( displayTheme );
+}
+
+
+bool Settings::setMonteCarloBatchSize( int batchSize ) {
+    return sMonteCarloBatchSize.set( batchSize );
+}
+
+
+bool Settings::setMonteCarloDigits( int numberOfDigits ) {
+    return sMonteCarloDigits.set( numberOfDigits );
+}
+
+
+bool Settings::setMonteCarloMaxNumOfBatches( int maxNumOfBatches ) {
+    return sMonteCarloMaxNumOfBatches.set( maxNumOfBatches );
+}
+
+
+bool Settings::setRestoreLastProject( bool restoreLastProject ) {
+    return sRestoreLastProject.set( restoreLastProject );
 }
 
 
 int Settings::getCSVPrecision() {
-    return sCSVPrecision;
+    return sCSVPrecision.value;
 }
 
 
 int Settings::getDefaultCSVPrecision() {
-    return sDefaultCSVPrecision;
+    return sCSVPrecision.def;
 }
 
 
 int Settings::getDefaultDisplayPrecision() {
-    return sDefaultDisplayPrecision;
+    return sDisplayPrecision.def;
 }
 
 
 int Settings::getDefaultMonteCarloBatchSize() {
-    return sDefaultMonteCarloBatchSize;
+    return sMonteCarloBatchSize.def;
 }
 
 
 int Settings::getDefaultMonteCarloDigits() {
-    return sDefaultMonteCarloDigits;
+    return sMonteCarloDigits.def;
 }
 
 
 int Settings::getDefaultMonteCarloMaxNumOfBatches() {
-    return sDefaultMonteCarloMaxNumOfBatches;
+    return sMonteCarloMaxNumOfBatches.def;
 }
 
 
 int Settings::getDisplayPrecision() {
-    return sDisplayPrecision;
+    return sDisplayPrecision.value;
+}
+
+
+int Settings::getMaxCSVPrecision() {
+    return sCSVPrecision.max;
+}
+
+
+int Settings::getMaxDisplayPrecision() {
+    return sDisplayPrecision.max;
+}
+
+
+int Settings::getMaxMonteCarloBatchSize() {
+    return sMonteCarloBatchSize.max;
+}
+
+
+int Settings::getMaxMonteCarloDigits() {
+    return sMonteCarloDigits.max;
+}
+
+
+int Settings::getMaxMonteCarloMaxNumOfBatches() {
+    return sMonteCarloMaxNumOfBatches.max;
+}
+
+
+int Settings::getMinCSVPrecision() {
+    return sCSVPrecision.min;
+}
+
+
+int Settings::getMinDisplayPrecision() {
+    return sDisplayPrecision.min;
+}
+
+
+int Settings::getMinMonteCarloBatchSize() {
+    return sMonteCarloBatchSize.min;
+}
+
+
+int Settings::getMinMonteCarloDigits() {
+    return sMonteCarloDigits.min;
+}
+
+
+int Settings::getMinMonteCarloMaxNumOfBatches() {
+    return sMonteCarloMaxNumOfBatches.min;
 }
 
 
 int Settings::getMonteCarloBatchSize() {
-    return sMonteCarloBatchSize;
+    return sMonteCarloBatchSize.value;
 }
 
 
 int Settings::getMonteCarloDigits() {
-    return sMonteCarloDigits;
+    return sMonteCarloDigits.value;
 }
 
 
 int Settings::getMonteCarloMaxNumOfBatches() {
-    return sMonteCarloMaxNumOfBatches;
-}
-
-
-void Settings::setAutoSaveProject( bool autoSaveProject ) {
-    sAutoSaveProject = autoSaveProject;
-}
-
-
-void Settings::setCSVPrecision( int csvPrecision ) {
-    sCSVPrecision = csvPrecision;
-}
-
-
-void Settings::setDisplayPrecision( int numberOfDigits ) {
-    sDisplayPrecision = numberOfDigits;
-}
-
-
-void Settings::setDisplayTheme( DisplayTheme displayTheme ) {
-    sDisplayTheme = displayTheme;
+    return sMonteCarloMaxNumOfBatches.value;
 }
 
 
@@ -138,33 +207,13 @@ void Settings::setLastProjectFilePath( const QUrl &lastProjectFilePath ) {
 }
 
 
-void Settings::setMonteCarloBatchSize( int batchSize ) {
-    sMonteCarloBatchSize = batchSize;
-}
-
-
-void Settings::setMonteCarloDigits( int numberOfDigits ) {
-    sMonteCarloDigits = numberOfDigits;
-}
-
-
-void Settings::setMonteCarloMaxOfNumBatches( int maxNumOfBatches ) {
-    sMonteCarloMaxNumOfBatches = maxNumOfBatches;
-}
-
-
-void Settings::setRestoreLastProject( bool restoreLastProject ) {
-    sRestoreLastProject = restoreLastProject;
-}
-
-
 void Settings::setToDefaults() {
-    setAutoSaveProject( sDefaultAutoSaveProject );
-    setCSVPrecision( sDefaultCSVPrecision );
-    setDisplayPrecision( sDefaultDisplayPrecision );
-    setDisplayTheme( sDefaultDisplayTheme );
-    setMonteCarloBatchSize( sDefaultMonteCarloBatchSize );
-    setMonteCarloDigits( sDefaultMonteCarloDigits );
-    setMonteCarloMaxOfNumBatches( sDefaultMonteCarloMaxNumOfBatches );
-    setRestoreLastProject( sDefaultRestoreLastProject );
+    setAutoSaveProject( sAutoSaveProject.def );
+    setCSVPrecision( sCSVPrecision.def );
+    setDisplayPrecision( sDisplayPrecision.def );
+    setDisplayTheme( sDisplayTheme.def );
+    setMonteCarloBatchSize( sMonteCarloBatchSize.def );
+    setMonteCarloDigits( sMonteCarloDigits.def );
+    setMonteCarloMaxNumOfBatches( sMonteCarloMaxNumOfBatches.def );
+    setRestoreLastProject( sRestoreLastProject.def );
 }

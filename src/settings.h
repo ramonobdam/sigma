@@ -24,11 +24,21 @@ public:
     Settings();
     Settings& operator= ( const Settings &settings );
 
-    static DisplayTheme getDisplayTheme();
     static DisplayTheme getDefaultDisplayTheme();
+    static DisplayTheme getDisplayTheme();
     static QUrl getLastProjectFilePath();
     static bool getAutoSaveProject();
+    static bool getDefaultAutoSaveProject();
+    static bool getDefaultRestoreLastProject();
     static bool getRestoreLastProject();
+    static bool setAutoSaveProject( bool autoSaveProject );
+    static bool setCSVPrecision( int csvPrecision );
+    static bool setDisplayPrecision( int numberOfDigits );
+    static bool setDisplayTheme ( DisplayTheme displayTheme );
+    static bool setMonteCarloBatchSize( int batchSize );
+    static bool setMonteCarloDigits( int numberOfDigits );
+    static bool setMonteCarloMaxNumOfBatches ( int maxNumOfBatches );
+    static bool setRestoreLastProject( bool restoreLastProject );
     static int getCSVPrecision();
     static int getDefaultCSVPrecision();
     static int getDefaultDisplayPrecision();
@@ -36,39 +46,56 @@ public:
     static int getDefaultMonteCarloDigits();
     static int getDefaultMonteCarloMaxNumOfBatches();
     static int getDisplayPrecision();
+    static int getMaxCSVPrecision();
+    static int getMaxDisplayPrecision();
+    static int getMaxMonteCarloBatchSize();
+    static int getMaxMonteCarloDigits();
+    static int getMaxMonteCarloMaxNumOfBatches();
+    static int getMinCSVPrecision();
+    static int getMinDisplayPrecision();
+    static int getMinMonteCarloBatchSize();
+    static int getMinMonteCarloDigits();
+    static int getMinMonteCarloMaxNumOfBatches();
     static int getMonteCarloBatchSize();
     static int getMonteCarloDigits();
     static int getMonteCarloMaxNumOfBatches();
-    static void setAutoSaveProject( bool autoSaveProject );
-    static void setCSVPrecision( int csvPrecision );
-    static void setDisplayPrecision( int numberOfDigits );
-    static void setDisplayTheme ( DisplayTheme displayTheme );
     static void setLastProjectFilePath( const QUrl &lastProjectFilePath );
-    static void setMonteCarloBatchSize( int batchSize );
-    static void setMonteCarloDigits( int numberOfDigits );
-    static void setMonteCarloMaxOfNumBatches ( int maxNumOfBatches );
-    static void setRestoreLastProject( bool restoreLastProject );
     static void setToDefaults();
 
 private:
-    static constexpr DisplayTheme sDefaultDisplayTheme { System };
-    static constexpr bool sDefaultAutoSaveProject { false };
-    static constexpr bool sDefaultRestoreLastProject { false };
-    static constexpr int sDefaultCSVPrecision { 10 };
-    static constexpr int sDefaultDisplayPrecision { 6 };
-    static constexpr int sDefaultMonteCarloBatchSize { 100000 };
-    static constexpr int sDefaultMonteCarloDigits { 2 };
-    static constexpr int sDefaultMonteCarloMaxNumOfBatches { 1000 };
+    template<typename T>
+    struct Setting {
+        Setting( T minVal, T defVal, T maxVal ) {
+            min = minVal;
+            def = defVal;
+            max = maxVal;
+            value = def;
+        }
 
-    static QUrl sLastProjectFilePath;
-    static DisplayTheme sDisplayTheme;
-    static bool sAutoSaveProject;
-    static bool sRestoreLastProject;
-    static int sCSVPrecision;
-    static int sDisplayPrecision;
-    static int sMonteCarloBatchSize;
-    static int sMonteCarloDigits;
-    static int sMonteCarloMaxNumOfBatches;
+        bool set( T val ) {
+            // Set the value only if it is within the allowable range
+            if ( val >= min && val <= max ) {
+                value = val;
+                return true;
+            }
+            return false;
+        }
+
+        T min;
+        T def;
+        T max;
+        T value;
+    };
+
+    inline static QUrl sLastProjectFilePath {};
+    inline static Setting<DisplayTheme> sDisplayTheme { System, System, Dark };
+    inline static Setting<bool> sAutoSaveProject { false, false, true };
+    inline static Setting<bool> sRestoreLastProject { false, false, true };
+    inline static Setting<int> sCSVPrecision { 1, 10, 20 };
+    inline static Setting<int> sDisplayPrecision { 1, 6, 10 };
+    inline static Setting<int> sMonteCarloBatchSize { 100, 100000, 1000000 };
+    inline static Setting<int> sMonteCarloDigits { 1, 2, 3 };
+    inline static Setting<int> sMonteCarloMaxNumOfBatches { 10, 1000, 100000 };
 };
 
 // Create a foreign namespace to make the Settings::DisplayTheme enum availble
