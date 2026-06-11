@@ -3,18 +3,20 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "applicationsettings.h"
+#include "commandlineinterface.h"
+#include "exitcodes.h"
 #include "uncertaintycalculation.h"
 #include "windowscaptionhelper.h"
-#include <QCoreApplication>
 #include <QGuiApplication>
-#include <QQmlApplicationEngine>
-#include <QQmlContext>
 #include <QIcon>
+#include <QList>
 #include <QLocale>
 #include <QObject>
-#include <QList>
-#include <QUrl>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QQuickWindow>
+#include <QString>
+#include <QUrl>
 #include <QWindow>
 
 int main( int argc, char *argv[] ) {
@@ -29,61 +31,89 @@ int main( int argc, char *argv[] ) {
     app.setApplicationName( "Sigma" );
     app.setApplicationDisplayName( "Sigma - Measurement Uncertainty Toolkit" );
     app.setApplicationVersion( APP_VERSION );
-    app.setOrganizationName( "Tiger Suit Interactive" );
-    app.setOrganizationDomain( "TigerSuitInteractive.org" );
+    app.setOrganizationName( "SigmaSoft" );
+    app.setOrganizationDomain( "SigmaSoft.org" );
 
-    QQmlApplicationEngine engine;
-    QObject::connect(
-        &engine,
-        &QQmlApplicationEngine::objectCreationFailed,
-        &app,
-        []() { QCoreApplication::exit( -1 ); },
-        Qt::QueuedConnection );
+    ApplicationSettings appSettings { &app };
+    UncertaintyCalculation calculation { &app, &appSettings };
+    CommandLineInterface CLI { &app, &calculation };
 
-    ApplicationSettings *appSettings { new ApplicationSettings( &app ) };
-    UncertaintyCalculation *calculation {
-        new UncertaintyCalculation( &app, appSettings )
-    };
-    WindowsCaptionHelper *captionHelper { new WindowsCaptionHelper( &app ) };
-
-    // Load a project based on the command-line argument or restore the last
-    // project
-    if ( argc > 1 ) {
-        QUrl url { argv[ 1 ] };
-        calculation->loadProject( url );
-    }
-    else if ( appSettings->getRestoreLastProject() ) {
-        QUrl url { appSettings->getLastProjectFilePath() };
-        calculation->loadProject( url );
-    }
-
-    QQmlContext *rootContext { engine.rootContext() };
-    rootContext->setContextProperty( "calculation", calculation );
-    rootContext->setContextProperty( "appSettings", appSettings );
-    rootContext->setContextProperty( "captionHelper", captionHelper );
-
-    // QObject ownership should remain with C++
-    QList<const QObject *> objects {
-        calculation->inputItemModel(),
-        calculation->outputItemModel(),
-        calculation->correlationItemModel(),
-        calculation->resultsItemModel(),
-        calculation->budgetItemModel(),
-        calculation->distributionsModel(),
-        calculation->unitsModel(),
-        calculation->undoHistoryModel(),
-        calculation->inputSelectionModel(),
-        calculation->outputSelectionModel(),
-        calculation->correlationSelectionModel()
-    };
-    for ( const QObject *object : objects ) {
-        engine.setObjectOwnership(
-            const_cast<QObject *>( object ),
-            QQmlEngine::CppOwnership
+    if ( !CLI.getHeadless() ) {
+        // Start the GUI
+        // Load the persistent settings (for GUI mode only)
+        appSettings.load();
+        // Create connection to save the persistent settings before quiting the
+        // main event loop
+        QObject::connect(
+            &app,
+            &QGuiApplication::aboutToQuit,
+            &appSettings,
+            [ &appSettings ]() { appSettings.save(); },
+            Qt::DirectConnection
         );
+
+        // Start the QML UI
+        QQmlApplicationEngine engine;
+        // Process the CLI settings and commands when the UI is ready
+        QObject::connect(
+            &engine,
+            &QQmlApplicationEngine::objectCreated,
+            &app,
+            [ & ]( QObject *object, const QUrl &url ) {
+                if ( !object ) {
+                    // QML failed to load — exit with error
+                    QGuiApplication::exit(
+                        static_cast<int>( ExitCode::QmlLoadFailure )
+                    );
+                    return;
+                }
+                // UI is ready — apply CLI settings and commands
+                CLI.process();
+
+                // Restore the last project when setting 'Restore last project
+                // on startup' is set and no project is opened yet from the CLI)
+                if (
+                    appSettings.getRestoreLastProject() &&
+                    calculation.getProjectFileName().isEmpty()
+                ) {
+                    QUrl lastUrl { appSettings.getLastProjectFilePath() };
+                    calculation.loadProject( lastUrl );
+                }
+            },
+            Qt::QueuedConnection
+        );
+
+        WindowsCaptionHelper captionHelper { &app };
+
+        QQmlContext *rootContext { engine.rootContext() };
+        rootContext->setContextProperty( "calculation", &calculation );
+        rootContext->setContextProperty( "appSettings", &appSettings );
+        rootContext->setContextProperty( "captionHelper", &captionHelper );
+
+        // QObject ownership should remain with C++
+        QList<QObject *> objects {
+            calculation.inputItemModel(),
+            calculation.outputItemModel(),
+            calculation.correlationItemModel(),
+            calculation.resultsItemModel(),
+            calculation.budgetItemModel(),
+            calculation.distributionsModel(),
+            calculation.unitsModel(),
+            calculation.undoHistoryModel(),
+            calculation.inputSelectionModel(),
+            calculation.outputSelectionModel(),
+            calculation.correlationSelectionModel()
+        };
+        for ( QObject *object : objects ) {
+            engine.setObjectOwnership( object, QQmlEngine::CppOwnership );
+        }
+
+        engine.loadFromModule( "Sigma", "Main" );
+
+        return app.exec();
     }
-
-    engine.loadFromModule( "Sigma", "Main" );
-
-    return app.exec();
+    else {
+        // Headless mode — apply CLI settings and commands
+        return CLI.process();
+    }
 }
