@@ -23,14 +23,14 @@
 // -h, --help            Displays help on commandline options.
 // --help-all            Displays help, including generic Qt options.
 // -v, --version         Displays version information.
-// -H, --headless        Run Sigma without the UI.
+// -H, --headless        Run Sigma without the GUI.
 // --open <file>         Open a project from <file>.
 // --run <par>           Run Monte Carlo simulation for output parameter <par>.
-// --runall              Run Monte Carlo simulation for all output parameters.
+// --run-all             Run Monte Carlo simulation for all output parameters.
 // --save <file>         Save the project to <file>.
 // --export <file>       Export results to CSV file.
-// --tojson              Print the project data to stdout in JSON format.
-// --fromjson            Load the project data from stdin in JSON format.
+// --to-json             Print the project data to stdout in JSON format.
+// --from-json           Load the project data from stdin in JSON format.
 // --csvdigits <digits>  Set CSV export significant digits (1 to 20).
 // --mcdigits <digits>   Set Monte Carlo significant digits (1 to 3).
 // --mcbatchsize <size>  Set Monte Carlo batch size (1e+02 to 1e+06).
@@ -176,7 +176,7 @@ private:
     };
     inline static QCommandLineOption sHeadlessOption {
         { "H", "headless" },
-        "Run Sigma without the UI."
+        "Run Sigma without the GUI."
     };
     inline static QCommandLineOption sOpenOption {
         "open",
@@ -189,7 +189,7 @@ private:
         "par"
     };
     inline static QCommandLineOption sRunAllOption {
-        "runall",
+        "run-all",
         "Run Monte Carlo simulation for all output parameters."
     };
     inline static QCommandLineOption sSaveOption {
@@ -198,11 +198,11 @@ private:
         "file"
     };
     inline static QCommandLineOption sToJsonOption {
-        "tojson",
+        "to-json",
         "Print the project data to stdout in JSON format."
     };
     inline static QCommandLineOption sFromJsonOption {
-        "fromjson",
+        "from-json",
         "Load the project data from stdin in JSON format."
     };
 
