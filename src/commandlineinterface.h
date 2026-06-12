@@ -24,18 +24,18 @@
 // --help-all            Displays help, including generic Qt options.
 // -v, --version         Displays version information.
 // -H, --headless        Run Sigma without the GUI.
-// --open <file>         Open a project from <file>.
-// --run <par>           Run Monte Carlo simulation for output parameter <par>.
-// --run-all             Run Monte Carlo simulation for all output parameters.
-// --save <file>         Save the project to <file>.
-// --export <file>       Export results to CSV file.
-// --to-json             Print the project data to stdout in JSON format.
-// --from-json           Load the project data from stdin in JSON format.
-// --csvdigits <digits>  Set CSV export significant digits (1 to 20).
-// --mcdigits <digits>   Set Monte Carlo significant digits (1 to 3).
-// --mcbatchsize <size>  Set Monte Carlo batch size (1e+02 to 1e+06).
-// --mcmaxbatches <num>  Set Monte Carlo maximum number of batches (1e+01 to
-//                       1e+05).
+// --open <file>         Opens a project from <file>.
+// --run <par>           Runs Monte Carlo simulation for output parameter <par>.
+// --run-all             Runs Monte Carlo simulation for all output parameters.
+// --save <file>         Saves the project to <file>.
+// --export <file>       Exports the results to CSV file.
+// --to-json             Prints the project data to stdout in JSON format.
+// --from-json           Loads the project data from stdin in JSON format.
+// --csvdigits <digits>  Sets the CSV export significant digits (1 to 20).
+// --mcdigits <digits>   Sets the Monte Carlo significant digits (1 to 3).
+// --mcbatchsize <size>  Sets the Monte Carlo batch size (1e+02 to 1e+06).
+// --mcmaxbatches <num>  Sets the Monte Carlo maximum number of batches (1e+01
+//                       to 1e+05).
 
 // The process() method maps the commands to the UncertaintyCalculation
 // instance.
@@ -65,7 +65,7 @@ private:
 
     // Pre- and postfix added to the setting options descriptions (so they can
     // be stripped away for the error messages):
-    static constexpr QLatin1StringView sPreFix { "Set " };
+    static constexpr QLatin1StringView sPreFix { "Sets the " };
     static constexpr QLatin1StringView sPostFix { "." };
 
     inline static const QList<CLISettingOption> sSettingOptions {
@@ -171,39 +171,39 @@ private:
 
     inline static QCommandLineOption sExportOption {
         "export",
-        "Export results to CSV file.",
+        "Exports the results to CSV file.",
         "file"
     };
     inline static QCommandLineOption sHeadlessOption {
         { "H", "headless" },
-        "Run Sigma without the GUI."
+        "Runs Sigma without the GUI."
     };
     inline static QCommandLineOption sOpenOption {
         "open",
-        "Open a project from <file>.",
+        "Opens a project from <file>.",
         "file"
     };
     inline static QCommandLineOption sRunOption {
         "run",
-        "Run Monte Carlo simulation for output parameter <par>.",
+        "Runs Monte Carlo simulation for output parameter <par>.",
         "par"
     };
     inline static QCommandLineOption sRunAllOption {
         "run-all",
-        "Run Monte Carlo simulation for all output parameters."
+        "Runs Monte Carlo simulation for all output parameters."
     };
     inline static QCommandLineOption sSaveOption {
         "save",
-        "Save the project to <file>.",
+        "Saves the project to <file>.",
         "file"
     };
     inline static QCommandLineOption sToJsonOption {
         "to-json",
-        "Print the project data to stdout in JSON format."
+        "Prints the project data to stdout in JSON format."
     };
     inline static QCommandLineOption sFromJsonOption {
         "from-json",
-        "Load the project data from stdin in JSON format."
+        "Loads the project data from stdin in JSON format."
     };
 
     QCommandLineParser mParser;
