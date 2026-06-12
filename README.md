@@ -26,25 +26,31 @@ Why a tool for interactive measurement uncertainty analysis?
 - The combined uncertainty and the components of the uncertainty budget are instantly displayed in the interface. The critical components can quickly be observed by a color scale.
 - Monte Carlo simulation is available for more complex models. The visualization of the simulation output values provides insight into the probability distribution of the output parameter.
 - Calculation projects can easily be saved or exported
+- Uncertainty budget calculations can be integrated into an existing calculation pipeline using *Sigma*'s command-line interface
 
 ## Architecture
-For maintainability and reusability, *Sigma* is structured into separate UI, Orchestration, and Core layers. This separation makes it straightforward to add a command-line interface in the future.
+For maintainability and reusability, *Sigma* is structured into separate UI, Orchestration, and Core layers. The UI layer contains a graphical user interface (GUI) and a command-line interface (CLI). The GUI provides an interactive environment for defining parameters and immediate visualization of results. The Orchestration layer acts as the interface between the GUI/CLI and the Core systems. It orchestrates the execution of calculations, manages data flow between components, and handles file I/O. The Core layer handles the data storage and numerical computations.
 
-The Core layer handles data storage and numerical computations. The UI layer is independent of the core and provides an interactive environment for defining parameters and immediate visualization of results. The Orchestration layer acts as the interface between the UI and the Core systems. It orchestrates the execution of calculations, manages data flow between components, and handles file I/O.
-
-### UI layer (Qt Quick)
-- User interaction
-- Data input
-- Results visualization
-- Custom QML components
+### UI layer
+- #### GUI (Qt Quick)
+  - User interaction
+  - Data input
+  - Results visualization
+  - Custom QML components
+- #### CLI (Command-Line Interface)
+  - Headless project automation
+  - Monte Carlo simulation via command-line
+  - JSON import/export
 
 ### Orchestration layer (C++)
 - Orchestration of calculations and data flow
-- File I/O
+- Transaction-based undo/redo system
+- Project file save/load (.sig)
+- CSV export
 
 ### Core layer (C++)
 - Data models
-- Mathematical expression parser
+- Mathematical expression parser (ExprTk)
 - Uncertainty budget calculations
 - Correlated sampler
 - Monte Carlo simulation
@@ -74,3 +80,32 @@ Compiling your own version of *Sigma* requires:
 The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects) folder contains *Sigma* project files for the calculation examples given in GUM parts [JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) and [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008). Note that the demo projects are also added to the installation folder when you use the installer.
 
 *Sigma* projects can be opened using 'Project > Open...' (Ctrl+O) from the main menu.
+
+## Command-line interface
+### Usage
+- Windows `Sigma.exe [options]`
+- macOS `./Sigma.app/Contents/MacOS/Sigma [options]`
+
+| Option | Description |
+|:---------|:-------------|
+| `-h`, `--help` | Displays help on command-line options |
+| `--help-all` | Displays help, including generic Qt options |
+| `-v`, `--version` | Displays version information |
+| `-H`, `--headless` | Runs Sigma without the GUI |
+| `--open <file>` | Opens a project from `<file>` |
+| `--run <par>` | Runs Monte Carlo simulation for output parameter `<par>` |
+| `--run-all` | Runs Monte Carlo simulation for all output parameters |
+| `--save <file>` | Saves the project to `<file>` |
+| `--export <file>` | Exports the results to CSV file |
+| `--to-json` | Prints the project data to stdout in JSON format |
+| `--from-json` | Loads the project data from stdin in JSON format |
+| `--csvdigits <digits>` | Sets the CSV export significant digits (1 to 20) |
+| `--mcdigits <digits>` | Sets the Monte Carlo significant digits (1 to 3) |
+| `--mcbatchsize <size>` | Sets the Monte Carlo batch size (1e+02 to 1e+06) |
+| `--mcmaxbatches <num>` | Sets the Monte Carlo maximum number of batches (1e+01 to 1e+05) |
+
+### Example
+Open a project, run all Monte Carlo simulations in headless mode, save the project, and export the results:
+```bash
+Sigma --headless --open project.sig --run-all --save project.sig --export export.csv
+```
