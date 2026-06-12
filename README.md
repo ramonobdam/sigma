@@ -83,7 +83,7 @@ The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects)
 
 ## Command-line interface
 ### Usage
-- Windows `Sigma.exe [options]`
+- Windows `Sigma [options]`
 - macOS `./Sigma.app/Contents/MacOS/Sigma [options]`
 
 | Option | Description |
