@@ -9,7 +9,7 @@
 #include "uncertaintycalculation.h"
 #include <QCommandLineOption>
 #include <QCommandLineParser>
-#include <QGuiApplication>
+#include <QCoreApplication>
 #include <QLatin1StringView>
 #include <QList>
 #include <QString>
@@ -42,16 +42,17 @@
 class CommandLineInterface {
 public:
     CommandLineInterface(
-        QGuiApplication *app,
+        QCoreApplication *app,
         UncertaintyCalculation *calculation
     );
 
-    QGuiApplication *getGuiApplication() const;
+    QCoreApplication *getCoreApplication() const;
     UncertaintyCalculation *getUncertaintyCalculation() const;
-    bool getHeadless();
     int process();
-    void setGuiApplication( QGuiApplication *app );
+    void setCoreApplication( QCoreApplication *app );
     void setUncertaintyCalculation( UncertaintyCalculation *calculation );
+
+    static bool headless( int argc, char *argv[] );
 
 private:
     int runMonteCarlo( const QString &name ) const;
@@ -178,6 +179,17 @@ private:
         { "H", "headless" },
         "Runs Sigma without the GUI."
     };
+    inline static QCommandLineOption sHelpOption {
+        {
+         "h",
+         "help"
+// On Windows, also support -?
+#ifdef Q_OS_WINDOWS
+, "?"
+#endif
+        },
+        "Displays help on commandline options."
+    };
     inline static QCommandLineOption sOpenOption {
         "open",
         "Opens a project from <file>.",
@@ -206,8 +218,9 @@ private:
         "Loads the project data from stdin in JSON format."
     };
 
+    QCommandLineOption mVersionOption;
     QCommandLineParser mParser;
-    QGuiApplication *mApp;
+    QCoreApplication *mApp;
     UncertaintyCalculation *mCalculation;
 };
 

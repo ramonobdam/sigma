@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QLocale>
+#include <QStringList>
 #include <QTextStream>
 #include <QUrl>
 #include <QtLogging>
@@ -18,18 +19,20 @@
 
 
 CommandLineInterface::CommandLineInterface(
-    QGuiApplication *app,
+    QCoreApplication *app,
     UncertaintyCalculation *calculation
 )   :   mApp { app },
         mCalculation { calculation },
-        mParser {}
+        mParser {},
+        // Overwritten with actual names in initializeParser():
+        mVersionOption { "version" }
 {
     initializeParser();
     setupSignalHandling();
 }
 
 
-QGuiApplication * CommandLineInterface::getGuiApplication() const {
+QCoreApplication * CommandLineInterface::getCoreApplication() const {
     return mApp;
 }
 
@@ -40,14 +43,26 @@ const {
 }
 
 
-bool CommandLineInterface::getHeadless() {
-    mParser.process( *mApp );
-    return mParser.isSet( sHeadlessOption );;
-}
-
-
 int CommandLineInterface::process() {
-    mParser.process( *mApp );
+    // Use parse() instead of process() to avoid exit()
+    if ( !mParser.parse( mApp->arguments() ) ) {
+        qCritical() << mParser.errorText();
+        return static_cast<int>( ExitCode::UsageError );
+    }
+
+    // Handle help and version manually since parse() doesn't handle them
+    if ( mParser.isSet( sHelpOption ) ) {
+        QTextStream out { stdout };
+        out << mParser.helpText();
+        return static_cast<int>( ExitCode::Success );
+    }
+
+    if ( mParser.isSet( mVersionOption ) ) {
+        QTextStream out { stdout };
+        out << mApp->applicationName() << " "
+            << mApp->applicationVersion() << "\n";
+        return static_cast<int>( ExitCode::Success );
+    }
 
     // Process setting options
     for ( const CLISettingOption &setting : sSettingOptions ) {
@@ -140,7 +155,7 @@ int CommandLineInterface::process() {
 }
 
 
-void CommandLineInterface::setGuiApplication( QGuiApplication *app ) {
+void CommandLineInterface::setCoreApplication( QCoreApplication *app ) {
     mApp = app;
 }
 
@@ -149,6 +164,29 @@ void CommandLineInterface::setUncertaintyCalculation(
     UncertaintyCalculation *calculation
 ){
     mCalculation = calculation;
+}
+
+
+bool CommandLineInterface::headless( int argc, char *argv[] ) {
+    // Add dashes to option names
+    QStringList optionNames { sHeadlessOption.names() };
+    for ( int i { 0 }; i < optionNames.size(); ++i ) {
+        QString name { optionNames[ i ] };
+        name = ( name.size() == 1 ? "-" : "--" ) + name;
+        optionNames[ i ] = name;
+    }
+
+    // Check if the headless flag is set
+    const QStringList &names { optionNames };
+    for ( int i { 1 }; i < argc; ++i ) {
+        for ( const QString &name : names ) {
+            if ( QString( argv[ i ] ) == name ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 
@@ -170,17 +208,16 @@ int CommandLineInterface::runMonteCarlo( const QString &name ) const {
             return static_cast<int>( ExitCode::Success );
         }
         else {
-            qCritical() << "Monte Carlo simulation failed for output "
-                        << "parameter '"
-                        << name
-                        << "'";
+            qCritical() << QString(
+                "Monte Carlo simulation failed for output parameter '" +
+                name +
+                "'"
+            );
             return static_cast<int>( ExitCode::SimulationError );
         }
     }
     else {
-        qCritical() << "Output parameter '"
-                    << name
-                    << "' not available";
+        qCritical() << "Output parameter '" + name + "' not available";
         return static_cast<int>( ExitCode::SimulationError );
     }
 }
@@ -196,15 +233,15 @@ void CommandLineInterface::initializeParser() {
             "in Measurement (GUM).\n"
             "For more information, see https://github.com/ramonobdam/sigma"
         ).arg(
-            mApp->applicationDisplayName(),
+            APP_DISPLAY_NAME,
             mApp->applicationVersion(),
             mApp->applicationName()
         )
     );
 
     // Add options
-    mParser.addHelpOption();
-    mParser.addVersionOption();
+    mParser.addOption( sHelpOption );
+    mVersionOption = mParser.addVersionOption();
     mParser.addOption( sHeadlessOption );
     mParser.addOption( sOpenOption );
     mParser.addOption( sRunOption );
