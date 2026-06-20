@@ -7,6 +7,7 @@
 #include "exitcodes.h"
 #include "uncertaintycalculation.h"
 #include "windowscaptionhelper.h"
+#include <QCoreApplication>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QList>
@@ -19,6 +20,29 @@
 #include <QUrl>
 #include <QWindow>
 
+#ifdef Q_OS_WINDOWS
+#include <windows.h>
+#endif
+
+void attachConsole() {
+#ifdef Q_OS_WINDOWS
+    // Make sure a console is attached to the app on Windows and stdout and
+    // stderr are available
+    if ( AttachConsole( ATTACH_PARENT_PROCESS ) ) {
+        FILE* fp;
+        freopen_s( &fp, "CONOUT$", "w", stdout );
+        freopen_s( &fp, "CONOUT$", "w", stderr );
+    }
+#endif
+}
+
+void setApplicationData( QCoreApplication *app ) {
+    app->setApplicationName( APP_NAME );
+    app->setApplicationVersion( APP_VERSION );
+    app->setOrganizationName( ORG_NAME );
+    app->setOrganizationDomain( ORG_DOMAIN );
+}
+
 int main( int argc, char *argv[] ) {
     // The locale is set to US to have the number format (decimal . and thousand
     // separator ,) consistent wih exprtk
@@ -27,18 +51,18 @@ int main( int argc, char *argv[] ) {
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough
     );
-    QGuiApplication app( argc, argv );
-    app.setApplicationName( "Sigma" );
-    app.setApplicationDisplayName( "Sigma - Measurement Uncertainty Toolkit" );
-    app.setApplicationVersion( APP_VERSION );
-    app.setOrganizationName( "SigmaSoft" );
-    app.setOrganizationDomain( "SigmaSoft.org" );
 
-    ApplicationSettings appSettings { &app };
-    UncertaintyCalculation calculation { &app, &appSettings };
-    CommandLineInterface CLI { &app, &calculation };
+    bool headless { CommandLineInterface::headless( argc, argv ) };
 
-    if ( !CLI.getHeadless() ) {
+    if ( !headless ) {
+        QGuiApplication app { argc, argv };
+        setApplicationData( &app );
+        app.setApplicationDisplayName( APP_DISPLAY_NAME );
+
+        ApplicationSettings appSettings { &app };
+        UncertaintyCalculation calculation { &app, &appSettings };
+        CommandLineInterface CLI { &app, &calculation };
+
         // Start the GUI
         // Load the persistent settings (for GUI mode only)
         appSettings.load();
@@ -67,8 +91,12 @@ int main( int argc, char *argv[] ) {
                     );
                     return;
                 }
-                // UI is ready — apply CLI settings and commands
-                CLI.process();
+                // UI is ready — apply CLI settings and commands, exit on error
+                int exitCode { CLI.process() };
+                if ( exitCode != 0 ) {
+                    QGuiApplication::exit( exitCode );
+                    return;
+                }
 
                 // Restore the last project when setting 'Restore last project
                 // on startup' is set and no project is opened yet from the CLI)
@@ -113,7 +141,17 @@ int main( int argc, char *argv[] ) {
         return app.exec();
     }
     else {
-        // Headless mode — apply CLI settings and commands
+        // Headless mode
+        QCoreApplication app { argc, argv };
+        setApplicationData( &app );
+
+        attachConsole();
+
+        ApplicationSettings appSettings { &app };
+        UncertaintyCalculation calculation { &app, &appSettings };
+        CommandLineInterface CLI { &app, &calculation };
+
+        // Apply CLI settings and commands
         return CLI.process();
     }
 }
