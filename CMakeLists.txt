@@ -42,7 +42,13 @@ else()
     qt_add_executable( Sigma src/main.cpp )
 endif()
 
-target_compile_definitions( Sigma PRIVATE APP_VERSION="${PROJECT_VERSION}" )
+target_compile_definitions( Sigma PRIVATE
+    APP_VERSION="${PROJECT_VERSION}"
+    APP_NAME="Sigma"
+    APP_DISPLAY_NAME="Sigma - Measurement Uncertainty Toolkit"
+    ORG_NAME="SigmaSoft"
+    ORG_DOMAIN="SigmaSoft.org"
+)
 
 set_source_files_properties( qml/Properties.qml qml/Fonts.qml
     PROPERTIES
