@@ -24,18 +24,6 @@
 #include <windows.h>
 #endif
 
-void attachConsole() {
-#ifdef Q_OS_WINDOWS
-    // Make sure a console is attached to the app on Windows and stdout and
-    // stderr are available
-    if ( AttachConsole( ATTACH_PARENT_PROCESS ) ) {
-        FILE* fp;
-        freopen_s( &fp, "CONOUT$", "w", stdout );
-        freopen_s( &fp, "CONOUT$", "w", stderr );
-    }
-#endif
-}
-
 void setApplicationData( QCoreApplication *app ) {
     app->setApplicationName( APP_NAME );
     app->setApplicationVersion( APP_VERSION );
@@ -55,6 +43,15 @@ int main( int argc, char *argv[] ) {
     bool headless { CommandLineInterface::headless( argc, argv ) };
 
     if ( !headless ) {
+#ifdef Q_OS_WINDOWS
+        // On windows, hide console window and detach from current console when
+        // in GUI mode
+        HWND consoleWindow { GetConsoleWindow() };
+        if ( consoleWindow ) {
+            ShowWindow( consoleWindow, SW_HIDE );
+        }
+        FreeConsole();
+#endif
         QGuiApplication app { argc, argv };
         setApplicationData( &app );
         app.setApplicationDisplayName( APP_DISPLAY_NAME );
@@ -85,6 +82,7 @@ int main( int argc, char *argv[] ) {
             &app,
             [ & ]( QObject *object, const QUrl &url ) {
                 if ( !object ) {
+                    Q_UNUSED( url )
                     // QML failed to load — exit with error
                     QGuiApplication::exit(
                         static_cast<int>( ExitCode::QmlLoadFailure )
@@ -144,8 +142,6 @@ int main( int argc, char *argv[] ) {
         // Headless mode
         QCoreApplication app { argc, argv };
         setApplicationData( &app );
-
-        attachConsole();
 
         ApplicationSettings appSettings { &app };
         UncertaintyCalculation calculation { &app, &appSettings };
