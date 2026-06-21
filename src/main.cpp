@@ -20,10 +20,6 @@
 #include <QUrl>
 #include <QWindow>
 
-#ifdef Q_OS_WINDOWS
-#include <windows.h>
-#endif
-
 void setApplicationData( QCoreApplication *app ) {
     app->setApplicationName( APP_NAME );
     app->setApplicationVersion( APP_VERSION );
@@ -43,15 +39,6 @@ int main( int argc, char *argv[] ) {
     bool headless { CommandLineInterface::headless( argc, argv ) };
 
     if ( !headless ) {
-#ifdef Q_OS_WINDOWS
-        // On windows, hide console window and detach from current console when
-        // in GUI mode
-        HWND consoleWindow { GetConsoleWindow() };
-        if ( consoleWindow ) {
-            ShowWindow( consoleWindow, SW_HIDE );
-        }
-        FreeConsole();
-#endif
         QGuiApplication app { argc, argv };
         setApplicationData( &app );
         app.setApplicationDisplayName( APP_DISPLAY_NAME );
