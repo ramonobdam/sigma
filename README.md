@@ -89,7 +89,6 @@ The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects)
 | Option | Description |
 |:---------|:-------------|
 | `-h`, `--help` | Displays help on command-line options |
-| `--help-all` | Displays help, including generic Qt options |
 | `-v`, `--version` | Displays version information |
 | `-H`, `--headless` | Runs Sigma without the GUI |
 | `--open <file>` | Opens a project from `<file>` |
