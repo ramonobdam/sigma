@@ -163,7 +163,7 @@ Each input parameter defines a quantity with an associated probability distribut
 
 ### Correlations
 
-Correlations define the statistical dependence between pairs of input parameters. The input parameters can be in arbitrary order. Only non-zero correlations need to be specified.
+Correlations define the statistical dependence between pairs of input parameters. The input parameter Ids can be entered in arbitrary order. Only non-zero correlations need to be specified.
 
 ```json
 {
