@@ -29,7 +29,7 @@ MonteCarlo::MonteCarlo( OutputParameter *outputParameter, QObject *parent )
         mLowerBound {},
         mHigherBound {},
         mStatus {},
-        mValid { true },
+        mValid { false },
         mOutputStat {},
         mConvergenceFactor {},
         mNumericalTolerance { 0.01 },
