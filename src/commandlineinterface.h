@@ -21,7 +21,6 @@
 // from the Settings class.
 
 // -h, --help            Displays help on commandline options.
-// --help-all            Displays help, including generic Qt options.
 // -v, --version         Displays version information.
 // -H, --headless        Run Sigma without the GUI.
 // --open <file>         Opens a project from <file>.
