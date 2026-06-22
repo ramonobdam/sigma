@@ -108,3 +108,146 @@ Open a project, run all Monte Carlo simulations in headless mode, save the proje
 ```bash
 Sigma --headless --open project.sig --run-all --save project.sig --export export.csv
 ```
+
+## JSON Format
+*Sigma* projects are loaded and saved in JSON format and can also be imported and exported using the `--from-json` and `--to-json` command-line options. The JSON format can be used to create projects programmatically or integrate *Sigma* with other tools.
+
+### Structure
+A *Sigma* project JSON object contains three arrays:
+
+```json
+{
+    "inputParameters":  [ ... ],
+    "correlations":     [ ... ],
+    "outputParameters": [ ... ]
+}
+```
+
+### Input Parameters
+Each input parameter defines a quantity with an associated probability distribution.
+
+```json
+{
+    "Id":              "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}",
+    "name":            "X1",
+    "unit":            "m",
+    "nominalValue":    0,
+    "stdUncertainty":  1,
+    "distribution":    "normal",
+    "DOFInfinite":     true,
+    "DOF":             1
+}
+```
+
+| Field            | Type    | Required | Description                                      |
+|------------------|---------|----------|--------------------------------------------------|
+| `name`           | string  | yes      | Unique identifier. Must start with a letter and cannot be a mathematical operator or constant (e.g. `sin`, `pi`) |
+| `nominalValue`   | number  | yes      | Best estimate of the quantity                    |
+| `stdUncertainty` | number  | yes      | Standard uncertainty (≥0)                        |
+| `distribution`   | string  | yes      | Probability distribution (see below)             |
+| `DOFInfinite`    | boolean | yes      | `true` if degrees of freedom are infinite        |
+| `DOF`            | integer | no       | Degrees of freedom. Required when `DOFInfinite` is `false` |
+| `unit`           | string  | no       | Unit of measurement                              |
+| `Id`             | string  | no       | UUID in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format. Required when referenced in a correlation |
+
+#### Distributions
+
+| Value         | Description                  |
+|---------------|------------------------------|
+| `normal`      | Normal (Gaussian) distribution |
+| `uniform`     | Uniform (rectangular) distribution |
+| `triangular`  | Triangular distribution      |
+| `arcsine`     | Arcsine distribution         |
+| `student`     | Student's t-distribution     |
+| `none`        | Constant — no distribution   |
+
+### Correlations
+
+Correlations define the statistical dependence between pairs of input parameters. The input parameters can be in arbitrary order. Only non-zero correlations need to be specified.
+
+```json
+{
+    "Id":               "{bbf6947c-fd34-4b9e-b367-fbca27143be3}",
+    "IdInputParameterA": "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}",
+    "IdInputParameterB": "{856a592f-4562-41ce-bb79-f1c57dbfba21}",
+    "correlation":       0.5
+}
+```
+
+| Field               | Type   | Required | Description                                      |
+|---------------------|--------|----------|--------------------------------------------------|
+| `IdInputParameterA` | string | yes      | `Id` of the first input parameter                |
+| `IdInputParameterB` | string | yes      | `Id` of the second input parameter               |
+| `correlation`       | number | yes      | Correlation coefficient in the range `[-1, 1]`  |
+| `Id`                | string | no       | UUID of the correlation                          |
+
+### Output Parameters
+
+Each output parameter defines a measurand expressed as a formula of input parameters.
+
+```json
+{
+    "Id":         "{a377bfca-38a4-4177-918c-0bc554859a3c}",
+    "name":       "Y1",
+    "unit":       "m",
+    "formula":    "X1 + X2",
+    "confidence": 0.95
+}
+```
+
+| Field        | Type   | Required | Description                                                  |
+|--------------|--------|----------|--------------------------------------------------------------|
+| `name`       | string | yes      | Unique identifier. Must be at least one character long       |
+| `formula`    | string | yes      | Mathematical expression using input parameter names          |
+| `confidence` | number | yes      | Coverage probability in the range `(0, 1)`, e.g. `0.95` for 95% |
+| `unit`       | string | no       | Unit of measurement                                          |
+| `Id`         | string | no       | UUID of the output parameter                                 |
+
+### Example
+
+```json
+{
+    "inputParameters": [
+        {
+            "name":           "X1",
+            "unit":           "m",
+            "nominalValue":   0,
+            "stdUncertainty": 1,
+            "distribution":   "normal",
+            "DOFInfinite":    true,
+            "Id":             "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}"
+        },
+        {
+            "name":           "X2",
+            "unit":           "m",
+            "nominalValue":   2,
+            "stdUncertainty": 3,
+            "distribution":   "uniform",
+            "DOFInfinite":    false,
+            "DOF":            10,
+            "Id":             "{856a592f-4562-41ce-bb79-f1c57dbfba21}"
+        }
+    ],
+    "correlations": [
+        {
+            "IdInputParameterA": "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}",
+            "IdInputParameterB": "{856a592f-4562-41ce-bb79-f1c57dbfba21}",
+            "correlation":       0.5
+        }
+    ],
+    "outputParameters": [
+        {
+            "name":       "Y1",
+            "unit":       "m",
+            "formula":    "X1 + X2",
+            "confidence": 0.95
+        }
+    ]
+}
+```
+
+### Notes
+
+- UUIDs are generated automatically by *Sigma* when saving a project. When creating JSON manually, UUIDs can be omitted unless correlations are defined, in which case `Id` must be specified for the referenced input parameters.
+- The `formula` field supports standard mathematical operators (`+`, `-`, `*`, `/`, `^`) and functions (`sin()`, `cos()`, `sqrt()`, `abs()`, `log()` etc.) via the [ExprTk](https://www.partow.net/programming/exprtk/index.html) expression parser.
+- Mathematical constants such as `pi`, `epsilon` and `inf` are reserved and cannot be used as input parameter names.
