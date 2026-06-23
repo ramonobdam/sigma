@@ -110,7 +110,7 @@ Sigma --headless --open project.sig --run-all --save project.sig --export export
 ```
 
 ## JSON Format
-*Sigma* projects are loaded and saved in JSON format and can also be imported and exported using the `--from-json` and `--to-json` command-line options. The JSON format can be used to create projects programmatically or integrate *Sigma* with other tools.
+*Sigma* projects (.sig) are loaded and saved in JSON format and can also be imported and exported using the `--from-json` and `--to-json` command-line options. The JSON format can be used to create projects programmatically or integrate *Sigma* with other tools.
 
 ### Structure
 A *Sigma* project JSON object contains three arrays:
@@ -199,7 +199,7 @@ Each output parameter defines a measurand expressed as a formula of input parame
 | `name`       | string | yes      | Unique identifier. Must be at least one character long       |
 | `unit`       | string | no       | Unit of measurement                                          |
 | `formula`    | string | yes      | Mathematical expression using input parameter names          |
-| `confidence` | number | yes      | Required coverage probability of the expanded uncertainty interval in the range `(0, 1)`, e.g. `0.95` for 95% |
+| `confidence` | number | yes      | Level of confidence — the required coverage probability of the expanded uncertainty interval in the range `(0, 1)`, e.g. `0.95` for 95% |
 
 ### Example
 ```json
