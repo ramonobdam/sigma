@@ -469,7 +469,7 @@ BaseWindow {
             }
 
             text: "Level of confidence [%]"
-            subText: "Required level of confidence of the expanded " +
+            subText: "Required coverage probability of the expanded " +
                      "uncertainty (" +
                      confidenceField.bottomString +
                      "% to " +
