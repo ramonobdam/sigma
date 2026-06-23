@@ -326,6 +326,7 @@ InputParameter * InputParameter::getSelected() {
     return mInputModel.getSelected();
 }
 
+
 ModelControl<InputParameter *> * InputParameter::getInputModel() {
     return &mInputModel;
 }
@@ -477,8 +478,16 @@ int InputParameter::getRowIndex( const QUuid &id ) {
 }
 
 
+symbol_table_t & InputParameter::InputParameter::getSymbolTable() {
+    // Use a function with a local static to avoid 'static initialization order
+    // fiasco' problem
+    static symbol_table_t symbolTable;     // Initialized on first call
+    return symbolTable;
+}
+
+
 void InputParameter::addConstantsToSymbolTable() {
-    symbolTable.add_constants();
+    getSymbolTable().add_constants();
 }
 
 
@@ -523,7 +532,7 @@ void InputParameter::clearModel() {
 
 
 void InputParameter::clearSymbolTable() {
-    symbolTable.clear();
+    getSymbolTable().clear();
 }
 
 
@@ -565,7 +574,10 @@ InputParameter * InputParameter::insertIntoModel( int row ) {
 bool InputParameter::addToSymbolTable() {
     if ( validSymbol( getName() ) && !symbolExists( getName() ) ) {
         resetSymbolValue();
-        return symbolTable.add_variable( getNameStdWString(), mSymbolValue );
+        return getSymbolTable().add_variable(
+            getNameStdWString(),
+            mSymbolValue
+        );
     }
     return false;
 }
@@ -573,15 +585,15 @@ bool InputParameter::addToSymbolTable() {
 
 bool InputParameter::removeSymbol( const QString &name ) {
     // Remove the symbol from the table
-    return symbolTable.remove_variable( name.toStdWString(), true );
+    return getSymbolTable().remove_variable( name.toStdWString(), true );
 }
 
 
 bool InputParameter::symbolExists( const QString &name ) {
-    return symbolTable.symbol_exists( name.toStdWString() );
+    return getSymbolTable().symbol_exists( name.toStdWString() );
 }
 
 
 bool InputParameter::validSymbol( const QString &name ) {
-    return symbolTable.valid_symbol( name.toStdWString() );
+    return getSymbolTable().valid_symbol( name.toLower().toStdWString() );
 }

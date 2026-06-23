@@ -629,7 +629,7 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
     if ( valid ) {
         // Try to compile the expression.
         static QRegularExpression re = QRegularExpression( sRegExErrorReplace );
-        expression.register_symbol_table( InputParameter::symbolTable );
+        expression.register_symbol_table( InputParameter::getSymbolTable() );
         if ( !parser.compile(mFormula.toStdWString(), expression ) ) {
             // Compilation error
             QString errorString {};

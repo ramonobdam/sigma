@@ -88,6 +88,7 @@ public:
         bool checkCurrentSelection = false
     );
     static int getRowIndex( const QUuid &id );
+    static symbol_table_t & getSymbolTable();
     static void addConstantsToSymbolTable();
     static void applyDiff( const JsonDiff &diff );
     static void clearModel();
@@ -109,7 +110,6 @@ public:
         "Distribution",
         "Degrees of freedom"
     };
-    inline static symbol_table_t symbolTable {};
 
 private:
     InputParameter *insertIntoModel( int row );
