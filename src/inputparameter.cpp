@@ -283,8 +283,8 @@ void InputParameter::setDOF( int DOF ) {
     }
     if ( !valid ) {
         qCritical() << sInvalidDOFString.arg(
-            QString::number( DOF, 'g', 0 ),
-            QString::number( mDOF, 'g', 0 )
+            QString::number( DOF, 'f', 0 ),
+            QString::number( mDOF, 'f', 0 )
         );
         return;
     }
