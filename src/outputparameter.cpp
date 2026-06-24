@@ -11,6 +11,7 @@
 #include <QRegularExpression>
 #include <QUuid>
 #include <QtAssert>
+#include <QtLogging>
 #include <QtMinMax>
 #include <cmath>
 #include <deque>
@@ -765,6 +766,23 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
 
 
 void OutputParameter::setConfidence( double confidence ) {
+    bool valid { true };
+    if ( confidence < sMinConfidence ) {
+        valid = false;
+        mConfidence = sMinConfidence;
+    }
+    else if ( confidence > sMaxConfidence ) {
+        valid = false;
+        mConfidence = sMaxConfidence;
+    }
+    if ( !valid ) {
+        int precison { 3 };
+        qCritical() << sInvalidConfidenceString.arg(
+            StringUtils::doubleToString( confidence, precison ),
+            StringUtils::doubleToString( mConfidence, precison )
+        );
+        return;
+    }
     mConfidence = confidence;
 }
 
@@ -1056,10 +1074,11 @@ void OutputParameter::setSelectionLocked( bool locked ) {
 
 OutputParameter * OutputParameter::insertIntoModel( int row ) {
     // Insert this OutputParameter into the model at row if the name is valid
-    if ( validName( getName() ) ) {
+    if ( validName( mName ) ) {
         const int boundedRow { qBound( 0, row, mOutputModel.rowCount() ) };
         return mOutputModel.insertRow( boundedRow, *this );
     }
+    qCritical() << sInsertErrorString.arg( mName );
     return nullptr;
 }
 
@@ -1162,4 +1181,14 @@ void OutputParameter::createConnections() {
         &OutputParameter::monteCarloConvergenceFactorChanged,
         Qt::UniqueConnection
     );
+}
+
+
+double OutputParameter::getMaxConfidence() {
+    return sMaxConfidence;
+}
+
+
+double OutputParameter::getMinConfidence() {
+    return sMinConfidence;
 }
