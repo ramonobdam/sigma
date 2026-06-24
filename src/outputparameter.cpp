@@ -776,7 +776,7 @@ void OutputParameter::setConfidence( double confidence ) {
         mConfidence = sMaxConfidence;
     }
     if ( !valid ) {
-        int precison { 3 };
+        int precison { Settings::getDefaultDisplayPrecision() };
         qCritical() << sInvalidConfidenceString.arg(
             StringUtils::doubleToString( confidence, precison ),
             StringUtils::doubleToString( mConfidence, precison )
