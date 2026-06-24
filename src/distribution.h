@@ -39,6 +39,10 @@ namespace Distribution {
     QList<Type> getDistributions();
     QString distributionToString( Type distribution );
     Type stringToDistribution( const QString &distributionString );
+    bool stringToDistribution(
+        const QString &distributionString,
+        Type &distribution
+    );
     double invCDFStandardNormal( double p );
     double normalCDF( double z );
 }

@@ -40,12 +40,25 @@ namespace Distribution {
 
 
     Type stringToDistribution( const QString &distributionString ) {
+        Type type {};
+        stringToDistribution( distributionString, type );
+        return type;
+    }
+
+    bool stringToDistribution(
+        const QString &distributionString,
+        Type &distribution
+    ) {
+        // Set the distribution type based on distributionString if it matches
+        // an existing distribution and return true if succesful
         for ( auto it { map.cbegin() }; it != map.cend(); ++it ) {
             if ( it.value() == distributionString.trimmed() ) {
-                return it.key();
+                distribution = it.key();
+                return true;
             }
         }
-        return Type::none;
+        distribution = Type::none;
+        return false;
     }
 
 
