@@ -158,7 +158,7 @@ private:
         "Invalid degrees of freedom value of '%1' is set to '%2'"
     };
     static constexpr QLatin1StringView sInsertErrorString {
-        "Input parameter '%1' could not be inserted into the model"
+        "Invalid input parameter '%1' could not be inserted into the model"
     };
     static constexpr QLatin1StringView sNegativeStdUncertaintyString {
         "Negative standard uncertainty value of '%1' is set to absolute value"
