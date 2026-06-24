@@ -267,8 +267,8 @@ BaseWindow {
         SigmaTextField {
             id: coefField
 
-            property real bottomValue: -1
-            property real topValue: 1
+            property real bottomValue: correlation.minCorrelation
+            property real topValue: correlation.maxCorrelation
             property string bottomString:
                 Number( bottomValue ).toLocaleString( locale, "f", 0)
             property string topString:
