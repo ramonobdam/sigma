@@ -48,6 +48,7 @@ public:
     QCoreApplication *getCoreApplication() const;
     UncertaintyCalculation *getUncertaintyCalculation() const;
     int process();
+    bool getProjectLoaded() const;
     void setCoreApplication( QCoreApplication *app );
     void setUncertaintyCalculation( UncertaintyCalculation *calculation );
 
@@ -221,6 +222,7 @@ private:
     QCommandLineParser mParser;
     QCoreApplication *mApp;
     UncertaintyCalculation *mCalculation;
+    bool mProjectLoaded;
 };
 
 #endif // COMMANDLINEINTERFACE_H

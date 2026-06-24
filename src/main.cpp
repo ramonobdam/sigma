@@ -84,10 +84,11 @@ int main( int argc, char *argv[] ) {
                 }
 
                 // Restore the last project when setting 'Restore last project
-                // on startup' is set and no project is opened yet from the CLI)
+                // on startup' is set and no project is loaded yet from the CLI
+                // using --open or --from-json
                 if (
                     appSettings.getRestoreLastProject() &&
-                    calculation.getProjectFileName().isEmpty()
+                    !CLI.getProjectLoaded()
                 ) {
                     QUrl lastUrl { appSettings.getLastProjectFilePath() };
                     calculation.loadProject( lastUrl );

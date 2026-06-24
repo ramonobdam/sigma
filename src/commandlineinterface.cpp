@@ -25,7 +25,8 @@ CommandLineInterface::CommandLineInterface(
         mCalculation { calculation },
         mParser {},
         // Overwritten with actual names in initializeParser():
-        mVersionOption { "version" }
+        mVersionOption { "version" },
+        mProjectLoaded { false }
 {
     initializeParser();
     setupSignalHandling();
@@ -88,6 +89,7 @@ int CommandLineInterface::process() {
         if ( !mCalculation->loadProject( url ) ) {
             return static_cast<int>( ExitCode::LoadError );
         }
+        mProjectLoaded = true;
     }
 
     if ( mParser.isSet( sFromJsonOption ) ) {
@@ -105,6 +107,7 @@ int CommandLineInterface::process() {
         }
 
         mCalculation->projectFromJson( doc.object() );
+        mProjectLoaded = true;
     }
 
     if ( mParser.isSet( sRunOption ) ) {
@@ -152,6 +155,11 @@ int CommandLineInterface::process() {
     }
 
     return static_cast<int>( ExitCode::Success );
+}
+
+
+bool CommandLineInterface::getProjectLoaded() const {
+    return mProjectLoaded;
 }
 
 
