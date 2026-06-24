@@ -66,6 +66,22 @@ public:
     Q_INVOKABLE void setStdUncertainty( double stdUncertainty );
     Q_INVOKABLE void setToSelected();
 
+    Q_PROPERTY(
+        double minStdUncertainty
+        READ getMinStdUncertainty
+        CONSTANT
+    )
+    Q_PROPERTY(
+        int maxDOF
+        READ getMaxDOF
+        CONSTANT
+    )
+    Q_PROPERTY(
+        int minDOF
+        READ getMinDOF
+        CONSTANT
+    )
+
     static InputParameter fromJson(
         const QJsonObject &json,
         bool appendToModel = true,
@@ -118,6 +134,9 @@ private:
     static bool removeSymbol( const QString &name );
     static bool symbolExists( const QString &name );
     static bool validSymbol( const QString &name );
+    static double getMinStdUncertainty();
+    static int getMaxDOF();
+    static int getMinDOF();
 
     Distribution::Type mDistribution;
     bool mDOFInfinite;
@@ -132,9 +151,24 @@ private:
     static constexpr QLatin1StringView sInputParametersHeaderString {
         "Input parameters:"
     };
+    static constexpr QLatin1StringView sInvalidDistributionString {
+        "Distribution type '%1' not recognized and set to '%2'"
+    };
+    static constexpr QLatin1StringView sInvalidDOFString {
+        "Invalid degrees of freedom value of '%1' is set to '%2'"
+    };
+    static constexpr QLatin1StringView sInsertErrorString {
+        "Input parameter '%1' could not be inserted into the model"
+    };
+    static constexpr QLatin1StringView sNegativeStdUncertaintyString {
+        "Negative standard uncertainty value of '%1' is set to absolute value"
+    };
     static constexpr QLatin1StringView sStdUncertaintyString {
         "stdUncertainty"
     };
+    static constexpr double sMinStdUncertainty { 0. };
+    static constexpr int sMaxDOF { 1000000 };
+    static constexpr int sMinDOF { 1 };
 };
 
 #endif // INPUTPARAMETER_H

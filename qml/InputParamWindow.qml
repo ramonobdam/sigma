@@ -311,7 +311,14 @@ BaseWindow {
             }
 
             text: "Standard uncertainty [" + control.unit + "]"
-            subText: "Estimated standard deviation of the input parameter (≥0)"
+            subText:
+                "Estimated standard deviation of the input parameter (≥" +
+                Number( doubleValidator.bottom ).toLocaleString(
+                    locale,
+                    'f',
+                    0
+                ) +
+                ")"
         }
 
         SigmaTextField {
@@ -339,7 +346,7 @@ BaseWindow {
 
             DoubleValidator {
                 id: doubleValidator
-                bottom: 0
+                bottom: param.minStdUncertainty
                 notation: DoubleValidator.ScientificNotation
             }
 
@@ -421,8 +428,8 @@ BaseWindow {
 
             visible: !control.dofInfinite
 
-            from: 1
-            to: 1e6
+            from: param.minDOF
+            to: param.maxDOF
 
             validator: DoubleValidator {
                 bottom: dofStepper.from

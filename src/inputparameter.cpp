@@ -8,7 +8,9 @@
 #include "stringutils.h"
 #include <QJsonValue>
 #include <QtAssert>
+#include <QtLogging>
 #include <QtMinMax>
+#include <cmath>
 
 
 ModelControl<InputParameter *> InputParameter::mInputModel = {};
@@ -269,6 +271,23 @@ int InputParameter::getDOF() const {
 
 
 void InputParameter::setDOF( int DOF ) {
+    bool valid { true };
+    if ( DOF < sMinDOF ) {
+        valid = false;
+        mDOF = sMinDOF;
+
+    }
+    else if ( DOF > sMaxDOF ) {
+        valid = false;
+        mDOF = sMaxDOF;
+    }
+    if ( !valid ) {
+        qCritical() << sInvalidDOFString.arg(
+            QString::number( DOF, 'g', 0 ),
+            QString::number( mDOF, 'g', 0 )
+        );
+        return;
+    }
     mDOF = DOF;
 }
 
@@ -279,11 +298,28 @@ void InputParameter::setDOFInfinite( bool DOFInfinite ) {
 
 
 void InputParameter::setDistribution( const QString &distributionString ) {
-    setDistribution( Distribution::stringToDistribution( distributionString ) );
+    if (
+        !Distribution::stringToDistribution( distributionString, mDistribution )
+    ) {
+        qCritical() << sInvalidDistributionString.arg(
+            distributionString.trimmed(),
+            Distribution::distributionToString( mDistribution )
+        );
+    }
 }
 
 
 void InputParameter::setStdUncertainty( double stdUncertainty ) {
+    if ( stdUncertainty < sMinStdUncertainty ) {
+        mStdUncertainty = std::abs( stdUncertainty );
+        qCritical() << sNegativeStdUncertaintyString.arg(
+            StringUtils::doubleToString(
+                stdUncertainty,
+                Settings::getDefaultDisplayPrecision()
+            )
+        );
+        return;
+    }
     mStdUncertainty = stdUncertainty;
 }
 
@@ -559,7 +595,7 @@ void InputParameter::setSelectionLocked( bool locked ) {
 InputParameter * InputParameter::insertIntoModel( int row ) {
     // Insert this InputParameter into the model at row and add its name to the
     // symbol table, if its name is valid
-    if ( validName( getName() ) ) {
+    if ( validName( mName ) ) {
         const int boundedRow { qBound( 0, row, mInputModel.rowCount() ) };
         InputParameter *newParam { mInputModel.insertRow( boundedRow, *this ) };
         if ( newParam ) {
@@ -567,6 +603,7 @@ InputParameter * InputParameter::insertIntoModel( int row ) {
             return newParam;
         }
     }
+    qCritical() << sInsertErrorString.arg( mName );
     return nullptr;
 }
 
@@ -596,4 +633,19 @@ bool InputParameter::symbolExists( const QString &name ) {
 
 bool InputParameter::validSymbol( const QString &name ) {
     return getSymbolTable().valid_symbol( name.toLower().toStdWString() );
+}
+
+
+double InputParameter::getMinStdUncertainty() {
+    return sMinStdUncertainty;
+}
+
+
+int InputParameter::getMaxDOF() {
+    return sMaxDOF;
+}
+
+
+int InputParameter::getMinDOF() {
+    return sMinDOF;
 }
