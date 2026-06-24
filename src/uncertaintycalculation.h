@@ -38,7 +38,13 @@ public:
         ApplicationSettings *appSettings = new ApplicationSettings()
     );
 
+    QJsonObject projectToJson() const;
+    QString getProjectFileName() const;
+    QStringList getOutputParameterNames() const;
     QStringList getUnits() const;
+    bool getHistogramValid() const;
+    bool selectOutputParameterByName( const QString &name );
+    void projectFromJson( const QJsonObject &json );
 
     Q_INVOKABLE QList<int> getBudgetColumnWidths() const;
     Q_INVOKABLE QList<int> getCorrelationColumnWidths() const;
@@ -63,17 +69,17 @@ public:
         const QString &name,
         const bool &checkCurrentSelection = false
     ) const;
-    Q_INVOKABLE const BudgetModel *budgetItemModel() const;
-    Q_INVOKABLE const QItemSelectionModel *correlationSelectionModel() const;
-    Q_INVOKABLE const QItemSelectionModel *inputSelectionModel() const;
-    Q_INVOKABLE const QItemSelectionModel *outputSelectionModel() const;
-    Q_INVOKABLE const QAbstractTableModel *correlationItemModel() const;
-    Q_INVOKABLE const QAbstractTableModel *inputItemModel() const;
-    Q_INVOKABLE const QAbstractTableModel *outputItemModel() const;
-    Q_INVOKABLE const QStringListModel *distributionsModel() const;
-    Q_INVOKABLE const QStringListModel *unitsModel() const;
-    Q_INVOKABLE const ResultsModel *resultsItemModel() const;
-    Q_INVOKABLE const UndoHistoryModel *undoHistoryModel() const;
+    Q_INVOKABLE BudgetModel *budgetItemModel();
+    Q_INVOKABLE QItemSelectionModel *correlationSelectionModel();
+    Q_INVOKABLE QItemSelectionModel *inputSelectionModel();
+    Q_INVOKABLE QItemSelectionModel *outputSelectionModel();
+    Q_INVOKABLE QAbstractTableModel *correlationItemModel();
+    Q_INVOKABLE QAbstractTableModel *inputItemModel();
+    Q_INVOKABLE QAbstractTableModel *outputItemModel();
+    Q_INVOKABLE QStringListModel *distributionsModel();
+    Q_INVOKABLE QStringListModel *unitsModel();
+    Q_INVOKABLE ResultsModel *resultsItemModel();
+    Q_INVOKABLE UndoHistoryModel *undoHistoryModel();
     Q_INVOKABLE void addCorrelation( const Correlation *correlation );
     Q_INVOKABLE void addInputParameter( const InputParameter *parameter );
     Q_INVOKABLE void addOutputParameter( const OutputParameter *parameter );
@@ -204,6 +210,7 @@ signals:
     void canRedoChanged();
     void inputParameterChanged();
     void monteCarloConvergenceFactorChanged();
+    void monteCarloFinished();
     void monteCarloResultsChanged();
     void monteCarloResultsListChanged();
     void histogramValuesChanged();
@@ -214,12 +221,10 @@ signals:
     void unsavedChangesChanged();
 
 private:
-    QJsonObject projectToJson() const;
     QList<double> getHistogramValues() const;
     QString getInputName() const;
     QString getOutputName() const;
     QString getOutputUnit() const;
-    QString getProjectFileName() const;
     QString outputParameterReferencesToString(
         const QStringList &references
     ) const;
@@ -232,7 +237,6 @@ private:
     QUrl getProjectFilePath() const;
     bool canRedo() const;
     bool canUndo() const;
-    bool getHistogramValid() const;
     bool getOutputLocked() const;
     bool getOutputValid() const;
     bool getUnsavedChanges() const;
@@ -247,7 +251,6 @@ private:
     void connectToOutputParameter( const OutputParameter *parameter);
     void createConnections();
     void emitAllResultsChanged();
-    void projectFromJson( const QJsonObject &json );
     void recompileExpressions(
         DiffUtil &diffUtil,
         const bool recompileInvalidExpressions,

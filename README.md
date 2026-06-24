@@ -27,25 +27,31 @@ Why a tool for interactive measurement uncertainty analysis?
 - Monte Carlo simulation is available for more complex models. The visualization of the simulation output values provides insight into the probability distribution of the output parameter.
 - All changes are undoable, including Monte Carlo simulation results
 - Calculation projects can easily be saved or exported
+- Uncertainty budget calculations can be integrated into an existing calculation pipeline using *Sigma*'s command-line interface
 
 ## Architecture
-For maintainability and reusability, *Sigma* is structured into separate UI, Orchestration, and Core layers. This separation makes it straightforward to add a command-line interface in the future.
+For maintainability and reusability, *Sigma* is structured into separate UI, Orchestration, and Core layers. The UI layer contains a graphical user interface (GUI) and a command-line interface (CLI). The GUI provides an interactive environment for defining parameters and immediate visualization of results. The Orchestration layer acts as the interface between the GUI/CLI and the Core systems. It orchestrates the execution of calculations, manages data flow between components, and handles file I/O. The Core layer handles the data storage and numerical computations.
 
-The Core layer handles data storage and numerical computations. The UI layer is independent of the core and provides an interactive environment for defining parameters and immediate visualization of results. The Orchestration layer acts as the interface between the UI and the Core systems. It orchestrates the execution of calculations, manages data flow between components, and handles file I/O.
-
-### UI layer (Qt Quick)
-- User interaction
-- Data input
-- Results visualization
-- Custom QML components
+### UI layer
+- #### GUI (Qt Quick)
+  - User interaction
+  - Data input
+  - Results visualization
+  - Custom QML components
+- #### CLI (Command-Line Interface)
+  - Headless project automation
+  - Monte Carlo simulation via command-line
+  - JSON import/export
 
 ### Orchestration layer (C++)
 - Orchestration of calculations and data flow
-- File I/O
+- Transaction-based undo/redo system
+- Project file save/load (.sig)
+- CSV export
 
 ### Core layer (C++)
 - Data models
-- Mathematical expression parser
+- Mathematical expression parser (ExprTk)
 - Uncertainty budget calculations
 - Correlated sampler
 - Monte Carlo simulation
@@ -75,3 +81,171 @@ Compiling your own version of *Sigma* requires:
 The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects) folder contains *Sigma* project files for the calculation examples given in GUM parts [JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) and [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008). Note that the demo projects are also added to the installation folder when you use the installer.
 
 *Sigma* projects can be opened using 'Project > Open...' (Ctrl+O) from the main menu.
+
+## Command-line interface
+### Usage
+- Windows `Sigma [options]`
+- macOS `./Sigma.app/Contents/MacOS/Sigma [options]`
+
+| Option | Description |
+|:---------|:-------------|
+| `-h`, `--help` | Displays help on command-line options |
+| `-v`, `--version` | Displays version information |
+| `-H`, `--headless` | Runs Sigma without the GUI |
+| `--open <file>` | Opens a project from `<file>` |
+| `--run <par>` | Runs Monte Carlo simulation for output parameter `<par>` |
+| `--run-all` | Runs Monte Carlo simulation for all output parameters |
+| `--save <file>` | Saves the project to `<file>` |
+| `--export <file>` | Exports the results to CSV file |
+| `--to-json` | Prints the project data to stdout in JSON format |
+| `--from-json` | Loads the project data from stdin in JSON format |
+| `--csvdigits <digits>` | Sets the CSV export significant digits (1 to 20) |
+| `--mcdigits <digits>` | Sets the Monte Carlo significant digits (1 to 3) |
+| `--mcbatchsize <size>` | Sets the Monte Carlo batch size (1e+02 to 1e+06) |
+| `--mcmaxbatches <num>` | Sets the Monte Carlo maximum number of batches (1e+01 to 1e+05) |
+
+### Example
+Open a project, run all Monte Carlo simulations in headless mode, save the project, and export the results:
+```bash
+Sigma --headless --open project.sig --run-all --save project.sig --export export.csv
+```
+
+## JSON Format
+*Sigma* projects (.sig) are loaded and saved in JSON format and can also be imported and exported using the `--from-json` and `--to-json` command-line options. The JSON format can be used to create projects programmatically or integrate *Sigma* with other tools.
+
+### Structure
+A *Sigma* project JSON object contains three arrays:
+
+```json
+{
+    "inputParameters":  [ ... ],
+    "correlations":     [ ... ],
+    "outputParameters": [ ... ]
+}
+```
+
+### Input parameters
+Each input parameter defines a quantity with an associated probability distribution.
+
+```json
+{
+    "Id":              "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}",
+    "name":            "X1",
+    "unit":            "m",
+    "nominalValue":    0,
+    "stdUncertainty":  1,
+    "distribution":    "normal",
+    "DOFInfinite":     true,
+    "DOF":             1
+}
+```
+
+| Field            | Type    | Required | Description                                      |
+|------------------|---------|----------|--------------------------------------------------|
+| `Id`             | string  | no       | UUID in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format. Required when referenced in a correlation |
+| `name`           | string  | yes      | Unique identifier. Must start with a letter and cannot be a mathematical operator or constant (e.g. `sin`, `pi`) |
+| `unit`           | string  | no       | Unit of measurement                              |
+| `nominalValue`   | number  | yes      | Best estimate of the quantity                    |
+| `stdUncertainty` | number  | yes      | Standard uncertainty (≥0)                        |
+| `distribution`   | string  | yes      | Probability distribution (see below)             |
+| `DOFInfinite`    | boolean | yes      | `true` if degrees of freedom are infinite        |
+| `DOF`            | integer | no       | Degrees of freedom `[1, 1e6]`. Required when `DOFInfinite` is `false` |
+
+#### Distributions
+| Value         | Description                  |
+|---------------|------------------------------|
+| `normal`      | Normal (Gaussian) distribution |
+| `uniform`     | Uniform (rectangular) distribution |
+| `triangular`  | Triangular distribution      |
+| `arcsine`     | Arcsine distribution         |
+| `student`     | Student's t-distribution     |
+| `none`        | Constant — no distribution   |
+
+### Correlations
+Correlations define the statistical dependence between pairs of input parameters. The input parameter Ids can be entered in arbitrary order. Only non-zero correlations need to be specified.
+
+```json
+{
+    "Id":                "{bbf6947c-fd34-4b9e-b367-fbca27143be3}",
+    "IdInputParameterA": "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}",
+    "IdInputParameterB": "{856a592f-4562-41ce-bb79-f1c57dbfba21}",
+    "correlation":       0.5
+}
+```
+
+| Field               | Type   | Required | Description                                      |
+|---------------------|--------|----------|--------------------------------------------------|
+| `Id`                | string | no       | UUID of the correlation in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format |
+| `IdInputParameterA` | string | yes      | `Id` of the first input parameter                |
+| `IdInputParameterB` | string | yes      | `Id` of the second input parameter               |
+| `correlation`       | number | yes      | Correlation coefficient in the range `[-1, 1]`   |
+
+
+### Output parameters
+Each output parameter defines a measurand expressed as a formula of input parameters.
+
+```json
+{
+    "Id":         "{a377bfca-38a4-4177-918c-0bc554859a3c}",
+    "name":       "Y1",
+    "unit":       "m",
+    "formula":    "X1 + X2",
+    "confidence": 0.95
+}
+```
+
+| Field        | Type   | Required | Description                                                  |
+|--------------|--------|----------|--------------------------------------------------------------|
+| `Id`         | string | no       | UUID of the output parameter in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format |
+| `name`       | string | yes      | Unique identifier. Must be at least one character long       |
+| `unit`       | string | no       | Unit of measurement                                          |
+| `formula`    | string | yes      | Mathematical expression using input parameter names          |
+| `confidence` | number | yes      | Level of confidence — the required coverage probability of the expanded uncertainty interval in the range `(0, 1)`, e.g. `0.95` for 95% |
+
+### Example
+```json
+{
+    "inputParameters": [
+        {
+            "Id":             "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}",
+            "name":           "X1",
+            "unit":           "m",
+            "nominalValue":   0,
+            "stdUncertainty": 1,
+            "distribution":   "normal",
+            "DOFInfinite":    true
+        },
+        {
+            "Id":             "{856a592f-4562-41ce-bb79-f1c57dbfba21}",
+            "name":           "X2",
+            "unit":           "m",
+            "nominalValue":   2,
+            "stdUncertainty": 3,
+            "distribution":   "uniform",
+            "DOFInfinite":    false,
+            "DOF":            10
+        }
+    ],
+    "correlations": [
+        {
+            "IdInputParameterA": "{ac7a4821-a1a4-4d72-88f5-f29b00779d41}",
+            "IdInputParameterB": "{856a592f-4562-41ce-bb79-f1c57dbfba21}",
+            "correlation":       0.5
+        }
+    ],
+    "outputParameters": [
+        {
+            "name":       "Y1",
+            "unit":       "m",
+            "formula":    "X1 + X2",
+            "confidence": 0.95
+        }
+    ]
+}
+```
+
+### Notes
+
+- UUIDs are generated automatically by *Sigma* when saving a project. When creating JSON manually, UUIDs can be omitted unless correlations are defined, in which case `Id` must be specified for the referenced input parameters.
+- The `formula` field supports standard mathematical operators (`+`, `-`, `*`, `/`, `^`) and functions (`sin()`, `cos()`, `sqrt()`, `abs()`, `log()` etc.) via the [ExprTk](https://www.partow.net/programming/exprtk/index.html) expression parser.
+- The mathematical constants `pi`, `epsilon` and `inf` are reserved and cannot be used as input parameter names.

@@ -11,6 +11,7 @@
 #include <QRegularExpression>
 #include <QUuid>
 #include <QtAssert>
+#include <QtLogging>
 #include <QtMinMax>
 #include <cmath>
 #include <deque>
@@ -629,7 +630,7 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
     if ( valid ) {
         // Try to compile the expression.
         static QRegularExpression re = QRegularExpression( sRegExErrorReplace );
-        expression.register_symbol_table( InputParameter::symbolTable );
+        expression.register_symbol_table( InputParameter::getSymbolTable() );
         if ( !parser.compile(mFormula.toStdWString(), expression ) ) {
             // Compilation error
             QString errorString {};
@@ -765,6 +766,23 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
 
 
 void OutputParameter::setConfidence( double confidence ) {
+    bool valid { true };
+    if ( confidence < sMinConfidence ) {
+        valid = false;
+        mConfidence = sMinConfidence;
+    }
+    else if ( confidence > sMaxConfidence ) {
+        valid = false;
+        mConfidence = sMaxConfidence;
+    }
+    if ( !valid ) {
+        int precison { Settings::getDefaultDisplayPrecision() };
+        qCritical() << sInvalidConfidenceString.arg(
+            StringUtils::doubleToString( confidence, precison ),
+            StringUtils::doubleToString( mConfidence, precison )
+        );
+        return;
+    }
     mConfidence = confidence;
 }
 
@@ -916,6 +934,19 @@ bool OutputParameter::remove( const QUuid &id ) {
 }
 
 
+bool OutputParameter::selectRowByName( const QString &name ) {
+    OutputParameter *parameter { mOutputModel.getByName( name ) };
+    if ( parameter ) {
+        int row { getRowIndex( parameter->getId() ) };
+        if ( row >= 0 ) {
+            mOutputModel.selectRow( row );
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool OutputParameter::update( const QUuid &id, OutputParameter *parameter ) {
     // The new name has to be valid (unique) or equal to the original parameter
     OutputParameter *originalParameter { getById( id )};
@@ -1043,10 +1074,11 @@ void OutputParameter::setSelectionLocked( bool locked ) {
 
 OutputParameter * OutputParameter::insertIntoModel( int row ) {
     // Insert this OutputParameter into the model at row if the name is valid
-    if ( validName( getName() ) ) {
+    if ( validName( mName ) ) {
         const int boundedRow { qBound( 0, row, mOutputModel.rowCount() ) };
         return mOutputModel.insertRow( boundedRow, *this );
     }
+    qCritical() << sInsertErrorString.arg( mName );
     return nullptr;
 }
 
@@ -1149,4 +1181,14 @@ void OutputParameter::createConnections() {
         &OutputParameter::monteCarloConvergenceFactorChanged,
         Qt::UniqueConnection
     );
+}
+
+
+double OutputParameter::getMaxConfidence() {
+    return sMaxConfidence;
+}
+
+
+double OutputParameter::getMinConfidence() {
+    return sMinConfidence;
 }

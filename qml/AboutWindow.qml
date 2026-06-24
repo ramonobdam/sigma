@@ -85,8 +85,8 @@ BaseWindow {
             }
 
             text:
-                "<p>
-                The " + Application.name +
+                "<p>"
+                + Application.name +
                 " implements measurement uncertainty calculation in accordance
                 with the Guide to the expression of Uncertainty in
                 Measurement (GUM).

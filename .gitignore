@@ -44,3 +44,4 @@
 *.user
 /installers
 /build
+/regression_tests

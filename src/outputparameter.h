@@ -110,6 +110,17 @@ public:
     Q_INVOKABLE void setFormula( const QString &formula );
     Q_INVOKABLE void setToSelected();
 
+    Q_PROPERTY(
+        double maxConfidence
+        READ getMaxConfidence
+        CONSTANT
+    )
+    Q_PROPERTY(
+        double minConfidence
+        READ getMinConfidence
+        CONSTANT
+    )
+
     static ModelControl<OutputParameter *> *getOutputModel();
     static OutputParameter fromJson(
         const QJsonObject &json,
@@ -125,6 +136,7 @@ public:
     static QString parametersToCSVString();
     static QUuid getSelectedId();
     static bool remove( const QUuid &id );
+    static bool selectRowByName( const QString &name );
     static bool update( const QUuid &id, OutputParameter *parameter );
     static bool validName(
         const QString &name,
@@ -190,6 +202,9 @@ private:
     bool allComponentsNormal() const;
     void createConnections();
 
+    static double getMaxConfidence();
+    static double getMinConfidence();
+
     Eigen::MatrixXd mLatentCorrelation;
     MonteCarlo mMonteCarlo;
     QList<UncertaintyComponent> mComponents;
@@ -217,6 +232,12 @@ private:
     };
     static constexpr QLatin1StringView sConfidenceString { "confidence" };
     static constexpr QLatin1StringView sFormulaString { "formula" };
+    static constexpr QLatin1StringView sInsertErrorString {
+        "Invalid output parameter '%1' could not be inserted into the model"
+    };
+    static constexpr QLatin1StringView sInvalidConfidenceString {
+        "Invalid level of confidence value of '%1' set to '%2'"
+    };
     static constexpr QLatin1StringView sMonteCarloHeaderString {
         "Monte Carlo simulation:"
     };
@@ -227,6 +248,8 @@ private:
     static constexpr QLatin1StringView sUncertaintyComponentsHeaderString {
         "Uncertainty components "
     };
+    static constexpr double sMaxConfidence { 0.999 };
+    static constexpr double sMinConfidence { 0. };
     static constexpr int sErrorCodeLength { 9 };
 };
 

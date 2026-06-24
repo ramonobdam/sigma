@@ -469,7 +469,7 @@ BaseWindow {
             }
 
             text: "Level of confidence [%]"
-            subText: "Required level of confidence of the expanded " +
+            subText: "Required coverage probability of the expanded " +
                      "uncertainty (" +
                      confidenceField.bottomString +
                      "% to " +
@@ -480,8 +480,8 @@ BaseWindow {
         SigmaTextField {
             id: confidenceField
 
-            property real validatorBottom: 0
-            property real validatorTop: 99.9
+            property real validatorBottom: param.minConfidence * 100.
+            property real validatorTop: param.maxConfidence * 100.
             property int decimals: 1
             property string bottomString:
                 Number( validatorBottom ).toLocaleString( locale, 'f', decimals)

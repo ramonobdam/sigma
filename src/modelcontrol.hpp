@@ -61,9 +61,9 @@ public:
 
     T *insertRow( int row, const T &record ) {
         const int boundedRow { qBound( 0, row, rowCount() ) };
-        mModel.insertRow( boundedRow, record );
+        T* newRec { mModel.insertRow( boundedRow, record ) };
         selectRow( boundedRow );   // The new row becomes the selected row
-        return getByRow( boundedRow );
+        return newRec;
     }
 
 

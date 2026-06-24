@@ -308,8 +308,8 @@ BaseWindow {
                 left: parent.left
             }
 
-            from: 1
-            to: 10
+            from: appSettings.minDisplayPrecision
+            to: appSettings.maxDisplayPrecision
             value: appSettings.displayPrecision
             onValueModified: {
                 if ( control.formActive ) {
@@ -356,8 +356,8 @@ BaseWindow {
                 left: parent.left
             }
 
-            from: 1
-            to: 20
+            from: appSettings.minCSVPrecision
+            to: appSettings.maxCSVPrecision
             value: appSettings.csvPrecision
             onValueModified: {
                 if ( formActive ) {
@@ -403,8 +403,8 @@ BaseWindow {
                 left: parent.left
             }
 
-            from: 1
-            to: 3
+            from: appSettings.minMonteCarloDigits
+            to: appSettings.maxMonteCarloDigits
             value: appSettings.monteCarloDigits
             onValueModified: {
                 if ( control.formActive ) {
@@ -451,8 +451,8 @@ BaseWindow {
                 left: parent.left
             }
 
-            numberFrom: 1e2
-            numberTo: 1e6
+            numberFrom: appSettings.minMonteCarloBatchSize
+            numberTo: appSettings.maxMonteCarloBatchSize
             value: numberToValue( appSettings.monteCarloBatchSize )
             onValueModified: {
                 if ( control.formActive) {
@@ -489,7 +489,7 @@ BaseWindow {
                 initial = number
             }
             function restoreInitial() {
-                appSettings.setMonteCarloMaxOfNumBatches( initial )
+                appSettings.setMonteCarloMaxNumOfBatches( initial )
             }
 
             anchors {
@@ -498,12 +498,12 @@ BaseWindow {
                 left: parent.left
             }
 
-            numberFrom: 1e1
-            numberTo: 1e5
+            numberFrom: appSettings.minMonteCarloMaxNumOfBatches
+            numberTo: appSettings.maxMonteCarloMaxNumOfBatches
             value: numberToValue( appSettings.monteCarloMaxNumOfBatches )
             onValueModified: {
                 if ( control.formActive ) {
-                    appSettings.setMonteCarloMaxOfNumBatches( number )
+                    appSettings.setMonteCarloMaxNumOfBatches( number )
                 }
             }
 

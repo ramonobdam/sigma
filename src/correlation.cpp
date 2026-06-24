@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "stringutils.h"
 #include <QtAssert>
+#include <QtLogging>
 
 
 ModelControl<Correlation *> Correlation::mCorrelationModel = {};
@@ -157,14 +158,16 @@ QUuid Correlation::getInputParameterBId() const {
 
 
 bool Correlation::getValid() const {
-    // Both InputParameters must be different and the coefficient between -1 and
-    // 1
+    // Both InputParameters must be different and exist in the model. The
+    // correlation coefficient must be between -1 and 1
     return (
         !mInputParameterAId.isNull() &&
         !mInputParameterBId.isNull() &&
         mInputParameterAId != mInputParameterBId &&
-        mCorrelation >= -1. &&
-        mCorrelation <= 1.
+        mCorrelation >= sMinCorrelation &&
+        mCorrelation <= sMaxCorrelation &&
+        InputParameter::getById( mInputParameterAId ) &&
+        InputParameter::getById( mInputParameterBId )
     );
 }
 
@@ -575,12 +578,17 @@ void Correlation::setSelectionLocked( bool locked ) {
 
 
 Correlation * Correlation::insertIntoModel( int row ) {
-    // Insert this Correlation into the model at row if it is unique
-    if ( correlationIsUnique( this ) ) {
-        const int boundedRow { qBound( 0, row, mCorrelationModel.rowCount() ) };
-        return mCorrelationModel.insertRow( boundedRow, *this );
+    // Insert this Correlation into the model at row if it is valid and unique
+    if ( !getValid() ) {
+        qCritical() << sInvalidCorrelationString;
+        return nullptr;
     }
-    return nullptr;
+    if ( !isUnique() ) {
+        qCritical() << sNonUniqueCorrelationString;
+        return nullptr;
+    }
+    const int boundedRow { qBound( 0, row, mCorrelationModel.rowCount() ) };
+    return mCorrelationModel.insertRow( boundedRow, *this );
 }
 
 
@@ -613,4 +621,14 @@ bool Correlation::sameInputParameters(
         }
     }
     return false;
+}
+
+
+double Correlation::getMaxCorrelation() {
+    return sMaxCorrelation;
+}
+
+
+double Correlation::getMinCorrelation() {
+    return sMinCorrelation;
 }

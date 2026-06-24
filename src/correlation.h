@@ -72,6 +72,17 @@ public:
     Q_INVOKABLE void setCorrelation( double correlation = 0. );
     Q_INVOKABLE void setToSelected();
 
+    Q_PROPERTY(
+        double maxCorrelation
+        READ getMaxCorrelation
+        CONSTANT
+    )
+    Q_PROPERTY(
+        double minCorrelation
+        READ getMinCorrelation
+        CONSTANT
+    )
+
     static Correlation *getById( const QUuid &id );
     static Correlation *getCorrelation( const QUuid &idA, const QUuid &idB );
     static Correlation *getSelected();
@@ -122,6 +133,8 @@ private:
         const Correlation *corrA,
         const Correlation *corrB
     );
+    static double getMaxCorrelation();
+    static double getMinCorrelation();
 
     InputParameter *mInputParameterA;
     InputParameter *mInputParameterB;
@@ -136,6 +149,14 @@ private:
     static constexpr QLatin1StringView sCorrelationString { "correlation" };
     static constexpr QLatin1StringView sIdInputAString { "IdInputParameterA" };
     static constexpr QLatin1StringView sIdInputBString { "IdInputParameterB" };
+    static constexpr QLatin1StringView sInvalidCorrelationString {
+        "Invalid correlation could not be inserted into the model"
+    };
+    static constexpr QLatin1StringView sNonUniqueCorrelationString {
+        "Non-unique correlation could not be inserted into the model"
+    };
+    static constexpr double sMaxCorrelation { 1. };
+    static constexpr double sMinCorrelation { -1. };
 };
 
 #endif // CORRELATION_H

@@ -8,7 +8,9 @@
 #include "stringutils.h"
 #include <QJsonValue>
 #include <QtAssert>
+#include <QtLogging>
 #include <QtMinMax>
+#include <cmath>
 
 
 ModelControl<InputParameter *> InputParameter::mInputModel = {};
@@ -269,6 +271,23 @@ int InputParameter::getDOF() const {
 
 
 void InputParameter::setDOF( int DOF ) {
+    bool valid { true };
+    if ( DOF < sMinDOF ) {
+        valid = false;
+        mDOF = sMinDOF;
+
+    }
+    else if ( DOF > sMaxDOF ) {
+        valid = false;
+        mDOF = sMaxDOF;
+    }
+    if ( !valid ) {
+        qCritical() << sInvalidDOFString.arg(
+            QString::number( DOF, 'f', 0 ),
+            QString::number( mDOF, 'f', 0 )
+        );
+        return;
+    }
     mDOF = DOF;
 }
 
@@ -279,11 +298,28 @@ void InputParameter::setDOFInfinite( bool DOFInfinite ) {
 
 
 void InputParameter::setDistribution( const QString &distributionString ) {
-    setDistribution( Distribution::stringToDistribution( distributionString ) );
+    if (
+        !Distribution::stringToDistribution( distributionString, mDistribution )
+    ) {
+        qCritical() << sInvalidDistributionString.arg(
+            distributionString.trimmed(),
+            Distribution::distributionToString( mDistribution )
+        );
+    }
 }
 
 
 void InputParameter::setStdUncertainty( double stdUncertainty ) {
+    if ( stdUncertainty < sMinStdUncertainty ) {
+        mStdUncertainty = std::abs( stdUncertainty );
+        qCritical() << sNegativeStdUncertaintyString.arg(
+            StringUtils::doubleToString(
+                stdUncertainty,
+                Settings::getDefaultDisplayPrecision()
+            )
+        );
+        return;
+    }
     mStdUncertainty = stdUncertainty;
 }
 
@@ -325,6 +361,7 @@ InputParameter * InputParameter::getById( const QUuid &id ) {
 InputParameter * InputParameter::getSelected() {
     return mInputModel.getSelected();
 }
+
 
 ModelControl<InputParameter *> * InputParameter::getInputModel() {
     return &mInputModel;
@@ -477,8 +514,16 @@ int InputParameter::getRowIndex( const QUuid &id ) {
 }
 
 
+symbol_table_t & InputParameter::InputParameter::getSymbolTable() {
+    // Use a function with a local static to avoid 'static initialization order
+    // fiasco' problem
+    static symbol_table_t symbolTable;     // Initialized on first call
+    return symbolTable;
+}
+
+
 void InputParameter::addConstantsToSymbolTable() {
-    symbolTable.add_constants();
+    getSymbolTable().add_constants();
 }
 
 
@@ -523,7 +568,7 @@ void InputParameter::clearModel() {
 
 
 void InputParameter::clearSymbolTable() {
-    symbolTable.clear();
+    getSymbolTable().clear();
 }
 
 
@@ -550,7 +595,7 @@ void InputParameter::setSelectionLocked( bool locked ) {
 InputParameter * InputParameter::insertIntoModel( int row ) {
     // Insert this InputParameter into the model at row and add its name to the
     // symbol table, if its name is valid
-    if ( validName( getName() ) ) {
+    if ( validName( mName ) ) {
         const int boundedRow { qBound( 0, row, mInputModel.rowCount() ) };
         InputParameter *newParam { mInputModel.insertRow( boundedRow, *this ) };
         if ( newParam ) {
@@ -558,6 +603,7 @@ InputParameter * InputParameter::insertIntoModel( int row ) {
             return newParam;
         }
     }
+    qCritical() << sInsertErrorString.arg( mName );
     return nullptr;
 }
 
@@ -565,7 +611,10 @@ InputParameter * InputParameter::insertIntoModel( int row ) {
 bool InputParameter::addToSymbolTable() {
     if ( validSymbol( getName() ) && !symbolExists( getName() ) ) {
         resetSymbolValue();
-        return symbolTable.add_variable( getNameStdWString(), mSymbolValue );
+        return getSymbolTable().add_variable(
+            getNameStdWString(),
+            mSymbolValue
+        );
     }
     return false;
 }
@@ -573,15 +622,30 @@ bool InputParameter::addToSymbolTable() {
 
 bool InputParameter::removeSymbol( const QString &name ) {
     // Remove the symbol from the table
-    return symbolTable.remove_variable( name.toStdWString(), true );
+    return getSymbolTable().remove_variable( name.toStdWString(), true );
 }
 
 
 bool InputParameter::symbolExists( const QString &name ) {
-    return symbolTable.symbol_exists( name.toStdWString() );
+    return getSymbolTable().symbol_exists( name.toStdWString() );
 }
 
 
 bool InputParameter::validSymbol( const QString &name ) {
-    return symbolTable.valid_symbol( name.toStdWString() );
+    return getSymbolTable().valid_symbol( name.toLower().toStdWString() );
+}
+
+
+double InputParameter::getMinStdUncertainty() {
+    return sMinStdUncertainty;
+}
+
+
+int InputParameter::getMaxDOF() {
+    return sMaxDOF;
+}
+
+
+int InputParameter::getMinDOF() {
+    return sMinDOF;
 }
