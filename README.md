@@ -73,7 +73,7 @@ Compiling your own version of *Sigma* requires:
 3. Create at least one output parameter by clicking 'New' in the Output parameters panel or choosing 'Output parameters > Add new...' (Ctrl+Shift+O) from the main menu. The measurement function of the output parameter defines the mathematical relation between the output value and the input parameters. The level of confidence specifies the required coverage probability of the expanded uncertainty interval. In other words, it gives the fraction of all possible output values that is contained in the expanded uncertainty interval.
 4. The combined uncertainty and uncertainty budget are shown in the results panel on the bottom of the interface.
 5. Choose 'Monte Carlo simulation > Start' (Ctrl+R) from the main menu to start the Monte Carlo simulation. The results can be found in the Monte Carlo simulation panel on the right.
-6. To save a project, choose 'Project > Save...' (Ctrl+S) from the main menu, enter the filename and localion, and click 'Save project'. The file extension of Sigma projects is 'sig'.
+6. To save a project, choose 'Project > Save...' (Ctrl+S) from the main menu, enter the filename and localion, and click 'Save project'. The file extension of *Sigma* projects is 'sig'.
 7. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' (Ctrl+E) from the main menu. Subsequently, enter the filename and localion, and click 'Save CSV'.
 8. Application settings can be accessed via 'Sigma > Settings...' on Windows or 'Sigma > Preferences...' on macOS.
 
@@ -91,7 +91,7 @@ The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects)
 |:---------|:-------------|
 | `-h`, `--help` | Displays help on command-line options |
 | `-v`, `--version` | Displays version information |
-| `-H`, `--headless` | Runs Sigma without the GUI |
+| `-H`, `--headless` | Runs *Sigma* without the GUI |
 | `--open <file>` | Opens a project from `<file>` |
 | `--run <par>` | Runs Monte Carlo simulation for output parameter `<par>` |
 | `--run-all` | Runs Monte Carlo simulation for all output parameters |
