@@ -693,7 +693,11 @@ MonteCarlo MonteCarlo::fromJson( const QJsonObject &json ) {
         monteCarlo.setHistogramHigherIndex( v.toInt() );
     }
     if ( const QJsonValue v = json[ sHistogramValuesString ]; v.isArray() ) {
-        const QJsonArray jsonValues { v.toArray() };
+        // Use copy constructor '()' instead of initializer_list constructor
+        // '{}' — QJsonArray implicitly converts to QJsonValue, so brace-init
+        // would match the initializer_list<QJsonValue> constructor instead,
+        // wrapping the whole array as a single element rather than copying it.
+        const QJsonArray jsonValues ( v.toArray() );
         QList<double> histogramValues {};
         for ( const QJsonValue &value : jsonValues ) {
             histogramValues.append( value.toDouble() );

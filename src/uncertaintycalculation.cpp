@@ -99,17 +99,29 @@ bool UncertaintyCalculation::selectOutputParameterByName(
 
 void UncertaintyCalculation::projectFromJson( const QJsonObject &json ) {
     if ( const QJsonValue v = json[ sInputParametersString ]; v.isArray() ) {
-        const QJsonArray paramArray { v.toArray() };
+        // Use copy constructor '()' instead of initializer_list constructor
+        // '{}' — QJsonArray implicitly converts to QJsonValue, so brace-init
+        // would match the initializer_list<QJsonValue> constructor instead,
+        // wrapping the whole array as a single element rather than copying it.
+        const QJsonArray paramArray ( v.toArray() );
         InputParameter::parametersFromJson( paramArray, this );
     }
 
     if ( const QJsonValue v = json[ sCorrelationsString ]; v.isArray() ) {
-        const QJsonArray correlationsArray { v.toArray() };
+        // Use copy constructor '()' instead of initializer_list constructor
+        // '{}' — QJsonArray implicitly converts to QJsonValue, so brace-init
+        // would match the initializer_list<QJsonValue> constructor instead,
+        // wrapping the whole array as a single element rather than copying it.
+        const QJsonArray correlationsArray ( v.toArray() );
         Correlation::correlationsFromJson( correlationsArray, this );
     }
 
     if ( const QJsonValue v = json[ sOutputParametersString ]; v.isArray() ) {
-        const QJsonArray paramArray { v.toArray() };
+        // Use copy constructor '()' instead of initializer_list constructor
+        // '{}' — QJsonArray implicitly converts to QJsonValue, so brace-init
+        // would match the initializer_list<QJsonValue> constructor instead,
+        // wrapping the whole array as a single element rather than copying it.
+        const QJsonArray paramArray ( v.toArray() );
         OutputParameter::parametersFromJson( paramArray, this );
 
         // Create connections between the new OutputParameters and this object's
