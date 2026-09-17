@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.4.1 LANGUAGES CXX )
+project( Sigma VERSION 1.4.2 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -40,6 +40,10 @@ elseif ( APPLE )
 #! [appicon_macOS]
 else()
     qt_add_executable( Sigma src/main.cpp )
+    # Fix to prevent folder/executable naming conflict on Linux
+    set_target_properties( Sigma PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
 endif()
 
 target_compile_definitions( Sigma PRIVATE
