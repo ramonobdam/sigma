@@ -20,12 +20,15 @@ Correlation::Correlation(
     double correlation
 )   :   QObject { parent },
         Data {},
-        mInputParameterA { inputParameterA },
-        mInputParameterB { inputParameterB },
+        mInputParameterA {},
+        mInputParameterB {},
         mInputParameterAId {},
         mInputParameterBId {},
         mCorrelation { correlation }
-{}
+{
+    setInputParameterA( inputParameterA );
+    setInputParameterB( inputParameterB );
+}
 
 
 Correlation::Correlation( const Correlation &cor )
