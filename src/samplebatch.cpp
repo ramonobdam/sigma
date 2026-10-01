@@ -104,7 +104,16 @@ int SampleBatch::getBatchSize() const {
 
 
 void SampleBatch::setBatchSize( int batchSize ) {
-    mBatchSize = batchSize;
+    if ( batchSize < sMinBatchSize ) {
+        mBatchSize = sMinBatchSize;
+        qCritical() << sInvalidBatchSizeString.arg(
+            QString::number( batchSize, 'f', 0 ),
+            QString::number( mBatchSize, 'f', 0 )
+        );
+    }
+    else {
+        mBatchSize = batchSize;
+    }
     mSamples.reserve( mBatchSize );
 }
 

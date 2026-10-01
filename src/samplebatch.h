@@ -8,7 +8,6 @@
 #include "mixedcopulasampler.hpp"
 #include "inputparameter.h"
 #include "outputparameter.h"
-#include "third_party/exprtk/exprtk.hpp"
 #include <QLatin1StringView>
 #include <QList>
 #include <QString>
@@ -51,12 +50,16 @@ private:
     std::vector<double> mSymbolValues;
     symbol_table_t mSymbolTable;
 
+    static constexpr QLatin1StringView sInvalidBatchSizeString {
+        "Invalid batch size of '%1' is set to '%2'"
+    };
     static constexpr QLatin1StringView sInvalidOutputString {
         "Invalid output value for input parameter values: "
     };
     static constexpr QLatin1StringView sNoSamplesGeneratedString {
         "No samples could be generated"
     };
+    static constexpr int sMinBatchSize { 1 };
 };
 
 #endif // SAMPLEBATCH_H
