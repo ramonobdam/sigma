@@ -658,7 +658,7 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
         std::sort(
             variables.begin(),
             variables.end(),
-            []( const symbol_t& a, const symbol_t& b) {
+            []( const symbol_t &a, const symbol_t &b) {
                 return StringUtils::unicodeLess( a.first, b.first );
             }
         );
