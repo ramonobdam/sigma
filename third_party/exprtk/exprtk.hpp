@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <cwctype>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -100,8 +101,8 @@ namespace exprtk
    namespace details
    {
       typedef wchar_t                char_t;
-      typedef char_t*                char_ptr;
-      typedef char_t const*          char_cptr;
+      typedef wchar_t*               char_ptr;
+      typedef wchar_t const*         char_cptr;
       typedef char32_t               uchar_t;
       typedef uchar_t*               uchar_ptr;
       typedef uchar_t const*         uchar_cptr;
@@ -193,13 +194,13 @@ namespace exprtk
       {
          for (std::size_t i = 0; i < s.size(); ++i)
          {
-            s[i] = static_cast<std::wstring::value_type>(std::tolower(s[i]));
+            s[i] = static_cast<std::wstring::value_type>(std::towlower(s[i]));
          }
       }
 
       inline bool imatch(const char_t c1, const char_t c2)
       {
-         return std::tolower(c1) == std::tolower(c2);
+         return std::towlower(c1) == std::towlower(c2);
       }
 
       inline bool imatch(const std::wstring& s1, const std::wstring& s2)
@@ -208,7 +209,7 @@ namespace exprtk
          {
             for (std::size_t i = 0; i < s1.size(); ++i)
             {
-               if (std::tolower(s1[i]) != std::tolower(s2[i]))
+               if (std::towlower(s1[i]) != std::towlower(s2[i]))
                {
                   return false;
                }
@@ -228,8 +229,8 @@ namespace exprtk
 
             for (std::size_t i = 0; i < length; ++i)
             {
-               const char_t c1 = static_cast<char_t>(std::tolower(s1[i]));
-               const char_t c2 = static_cast<char_t>(std::tolower(s2[i]));
+               const char_t c1 = static_cast<char_t>(std::towlower(s1[i]));
+               const char_t c2 = static_cast<char_t>(std::towlower(s2[i]));
 
                if (c1 < c2)
                   return true;
@@ -607,7 +608,7 @@ namespace exprtk
       {
          static inline bool cmp(const char_t c0, const char_t c1)
          {
-            return (std::tolower(c0) == std::tolower(c1));
+            return (std::towlower(c0) == std::towlower(c1));
          }
       };
 
@@ -44236,7 +44237,7 @@ namespace exprtk
 
             for (std::size_t i = 0; i < access.size(); ++i)
             {
-               switch (std::tolower(access[i]))
+               switch (std::towlower(access[i]))
                {
                   case 'r' : r_cnt++; break;
                   case 'w' : w_cnt++; break;
