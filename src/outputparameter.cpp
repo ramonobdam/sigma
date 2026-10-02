@@ -655,7 +655,13 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
         // Store the components and sort them.
         std::deque<symbol_t> variables {};
         parser.dec().symbols( variables );
-        std::sort( variables.begin(), variables.end() );
+        std::sort(
+            variables.begin(),
+            variables.end(),
+            []( const symbol_t& a, const symbol_t& b) {
+                return StringUtils::unicodeLess( a.first, b.first );
+            }
+        );
         for ( auto &variable: variables ) {
             QString inputName { QString::fromStdWString( variable.first ) };
             InputParameter *inputParameter {
