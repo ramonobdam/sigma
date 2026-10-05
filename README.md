@@ -69,7 +69,7 @@ Compiling your own version of *Sigma* requires:
 
 ## Quick start guide
 1. Open *Sigma*
-2. Define the input parameters by clicking 'New' in the Input parameters panel or choosing 'Input parameters > Add new...' (Ctrl+Shift+I) from the main menu. See the GUM for details on how to set the input estimate, standard uncertainty, probability distribution and degrees of freedom.
+2. Define the input parameters by clicking 'New' in the Input parameters panel or choosing 'Input parameters > Add new...' (Ctrl+Shift+I) from the main menu. See the GUM for details on how to set the input estimate, standard uncertainty, probability distribution and degrees of freedom. Note that the names of the input parameters must be unique and are case-insensitive, so 'X1' equals 'x1' and 'Δ' equals 'δ'.
 3. Create at least one output parameter by clicking 'New' in the Output parameters panel or choosing 'Output parameters > Add new...' (Ctrl+Shift+O) from the main menu. The measurement function of the output parameter defines the mathematical relation between the output value and the input parameters. The level of confidence specifies the required coverage probability of the expanded uncertainty interval. In other words, it gives the fraction of all possible output values that is contained in the expanded uncertainty interval.
 4. The combined uncertainty and uncertainty budget are shown in the results panel on the bottom of the interface.
 5. Choose 'Monte Carlo simulation > Start' (Ctrl+R) from the main menu to start the Monte Carlo simulation. The results can be found in the Monte Carlo simulation panel on the right.
@@ -249,3 +249,31 @@ Each output parameter defines a measurand expressed as a formula of input parame
 - UUIDs are generated automatically by *Sigma* when saving a project. When creating JSON manually, UUIDs can be omitted unless correlations are defined, in which case `Id` must be specified for the referenced input parameters.
 - The `formula` field supports standard mathematical operators (`+`, `-`, `*`, `/`, `^`) and functions (`sin()`, `cos()`, `sqrt()`, `abs()`, `log()` etc.) via the [ExprTk](https://www.partow.net/programming/exprtk/index.html) expression parser.
 - The mathematical constants `pi`, `epsilon` and `inf` are reserved and cannot be used as input parameter names.
+
+## Automated tests
+*Sigma* contains a Qt Test based test suite containing unit and regression tests.
+
+| File | Focus |
+|---|---|
+| `tst_correlation` | Validity, uniqueness, JSON round-trip, reconnect input parameters, diff application |
+| `tst_demoprojects` | Regression tests for all demo projects defined in `demo_projects.json`. Runs each project via the CLI and compares the saved `.sig` and exported `.csv` against reference results. |
+| `tst_diffutil` | Undo/redo snapshot/diff/transaction engine |
+| `tst_distribution` | Inverse-CDFs for all distributions, distribution\string mapping |
+| `tst_inputparameter` | Validation, ExprTk symbol table, JSON round-trip, model CRUD |
+| `tst_montecarlo` | Full simulation convergence loop, request stop, reset results, JSON round-trip |
+| `tst_outputparameter` | expression compilation, correlation/error-handling cases, GUM budget calculation validated against the JCGM 100 Annex H.1 demo project's reference numbers |
+| `tst_samplebatch` | Monte Carlo sample generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
+| `tst_statistics` | Mean/std-dev, coverage-interval bounds, histogram |
+| `tst_stringutils` | Number/CSV formatting helpers and Unicode locale behaviour |
+| `tst_uncertaintycalculation` | add/remove/update input parameter/output parameter/correlation, cascade delete, JSON round-trip, project load/save, project export, undo/redo system |
+| `tst_uncertaintycomponent` | Input parameter properies, sensitivity (finite-difference), component/correlation contributions, Welch-Satterthwaite |
+
+**Build integration** 
+CMakeLists.txt contains a `SIGMA_BUILD_TESTS` option that enables `ctest` and adds the `tests` folder.
+
+Build and run the tests:
+```bash
+cmake -B build -S . -DSIGMA_BUILD_TESTS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
