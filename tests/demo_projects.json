@@ -23,19 +23,10 @@
         "relative": 1e-5
     },
     "ignoredCSVLinePrefixes": [
-        "Sigma version:", 
-        "Bins:",
-        "Probabilities:"    
+        "Sigma version:"  
     ],
     "ignoredJSONKeys": [
-        "Sigma version",
-        "histogramHigherIndex",
-        "histogramLowerIndex",
-        "histogramValues",
-        "histogramXMax",
-        "histogramXMin",
-        "histogramYMax",
-        "status"
+        "Sigma version"
     ],
     "projects": [
         {
@@ -96,11 +87,7 @@
                     "mcbatchsize": "1e5",
                     "mcmaxbatches": "1e5"
                 }
-            ],
-            "tolerance": {
-                "absolute": 1e-9,
-                "relative": 1e-3
-            }
+            ]
         },
         {
             "name": "GUM_JCGM_101_9.2_Additive_model",
@@ -169,11 +156,7 @@
                     "mcbatchsize": "1e5",
                     "mcmaxbatches": "1e5"
                 }
-            ],
-            "tolerance": {
-                "absolute": 1e-9,
-                "relative": 1e-4
-            }
+            ]
         }
     ]
 }
