@@ -255,21 +255,21 @@ Each output parameter defines a measurand expressed as a formula of input parame
 
 | File | Focus |
 |---|---|
-| `tst_correlation` | Validity, uniqueness, JSON round-trip, reconnect input parameters, diff application |
+| `tst_correlation` | Correlation validity, uniqueness, JSON round-trip, reconnection of input parameters, diff application |
 | `tst_demoprojects` | Regression tests for all demo projects defined in `demo_projects.json`. Runs each project via the CLI and compares the saved `.sig` and exported `.csv` against reference results. |
 | `tst_diffutil` | Undo/redo snapshot/diff/transaction engine |
-| `tst_distribution` | Inverse-CDFs for all distributions, distribution\string mapping |
-| `tst_inputparameter` | Validation, ExprTk symbol table, JSON round-trip, model CRUD |
-| `tst_montecarlo` | Full simulation convergence loop, request stop, reset results, JSON round-trip |
-| `tst_outputparameter` | expression compilation, correlation/error-handling cases, GUM budget calculation validated against the JCGM 100 Annex H.1 demo project's reference numbers |
-| `tst_samplebatch` | Monte Carlo sample generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
+| `tst_distribution` | Inverse-CDFs for all distributions, distribution/string mapping |
+| `tst_inputparameter` | Input parameter validation, ExprTk symbol table, JSON round-trip, model CRUD |
+| `tst_montecarlo` | Monte Carlo full simulation convergence loop, request stop, reset results, JSON round-trip |
+| `tst_outputparameter` | Output parameter expression compilation, correlation/error-handling cases, GUM budget calculation validated against the JCGM 100 Annex H.1 demo project's reference numbers |
+| `tst_samplebatch` | Monte Carlo sample batch generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
 | `tst_statistics` | Mean/std-dev, coverage-interval bounds, histogram |
 | `tst_stringutils` | Number/CSV formatting helpers and Unicode locale behaviour |
-| `tst_uncertaintycalculation` | add/remove/update input parameter/output parameter/correlation, cascade delete, JSON round-trip, project load/save, project export, undo/redo system |
-| `tst_uncertaintycomponent` | Input parameter properies, sensitivity (finite-difference), component/correlation contributions, Welch-Satterthwaite |
+| `tst_uncertaintycalculation` | Add/remove/update input parameter/output parameter/correlation, delete cascades, JSON round-trip, project load/save, project export, undo/redo system |
+| `tst_uncertaintycomponent` | Input parameter properties, sensitivity (partial derivative), component/correlation contributions, Welch-Satterthwaite |
 
-**Build integration** 
-CMakeLists.txt contains a `SIGMA_BUILD_TESTS` option that enables `ctest` and adds the `tests` folder.
+### Build integration
+The main *Sigma* CMakeLists.txt contains a `SIGMA_BUILD_TESTS` option. When enabled, CMake adds the `tests` subdirectory and registers the test executables with CTest.
 
 Build and run the tests:
 ```bash
