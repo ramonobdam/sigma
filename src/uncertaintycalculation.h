@@ -10,7 +10,6 @@
 #include "correlation.h"
 #include "diffutil.h"
 #include "inputparameter.h"
-#include "modelcontrol.hpp"
 #include "outputparameter.h"
 #include "resultsmodel.h"
 #include "undohistorymodel.h"

@@ -507,36 +507,35 @@ void UncertaintyCalculation::removeCorrelation() {
 
 
 void UncertaintyCalculation::removeInputParameter() {
-    QUuid id { InputParameter::getSelectedId() };
-    if ( !id.isNull() ) {
-        InputParameter *parameter { InputParameter::getById( id ) };
-        if ( parameter ) {
-            DiffUtil diffUtil {};
-            diffUtil.takeSnapshot( parameter );
+    const QUuid id { InputParameter::getSelectedId() };
+    if ( id.isNull() ) return;
 
-            // Store needed data before removal
-            const QString name { parameter->getName() };
-            const QUuid id { parameter->getId() };
-            if ( InputParameter::remove( id ) ) {
-                // Remove correlations that reference the deleted InputParameter
-                const QList<Correlation *> &correlations {
-                    Correlation::getCorrelationsForInputParameter( id )
-                };
-                for ( Correlation *correlation: correlations ) {
-                    diffUtil.takeSnapshot( correlation );
-                    Correlation::remove( correlation->getId() );
-                }
+    InputParameter *parameter { InputParameter::getById( id ) };
+    if ( !parameter ) return;
 
-                // Recompile the expressions that reference the deleted
-                // InputParameter
-                recompileExpressions( diffUtil, false, id );
+    DiffUtil diffUtil {};
+    const QString name { parameter->getName() };
 
-                diffUtil.commitChanges( "Delete input parameter " + name );
-
-                setUnsavedChanges( true );
-            }
-        }
+    // Remove correlations that reference the deleted InputParameter first -
+    // ensures the InputParameter is restored before correlations on undo
+    const QList<Correlation *> &correlations {
+        Correlation::getCorrelationsForInputParameter( id )
+    };
+    for ( Correlation *correlation: correlations ) {
+        diffUtil.takeSnapshot( correlation );
+        Correlation::remove( correlation->getId() );
     }
+
+    // Remove the InputParameter
+    diffUtil.takeSnapshot( parameter );
+    InputParameter::remove( id );
+
+    // Recompile the expressions that reference the deleted InputParameter
+    recompileExpressions( diffUtil, false, id );
+
+    diffUtil.commitChanges( "Delete input parameter " + name );
+
+    setUnsavedChanges( true );
 }
 
 

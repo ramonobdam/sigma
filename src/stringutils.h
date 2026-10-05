@@ -13,6 +13,7 @@ namespace StringUtils {
     QString doubleToString( double value, int precision, char format = 'g' );
     QString addQuotes( const QString &string );
     QString contributionToPercentageString( double contri, int decimals = 1 );
+    void setupLocale();
 
     constexpr QLatin1StringView csvSeparator { "," };
     constexpr QLatin1StringView endl { "\n" };

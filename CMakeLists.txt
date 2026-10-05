@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.4.2 LANGUAGES CXX )
+project( Sigma VERSION 1.5.0 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -243,3 +243,12 @@ install( TARGETS Sigma
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+# Qt Test based unit tests for the Core and Orchestration layers, and regression
+# tests for the demo projects. Disable with -DSIGMA_BUILD_TESTS=OFF if a Qt Test
+# module is not available.
+option( SIGMA_BUILD_TESTS "Build Qt Test based (unit) tests for Sigma" ON )
+if ( SIGMA_BUILD_TESTS )
+    enable_testing()
+    add_subdirectory( tests )
+endif()

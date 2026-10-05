@@ -3,8 +3,11 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "stringutils.h"
+#include <QLocale>
 #include <cmath>
-
+#ifdef Q_OS_WINDOWS
+#include <clocale>
+#endif
 namespace StringUtils {
 
     QString doubleToString( double value, int precision , char format ) {
@@ -27,6 +30,21 @@ namespace StringUtils {
             percentage = QString::number( contri * 100., 'f', decimals ) + "%";
         }
         return percentage;
+    }
+
+
+    void setupLocale() {
+        // The Qlocale is set to US to have the number format (decimal . and
+        // thousand separator ,) consistent wih exprtk
+        QLocale::setDefault(
+            QLocale( QLocale::English, QLocale::UnitedStates )
+        );
+
+        // The C-locale is set to UTF-8 to make sure std::towlower() handles
+        // Unicode correctly on Windows
+#ifdef Q_OS_WINDOWS
+        std::setlocale( LC_ALL, ".UTF-8" );
+#endif
     }
 
 }

@@ -13,6 +13,7 @@
 #include <QtAssert>
 #include <QtLogging>
 #include <QtMinMax>
+#include <algorithm>
 #include <cmath>
 #include <deque>
 
@@ -654,6 +655,7 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
         // Store the components.
         std::deque<symbol_t> variables {};
         parser.dec().symbols( variables );
+
         for ( auto &variable: variables ) {
             QString inputName { QString::fromStdWString( variable.first ) };
             InputParameter *inputParameter {

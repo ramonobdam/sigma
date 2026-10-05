@@ -1,0 +1,162 @@
+{
+    "_comment": [
+        "Configuration of the Sigma demo project regression tests.",
+        "Every project is opened from the 'demoProjectsDirectory' folder, processed",
+        "with the command-line options given below, and the saved project (.sig)",
+        "and the exported results (.csv) are compared with the reference results",
+        "in 'referenceDirectory'. Relative directorie paths are assumed to be with",
+        "respect to this config file.",
+        "The --open, --save, --export and --headless options are added by the",
+        "test itself, since they depend on the (temporary) working directory.",
+        "Every entry of 'runs' is one invocation of the Sigma executable. The",
+        "keys are command-line option names without the leading dashes, a value",
+        "of true adds the option as a flag (without value).",
+        "The optional 'tolerance' of a project overrules 'defaultTolerance'.",
+        "Numerical values are considered equal when the difference is within",
+        "the absolute or within the relative tolerance."
+    ],
+    "demoProjectsDirectory": "../demo_projects",
+    "referenceDirectory": "../demo_projects",
+    "timeoutSeconds": 600,
+    "defaultTolerance": {
+        "absolute": 1e-9,
+        "relative": 1e-5
+    },
+    "ignoredCSVLinePrefixes": [
+        "Sigma version:"  
+    ],
+    "ignoredJSONKeys": [
+        "Sigma version"
+    ],
+    "projects": [
+        {
+            "name": "GUM_JCGM_100_H1_End-gauge_calibration",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "2",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_100_H2_Simultaneous_resistance_and_reactance_measurement",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_100_H3_Calibration_of_a_thermometer",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_100_H4_Measurement_of_activity",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_100_H6_Hardness",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_101_9.2_Additive_model",
+            "runs": [
+                {
+                    "_comment": "First run all with 1 significant mcdigits",
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "2",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                },
+                {
+                    "_comment": "Then run Y3 with 2 significant mcdigits",
+                    "run": "Y3",
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_101_9.3_Mass_calibration",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_101_9.4.2_Comparison_loss",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_101_9.4.3_Comparison_loss",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "3",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        },
+        {
+            "name": "GUM_JCGM_101_9.5_Gauge_block_calibration",
+            "runs": [
+                {
+                    "run-all": true,
+                    "csvdigits": "10",
+                    "mcdigits": "2",
+                    "mcbatchsize": "1e5",
+                    "mcmaxbatches": "1e5"
+                }
+            ]
+        }
+    ]
+}
