@@ -5,7 +5,7 @@
 #include "stringutils.h"
 #include <QTest>
 #include <limits>
-#include <string>
+#include <cwctype>
 
 // Unit tests for the StringUtils namespace, used throughout the Core and
 // Orchestration layers to format numbers for display and CSV export.
@@ -13,6 +13,8 @@ class tst_stringutils : public QObject {
     Q_OBJECT
 
 private slots:
+    void initTestCase();
+
     void doubleToString_usesRequestedPrecision();
     void doubleToString_supportsFixedFormat();
 
@@ -24,8 +26,13 @@ private slots:
     void contributionToPercentageString_nonFiniteYieldsDash();
     void contributionToPercentageString_respectsDecimals();
 
-    void unicodeLess_greekSymbolOrder();
+    void std_towlower_GreekSymbols();
 };
+
+
+void tst_stringutils::initTestCase() {
+    StringUtils::setupLocale();
+}
 
 
 void tst_stringutils::doubleToString_usesRequestedPrecision() {
@@ -106,17 +113,12 @@ void tst_stringutils::contributionToPercentageString_respectsDecimals() {
 }
 
 
-void tst_stringutils::unicodeLess_greekSymbolOrder() {
-    // Expected symbol order: Δ_S < Δ_b < δ
-    const std::wstring deltaLower = L"δ";
-    const std::wstring deltaSubB  = L"Δ_b";
-    const std::wstring deltaSubS  = L"Δ_S";
-
-    QVERIFY( StringUtils::unicodeLess( deltaSubS, deltaSubB ) );
-    QVERIFY( StringUtils::unicodeLess( deltaSubB, deltaLower ) );
-
-    QVERIFY( !StringUtils::unicodeLess( deltaLower, deltaSubB ) );
-    QVERIFY( !StringUtils::unicodeLess( deltaSubB, deltaSubS ) );
+void tst_stringutils::std_towlower_GreekSymbols() {
+    // Make sure std::towlower() handles Unicode
+    // correctly
+    QCOMPARE( std::towlower( L'A' ), L'a' );
+    QCOMPARE( std::towlower( L'Δ' ), L'δ' );
+    QCOMPARE( std::towlower( L'Σ' ), L'σ' );
 }
 
 

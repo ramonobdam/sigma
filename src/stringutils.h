@@ -7,15 +7,13 @@
 
 #include <QLatin1StringView>
 #include <QString>
-#include <string>
 
-// Namespace with string related functions and string constants
+// Namespace with string conversion functions and string constants
 namespace StringUtils {
     QString doubleToString( double value, int precision, char format = 'g' );
     QString addQuotes( const QString &string );
     QString contributionToPercentageString( double contri, int decimals = 1 );
-    bool unicodeLess( const std::wstring &a, const std::wstring &b );
-    std::u32string unicodeCodePoints( const std::wstring &s );
+    void setupLocale();
 
     constexpr QLatin1StringView csvSeparator { "," };
     constexpr QLatin1StringView endl { "\n" };

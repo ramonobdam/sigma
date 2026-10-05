@@ -5,13 +5,13 @@
 #include "applicationsettings.h"
 #include "commandlineinterface.h"
 #include "exitcodes.h"
+#include "stringutils.h"
 #include "uncertaintycalculation.h"
 #include "windowscaptionhelper.h"
 #include <QCoreApplication>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QList>
-#include <QLocale>
 #include <QObject>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -28,13 +28,7 @@ void setApplicationData( QCoreApplication *app ) {
 }
 
 int main( int argc, char *argv[] ) {
-    // The locale is set to US to have the number format (decimal . and thousand
-    // separator ,) consistent wih exprtk
-    QLocale::setDefault( QLocale( QLocale::English, QLocale::UnitedStates ) );
-
-    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
-        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough
-    );
+    StringUtils::setupLocale();
 
     bool headless { CommandLineInterface::headless( argc, argv ) };
 
