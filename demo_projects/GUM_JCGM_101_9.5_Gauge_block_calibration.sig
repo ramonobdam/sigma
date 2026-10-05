@@ -1,5 +1,5 @@
 {
-    "Sigma version": "1.4.2",
+    "Sigma version": "1.5.0",
     "correlations": [
     ],
     "inputParameters": [
