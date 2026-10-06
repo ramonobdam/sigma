@@ -15,6 +15,7 @@
 #include <QStringList>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QUuid>
 #include <QUrl>
 #include <QtNumeric>
 #include <cmath>
@@ -49,6 +50,8 @@ private slots:
     void runMonteCarlo_updatesSelectedOutputAndIsUndoable();
 
     void newProject_clearsEverything();
+
+    void userClearProject_clearsEverythingAndIsUndoable();
 
     void projectFromJson_addsNewUnit();
 };
@@ -696,39 +699,119 @@ void tst_uncertaintycalculation::newProject_clearsEverything() {
     QVERIFY( !UndoStack::instance().canRedo() );
 }
 
+void tst_uncertaintycalculation::userClearProject_clearsEverythingAndIsUndoable(
+) {
+    UncertaintyCalculation calc {};
+
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
+
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
+
+    QCOMPARE( InputParameter::getAll().size(), 2 );
+
+    Correlation correlation {};
+    correlation.setInputParameterA( paramX1 );
+    correlation.setInputParameterB( paramX2 );
+    correlation.setCorrelation( 0.5 );
+    calc.addCorrelation( &correlation );
+    QCOMPARE( Correlation::getAll().size(), 1 );
+    Correlation *addedCorr {
+        Correlation::getCorrelation( paramX1->getId(), paramX2->getId() )
+    };
+    QVERIFY( addedCorr );
+    QUuid corrId { addedCorr->getId() };
+
+    OutputParameter y1 {};
+    y1.setName( "Y1" );
+    y1.setFormula( "X1 + X2" );
+    calc.addOutputParameter( &y1 );
+    QCOMPARE( OutputParameter::getAll().size(), 1 );
+    QVERIFY( OutputParameter::getByName( "Y1" )->getValid() );
+
+    // Clear the project
+    calc.userClearProject();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( !UndoStack::instance().canRedo() );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( Correlation::getAll().size(), 0 );
+    QCOMPARE( OutputParameter::getAll().size(), 0 );
+
+    // Undo clearing the project
+    calc.undo();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( UndoStack::instance().canRedo() );
+    QCOMPARE( InputParameter::getAll().size(), 2 );
+    QCOMPARE( Correlation::getAll().size(), 1 );
+    QCOMPARE( OutputParameter::getAll().size(), 1 );
+    QVERIFY( OutputParameter::getByName( "Y1" )->getValid() );
+    QVERIFY( Correlation::getById( corrId ) );
+
+    // Redo clearing the project
+    calc.redo();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( !UndoStack::instance().canRedo() );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( Correlation::getAll().size(), 0 );
+    QCOMPARE( OutputParameter::getAll().size(), 0 );
+}
+
 
 void tst_uncertaintycalculation::projectFromJson_addsNewUnit() {
     UncertaintyCalculation calc1 {};
-    QStringList defaultUnits { calc1.getUnits() };
+    QStringList defaultUnits { calc1.unitsModel()->stringList() };
 
-    // An existing unit should not be added to the list
+    // An existing unit should not be added to the list by projectToJson()
     InputParameter x1 {};
     x1.setName( "X1" );
-    x1.setUnit( "m" );  // included in the default units list
+    x1.setUnit( "m" );  // Included in the default units list
     calc1.addInputParameter( &x1 );
     QCOMPARE( InputParameter::getAll().size(), 1 );
 
-    // An new unit should be added to the list
+    // An new unit should be added to the list by projectToJson()
     InputParameter x2 {};
     x2.setName( "X2" );
-    x2.setUnit( "not-existing-unit" );  // included in the default units list
+    x2.setUnit( "not-existing-unit" ); // Not included in the default units list
     calc1.addInputParameter( &x2 );
     QCOMPARE( InputParameter::getAll().size(), 2 );
 
     QJsonObject json { calc1.projectToJson() };
 
-    // Restore the project from json
+    // Make sure the symbol table is empty so the input parameters can be added
+    // again in a fresh UncertaintyCalculation object
+    calc1.newProject();
+
+    // Create a fresh UncertaintyCalculation object and make sure its units list
+    // is equal to the default
     UncertaintyCalculation calc2 {};
+    QCOMPARE( calc2.unitsModel()->stringList(), defaultUnits );
+
+    // Restore the project from json
     calc2.projectFromJson( json );
+
     // New units list should contain 'not-existing-unit'
-    QCOMPARE( calc2.getUnits().size(), defaultUnits.size() + 1 );
-    QVERIFY( calc2.getUnits().contains( "not-existing-unit" ) );
+    QCOMPARE(
+        calc2.unitsModel()->stringList().size(),
+        defaultUnits.size() + 1
+    );
+    QVERIFY( calc2.unitsModel()->stringList().contains( "not-existing-unit" ) );
+
+    // Make sure the unit list is sorted
+    QStringList sortedUnits { calc2.unitsModel()->stringList() };
+    sortedUnits.sort();
+    QCOMPARE( calc2.unitsModel()->stringList(), sortedUnits );
 
     // projectFromJson() parents the newly created objects to 'calc'. Clear the
     // models explicitly while 'calc' is stil alive, rather than relying on its
     // destructor to cascade-delete them (see the comment in
     // projectJson_roundTripInMemory() for details).
-    calc1.newProject();
     calc2.newProject();
 }
 
