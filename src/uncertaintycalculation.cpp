@@ -604,8 +604,6 @@ void UncertaintyCalculation::updateCorrelation(
         // Store the needed data before updating
         QUuid originalParamAId { originalCorrelation->getInputParameterAId() };
         QUuid originalParamBId { originalCorrelation->getInputParameterBId() };
-        QString originalNameA { originalCorrelation->getInputParameterNameA() };
-        QString originalNameB { originalCorrelation->getInputParameterNameB() };
 
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalCorrelation );
@@ -631,9 +629,9 @@ void UncertaintyCalculation::updateCorrelation(
 
         diffUtil.commitChanges(
             "Update correlation between " +
-            originalNameA +
+            newCorrelation.getInputParameterNameA() +
             " and " +
-            originalNameB
+            newCorrelation.getInputParameterNameB()
         );
 
         setUnsavedChanges( true );
@@ -719,14 +717,13 @@ void UncertaintyCalculation::updateOutputParameter(
 void UncertaintyCalculation::userClearProject() {
     // The project is cleared by the user and can be undone
 
-    // Take snapshot and remove all objects. Note that the objects are removed
-    // individually in this case to maintain the row order on undo.
+    // Take snapshot and remove all objects. The objects are removed in this
+    // particular order - output parameters, correlations, input parameters - to
+    // make sure undo (in reverse order) can create all objects (correlations
+    // need the input parameters to exist).
+    // Note that the objects are removed individually in this case to maintain
+    // the row order on undo.
     DiffUtil diffUtil {};
-
-    for ( const InputParameter *inputParameter : InputParameter::getAll() ) {
-        diffUtil.takeSnapshot( inputParameter );
-        InputParameter::remove( inputParameter->getId() );
-    }
 
     for ( const OutputParameter *outputParameter : OutputParameter::getAll() ) {
         diffUtil.takeSnapshot( outputParameter );
@@ -736,6 +733,11 @@ void UncertaintyCalculation::userClearProject() {
     for ( const Correlation *correlation : Correlation::getAll() ) {
         diffUtil.takeSnapshot( correlation );
         Correlation::remove( correlation->getId() );
+    }
+
+    for ( const InputParameter *inputParameter : InputParameter::getAll() ) {
+        diffUtil.takeSnapshot( inputParameter );
+        InputParameter::remove( inputParameter->getId() );
     }
 
     diffUtil.commitChanges( "Clear project" );
