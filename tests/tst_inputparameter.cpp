@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "inputparameter.h"
+#include <QRegularExpression>
 #include <QSignalSpy>
 #include <QTest>
 #include <QtNumeric>
@@ -73,6 +74,13 @@ void tst_inputparameter::setUnit_trimsWhitespace() {
 
 void tst_inputparameter::setStdUncertainty_negativeIsClampedToAbsoluteValue() {
     InputParameter parameter {};
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Negative standard uncertainty value of '-5' is set to absolute "
+            "value"
+        )
+    );
     parameter.setStdUncertainty( -5. );
     QCOMPARE( parameter.getStdUncertainty(), 5. );
 
@@ -84,12 +92,24 @@ void tst_inputparameter::setStdUncertainty_negativeIsClampedToAbsoluteValue() {
 void tst_inputparameter::setDOF_isClampedToValidRange() {
     InputParameter parameter {};
 
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid degrees of freedom value of '0' is set to '1'"
+        )
+    );
     parameter.setDOF( 0 );          // below minimum (1)
     QCOMPARE( parameter.getDOF(), 1 );
 
     parameter.setDOF( 42 );         // within range
     QCOMPARE( parameter.getDOF(), 42 );
 
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid degrees of freedom value of '10000000' is set to '1000000'"
+        )
+    );
     parameter.setDOF( 10000000 );   // above maximum (1000000)
     QCOMPARE( parameter.getDOF(), 1000000 );
 }
@@ -104,6 +124,13 @@ void tst_inputparameter::setDistribution_string_validAndInvalid() {
 
     // An unrecognized distribution string resets the distribution to 'none'
     // (and logs a critical warning)
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Distribution type 'not-a-distribution' not recognized and set to "
+            "'none'"
+         )
+    );
     parameter.setDistribution( "not-a-distribution" );
     QCOMPARE( parameter.getDistribution(), Distribution::Type::none );
 }
@@ -201,6 +228,12 @@ void tst_inputparameter::appendToModel_addsToModelAndSymbolTable() {
 
     // An invalid name (already a reserved constant) cannot be appended
     InputParameter invalid {};
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid input parameter 'pi' could not be inserted into the model"
+        )
+    );
     invalid.setName( "pi" );
     QCOMPARE( invalid.appendToModel(), nullptr );
     QCOMPARE( InputParameter::getAll().size(), 1 );

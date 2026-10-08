@@ -131,9 +131,6 @@ void UncertaintyCalculation::projectFromJson( const QJsonObject &json ) {
         }
     }
 
-    // Connect the new Correlation objects to their InputParameters
-    Correlation::reconnectAllCorrelations();
-
     updateUnits();
 
     emitAllResultsChanged();
@@ -201,10 +198,10 @@ QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
     QString string {};
     const Correlation *correlation { Correlation::getSelected() };
     if ( correlation ) {
-        InputParameter *paramA { correlation->getInputParameterA() };
-        InputParameter *paramB { correlation->getInputParameterB() };
-        QStringList referencesA { getInputParameterReferences( paramA ) };
-        QStringList referencesB { getInputParameterReferences( paramB ) };
+        const QUuid idA { correlation->getInputParameterAId() };
+        const QUuid idB { correlation->getInputParameterBId() };
+        QStringList referencesA { getInputParameterReferences( idA ) };
+        QStringList referencesB { getInputParameterReferences( idB ) };
         QStringList referencesBoth {};
         for ( QString &nameA : referencesA ) {
             if ( referencesB.contains( nameA ) ) {
@@ -222,7 +219,8 @@ QString UncertaintyCalculation::getSelectedInputParameterReferences(
     // Return a string that lists the OutputParameters that are referencing the
     // selected InputParameter
     const InputParameter *inputParameter { InputParameter::getSelected() };
-    QStringList references { getInputParameterReferences( inputParameter ) };
+    const QUuid id { inputParameter ? inputParameter->getId() : QUuid {} };
+    QStringList references { getInputParameterReferences( id ) };
     return outputParameterReferencesToString( references );
 }
 
@@ -604,8 +602,6 @@ void UncertaintyCalculation::updateCorrelation(
         // Store the needed data before updating
         QUuid originalParamAId { originalCorrelation->getInputParameterAId() };
         QUuid originalParamBId { originalCorrelation->getInputParameterBId() };
-        QString originalNameA { originalCorrelation->getInputParameterNameA() };
-        QString originalNameB { originalCorrelation->getInputParameterNameB() };
 
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalCorrelation );
@@ -631,9 +627,9 @@ void UncertaintyCalculation::updateCorrelation(
 
         diffUtil.commitChanges(
             "Update correlation between " +
-            originalNameA +
+            newCorrelation.getInputParameterNameA() +
             " and " +
-            originalNameB
+            newCorrelation.getInputParameterNameB()
         );
 
         setUnsavedChanges( true );
@@ -719,14 +715,13 @@ void UncertaintyCalculation::updateOutputParameter(
 void UncertaintyCalculation::userClearProject() {
     // The project is cleared by the user and can be undone
 
-    // Take snapshot and remove all objects. Note that the objects are removed
-    // individually in this case to maintain the row order on undo.
+    // Take snapshot and remove all objects. The objects are removed in this
+    // particular order - output parameters, correlations, input parameters - to
+    // make sure undo (in reverse order) can create all objects (correlations
+    // need the input parameters to exist).
+    // Note that the objects are removed individually in this case to maintain
+    // the row order on undo.
     DiffUtil diffUtil {};
-
-    for ( const InputParameter *inputParameter : InputParameter::getAll() ) {
-        diffUtil.takeSnapshot( inputParameter );
-        InputParameter::remove( inputParameter->getId() );
-    }
 
     for ( const OutputParameter *outputParameter : OutputParameter::getAll() ) {
         diffUtil.takeSnapshot( outputParameter );
@@ -736,6 +731,11 @@ void UncertaintyCalculation::userClearProject() {
     for ( const Correlation *correlation : Correlation::getAll() ) {
         diffUtil.takeSnapshot( correlation );
         Correlation::remove( correlation->getId() );
+    }
+
+    for ( const InputParameter *inputParameter : InputParameter::getAll() ) {
+        diffUtil.takeSnapshot( inputParameter );
+        InputParameter::remove( inputParameter->getId() );
     }
 
     diffUtil.commitChanges( "Clear project" );
@@ -781,9 +781,6 @@ void UncertaintyCalculation::onTransactionApplied() {
     for ( OutputParameter *parameter : parameters ) {
         connectToOutputParameter( parameter );
     }
-
-    // Re-establish live pointers in Correlations from stored Ids
-    Correlation::reconnectAllCorrelations();
 
     // Recompile all OutputParameters without resetting Monte Carlo results
     OutputParameter::recompileAllExpressions( false );
@@ -903,18 +900,16 @@ QStringList UncertaintyCalculation::getDistributionStrings() const {
 
 
 QStringList UncertaintyCalculation::getInputParameterReferences(
-    const InputParameter *inputParameter
+    const QUuid &parameterId
 ) const {
     // Return a list of OutputParameter names that reference this
     // InputParameter
     QStringList references {};
-    if ( inputParameter ) {
+    if ( !parameterId.isNull() ) {
         for ( const OutputParameter *outputParam : OutputParameter::getAll() ) {
             if (
                 outputParam &&
-                outputParam->isInputParameterReferenced(
-                    inputParameter->getId()
-                )
+                outputParam->isInputParameterReferenced( parameterId )
             ) {
                 references.append( outputParam->getName() );
             }

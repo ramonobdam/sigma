@@ -7,6 +7,7 @@
 #include "outputparameter.h"
 #include "samplebatch.h"
 #include "statistics.h"
+#include <QRegularExpression>
 #include <QTest>
 #include <QtNumeric>
 #include <cmath>
@@ -153,18 +154,17 @@ void tst_samplebatch::generateSamples_correlatedInputs_matchesCombinedUncertaint
         a.setName( "X1" );
         a.setStdUncertainty( 1. );
         x1 = a.appendToModel();
+        QVERIFY( x1 );
 
         InputParameter b {};
         b.setName( "X2" );
         b.setStdUncertainty( 1. );
         x2 = b.appendToModel();
+        QVERIFY( x2 );
     }
 
-    Correlation correlation {};
-    correlation.setInputParameterA( x1 );
-    correlation.setInputParameterB( x2 );
-    correlation.setCorrelation( 0.5 );
-    QVERIFY( correlation.appendToModel() != nullptr );
+    Correlation correlation { nullptr, x1->getId(), x2->getId(), 0.5 };
+    QVERIFY( correlation.appendToModel() );
 
     OutputParameter output {};
     output.setFormula( "X1 + X2" );
@@ -196,9 +196,17 @@ void tst_samplebatch::generateSamples_withoutOutputParameter_fails() {
 
 void tst_samplebatch::setBatchSize_belowOneIsClamped() {
     // The minimum batch size is 1
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression( "Invalid batch size of '0' is set to '1'" )
+    );
     SampleBatch batch { nullptr, 0, 1 };
     QCOMPARE( batch.getBatchSize(), 1 );
 
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression( "Invalid batch size of '-1' is set to '1'" )
+    );
     batch.setBatchSize( -1 );
     QCOMPARE( batch.getBatchSize(), 1 );
 

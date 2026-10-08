@@ -15,27 +15,20 @@ ModelControl<Correlation *> Correlation::mCorrelationModel = {};
 
 Correlation::Correlation(
     QObject *parent,
-    InputParameter *inputParameterA,
-    InputParameter *inputParameterB,
+    const QUuid &inputParameterAId,
+    const QUuid &inputParameterBId,
     double correlation
 )   :   QObject { parent },
         Data {},
-        mInputParameterA {},
-        mInputParameterB {},
-        mInputParameterAId {},
-        mInputParameterBId {},
+        mInputParameterAId { inputParameterAId },
+        mInputParameterBId { inputParameterBId },
         mCorrelation { correlation }
-{
-    setInputParameterA( inputParameterA );
-    setInputParameterB( inputParameterB );
-}
+{}
 
 
 Correlation::Correlation( const Correlation &cor )
     :   QObject { cor.parent() },
         Data { cor },
-        mInputParameterA { cor.getInputParameterA() },
-        mInputParameterB { cor.getInputParameterB() },
         mInputParameterAId { cor.getInputParameterAId() },
         mInputParameterBId { cor.getInputParameterBId() },
         mCorrelation { cor.getCorrelation() }
@@ -46,8 +39,6 @@ Correlation & Correlation::operator= ( const Correlation &cor ) {
     if ( this != &cor ) {
         Data::operator=( cor );
         setParent( cor.parent() );
-        setInputParameterA( cor.getInputParameterA() );
-        setInputParameterB( cor.getInputParameterB() );
         setInputParameterAId( cor.getInputParameterAId() );
         setInputParameterBId( cor.getInputParameterBId() );
         setCorrelation( cor.getCorrelation() );
@@ -81,16 +72,6 @@ Correlation * Correlation::appendToModel() {
 
 DataType Correlation::dataType() const {
     return DataType::Correlation;
-}
-
-
-InputParameter * Correlation::getInputParameterA() const {
-    return mInputParameterA;
-}
-
-
-InputParameter * Correlation::getInputParameterB() const {
-    return mInputParameterB;
 }
 
 
@@ -181,8 +162,8 @@ int Correlation::columnCount() const {
 
 
 void Correlation::reset() {
-    setInputParameterA();
-    setInputParameterB();
+    setInputParameterAId();
+    setInputParameterBId();
     setCorrelation();
 }
 
@@ -202,40 +183,8 @@ void Correlation::set( int column, const QVariant &value ) {
 }
 
 
-void Correlation::setInputParameterA( InputParameter *inputParameter ) {
-    mInputParameterA = inputParameter;
-    mInputParameterAId = inputParameter ? inputParameter->getId() : QUuid {};
-}
-
-
-void Correlation::setInputParameterAById( const QUuid &id ) {
-    if ( !id.isNull( ) ) {
-        InputParameter *param { InputParameter::getById( id ) };
-        if ( param ) {
-            setInputParameterA( param );
-        }
-    }
-}
-
-
 void Correlation::setInputParameterAId( const QUuid &id ) {
     mInputParameterAId = id;
-}
-
-
-void Correlation::setInputParameterB( InputParameter *inputParameter ) {
-    mInputParameterB = inputParameter;
-    mInputParameterBId = inputParameter ? inputParameter->getId() : QUuid {};
-}
-
-
-void Correlation::setInputParameterBById( const QUuid &id ) {
-    if ( !id.isNull( ) ) {
-        InputParameter *param { InputParameter::getById( id ) };
-        if ( param) {
-            setInputParameterB( param );
-        }
-    }
 }
 
 
@@ -261,13 +210,14 @@ void Correlation::updateFromJson( const QJsonObject &json ) {
 
 
 QString Correlation::getInputParameterNameA( bool csvMode ) const {
-    return mInputParameterA ? mInputParameterA->getName( csvMode ) : "";
+    InputParameter *param { InputParameter::getById( mInputParameterAId ) };
+    return param ? param->getName( csvMode ) : "";
 }
 
 
 QString Correlation::getInputParameterNameB( bool csvMode ) const {
-    return mInputParameterB ? mInputParameterB->getName( csvMode ) : "";
-
+    InputParameter *param { InputParameter::getById( mInputParameterBId ) };
+    return param ? param->getName( csvMode ) : "";
 }
 
 
@@ -279,7 +229,7 @@ bool Correlation::isUnique( bool checkCurrentSelection ) const {
 bool Correlation::setInputParameterAByName( const QString &name ) {
     InputParameter *parameter { InputParameter::getByName( name ) };
     if ( parameter ) {
-        setInputParameterA( parameter );
+        setInputParameterAId( parameter->getId() );
         return true;
     }
     return false;
@@ -289,7 +239,7 @@ bool Correlation::setInputParameterAByName( const QString &name ) {
 bool Correlation::setInputParameterBByName( const QString &name ) {
     InputParameter *parameter { InputParameter::getByName( name ) };
     if ( parameter ) {
-        setInputParameterB( parameter );
+        setInputParameterBId( parameter->getId() );
         return true;
     }
     return false;
@@ -308,7 +258,7 @@ void Correlation::setCorrelation( double correlation ) {
 
 void Correlation::setToSelected() {
     // Set this Correlation to the values of the selected Correlation, or reset
-    // is no Correlation is selected
+    // if no Correlation is selected
     const Correlation *correlation { mCorrelationModel.getSelected() };
     if ( correlation ) {
         *this = *correlation;
@@ -566,15 +516,6 @@ void Correlation::onDisplayPrecisionChanged() {
 }
 
 
-void Correlation::reconnectAllCorrelations() {
-    // Set the pointers to both the InputParameters based on the Ids for all
-    // stored correlations. Needed when restoring the model states from Json.
-    for ( Correlation *correlation : getAll() ) {
-        correlation->reconnectInputParameters();
-    }
-}
-
-
 void Correlation::setSelectionLocked( bool locked ) {
     mCorrelationModel.setSelectionLocked( locked );
 }
@@ -592,13 +533,6 @@ Correlation * Correlation::insertIntoModel( int row ) {
     }
     const int boundedRow { qBound( 0, row, mCorrelationModel.rowCount() ) };
     return mCorrelationModel.insertRow( boundedRow, *this );
-}
-
-
-void Correlation::reconnectInputParameters() {
-    // Set the pointers to both the InputParameters based on the Ids
-    setInputParameterAById( mInputParameterAId );
-    setInputParameterBById( mInputParameterBId );
 }
 
 

@@ -5,6 +5,7 @@
 #include "correlation.h"
 #include "inputparameter.h"
 #include "outputparameter.h"
+#include <QRegularExpression>
 #include <QSignalSpy>
 #include <QTest>
 #include <QtNumeric>
@@ -179,12 +180,11 @@ void tst_outputparameter::compile_simpleSum_combinedUncertaintyIsRootSumOfSquare
 void tst_outputparameter::compile_correlatedInputs_increaseCombinedUncertainty(
 ) {
     InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    QVERIFY( x1 );
     InputParameter *x2 { addInput( "X2", 0., 1. ) };
+    QVERIFY( x2 );
 
-    Correlation correlation {};
-    correlation.setInputParameterA( x1 );
-    correlation.setInputParameterB( x2 );
-    correlation.setCorrelation( 0.5 );
+    Correlation correlation { nullptr, x1->getId(), x2->getId(), 0.5 };
     QVERIFY( correlation.appendToModel() != nullptr );
 
     OutputParameter output {};
@@ -204,12 +204,11 @@ void tst_outputparameter::compile_correlatedInputs_increaseCombinedUncertainty(
 void tst_outputparameter::compile_negativeCorrelation_decreasesCombinedUncertainty(
 ) {
     InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    QVERIFY( x1 );
     InputParameter *x2 { addInput( "X2", 0., 1. ) };
+    QVERIFY( x2 );
 
-    Correlation correlation {};
-    correlation.setInputParameterA( x1 );
-    correlation.setInputParameterB( x2 );
-    correlation.setCorrelation( -0.5 );
+    Correlation correlation { nullptr, x1->getId(), x2->getId(), -0.5 };
     QVERIFY( correlation.appendToModel() != nullptr );
 
     OutputParameter output {};
@@ -319,9 +318,21 @@ void tst_outputparameter::equality_dependsOnlyOnFormulaAndConfidence() {
 void tst_outputparameter::setConfidence_isClampedToValidRange() {
     OutputParameter output {};
 
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid level of confidence value of '1.5' set to '0.999'"
+        )
+    );
     output.setConfidence( 1.5 );          // above maximum (0.999)
     QCOMPARE( output.getConfidence(), 0.999 );
 
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid level of confidence value of '-0.5' set to '0'"
+        )
+    );
     output.setConfidence( -0.5 );         // below minimum (0.)
     QCOMPARE( output.getConfidence(), 0. );
 

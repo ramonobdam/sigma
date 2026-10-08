@@ -4,6 +4,8 @@
 
 #include "correlation.h"
 #include "inputparameter.h"
+#include <QRegularExpression>
+#include <QUUid>
 #include <QTest>
 
 // Unit tests for Correlation: the class that stores the correlation
@@ -28,7 +30,6 @@ private slots:
     void remove_removesFromModel();
     void update_requiresUniqueOrSameParameters();
 
-    void reconnectInputParameters_restoresPointersFromIds();
     void applyDiff_addUpdateAndRemove();
 
 private:
@@ -62,31 +63,31 @@ void tst_correlation::cleanup() {
 
 
 void tst_correlation::getValid_requiresTwoDistinctRegisteredParameters() {
-    Correlation valid { nullptr, mParamA, mParamB, 0.5 };
+    Correlation valid { nullptr, mParamA->getId(), mParamB->getId(), 0.5 };
     QVERIFY( valid.getValid() );
 
-    Correlation sameParameter { nullptr, mParamA, mParamA, 0.5 };
-    QVERIFY( !sameParameter.getValid() );
+    Correlation sameParams { nullptr, mParamA->getId(), mParamA->getId(), 0.5 };
+    QVERIFY( !sameParams.getValid() );
 
-    Correlation noParameterB { nullptr, mParamA, nullptr, 0.5 };
+    Correlation noParameterB { nullptr, mParamA->getId(), QUuid(), 0.5 };
     QVERIFY( !noParameterB.getValid() );
 }
 
 
 void tst_correlation::getValid_requiresCorrelationInRange() {
-    Correlation tooHigh { nullptr, mParamA, mParamB, 1.5 };
+    Correlation tooHigh { nullptr, mParamA->getId(), mParamB->getId(), 1.5 };
     QVERIFY( !tooHigh.getValid() );
 
-    Correlation tooLow { nullptr, mParamA, mParamB, -1.5 };
+    Correlation tooLow { nullptr, mParamA->getId(), mParamB->getId(), -1.5 };
     QVERIFY( !tooLow.getValid() );
 
-    Correlation atBound { nullptr, mParamA, mParamB, 1. };
+    Correlation atBound { nullptr, mParamA->getId(), mParamB->getId(), 1. };
     QVERIFY( atBound.getValid() );
 }
 
 
 void tst_correlation::jsonRoundTrip() {
-    Correlation original { nullptr, mParamA, mParamB, 0.42 };
+    Correlation original { nullptr, mParamA->getId(), mParamB->getId(), 0.42 };
 
     QJsonObject json { original.toJson() };
     QCOMPARE(
@@ -108,25 +109,31 @@ void tst_correlation::jsonRoundTrip() {
 
 
 void tst_correlation::appendToModel_rejectsNonUniqueCorrelation() {
-    Correlation first { nullptr, mParamA, mParamB, 0.3 };
+    Correlation first { nullptr, mParamA->getId(), mParamB->getId(), 0.3 };
     QVERIFY( first.appendToModel() != nullptr );
     QCOMPARE( Correlation::getAll().size(), 1 );
 
     // Same InputParameters, reversed order -> still not unique
-    Correlation duplicate { nullptr, mParamB, mParamA, 0.7 };
-    QCOMPARE( duplicate.appendToModel(), nullptr );
+    Correlation duplicate { nullptr, mParamB->getId(), mParamA->getId(), 0.7 };
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Non-unique correlation could not be inserted into the model"
+        )
+    );
+    QVERIFY( !duplicate.appendToModel() );
     QCOMPARE( Correlation::getAll().size(), 1 );
 
     // A correlation between a different pair is fine
-    Correlation other { nullptr, mParamA, mParamC, 0.1 };
-    QVERIFY( other.appendToModel() != nullptr );
+    Correlation other { nullptr, mParamA->getId(), mParamC->getId(), 0.1 };
+    QVERIFY( other.appendToModel() );
     QCOMPARE( Correlation::getAll().size(), 2 );
 }
 
 
 void tst_correlation::getCorrelation_isOrderIndependent() {
-    Correlation correlation { nullptr, mParamA, mParamB, 0.55 };
-    Correlation *added { correlation.appendToModel() };
+    Correlation corr { nullptr, mParamA->getId(), mParamB->getId(), 0.55 };
+    Correlation *added { corr.appendToModel() };
     QVERIFY( added != nullptr );
 
     QCOMPARE(
@@ -145,9 +152,9 @@ void tst_correlation::getCorrelation_isOrderIndependent() {
 
 
 void tst_correlation::getCorrelationsForInputParameter_findsBothSides() {
-    Correlation ab { nullptr, mParamA, mParamB, 0.2 };
+    Correlation ab { nullptr, mParamA->getId(), mParamB->getId(), 0.2 };
     ab.appendToModel();
-    Correlation ac { nullptr, mParamA, mParamC, 0.3 };
+    Correlation ac { nullptr, mParamA->getId(), mParamC->getId(), 0.3 };
     ac.appendToModel();
 
     QList<Correlation *> forA {
@@ -168,8 +175,8 @@ void tst_correlation::getCorrelationsForInputParameter_findsBothSides() {
 
 
 void tst_correlation::remove_removesFromModel() {
-    Correlation correlation { nullptr, mParamA, mParamB, 0.5 };
-    Correlation *added { correlation.appendToModel() };
+    Correlation corr { nullptr, mParamA->getId(), mParamB->getId(), 0.5 };
+    Correlation *added { corr.appendToModel() };
     QUuid id { added->getId() };
 
     QVERIFY( Correlation::remove( id ) );
@@ -179,9 +186,9 @@ void tst_correlation::remove_removesFromModel() {
 
 
 void tst_correlation::update_requiresUniqueOrSameParameters() {
-    Correlation ab { nullptr, mParamA, mParamB, 0.5 };
+    Correlation ab { nullptr, mParamA->getId(), mParamB->getId(), 0.5 };
     Correlation *addedAB { ab.appendToModel() };
-    Correlation ac { nullptr, mParamA, mParamC, 0.1 };
+    Correlation ac { nullptr, mParamA->getId(), mParamC->getId(), 0.1 };
     Correlation *addedAC { ac.appendToModel() };
     Q_UNUSED( addedAC )
 
@@ -195,42 +202,14 @@ void tst_correlation::update_requiresUniqueOrSameParameters() {
 
     // Changing to a pair that already exists elsewhere in the model ->
     // rejected
-    Correlation conflicting { nullptr, mParamA, mParamC, 0.2 };
-    QVERIFY( !Correlation::update( addedAB->getId(), &conflicting ) );
-}
-
-
-void tst_correlation::reconnectInputParameters_restoresPointersFromIds() {
-    // Simulates what happens after loading a project from JSON: correlations
-    // are constructed from Ids only, and the InputParameter pointers need to
-    // be reconnected afterwards.
-    QJsonObject json {};
-    json[ "IdInputParameterA" ] = mParamA->getId().toString();
-    json[ "IdInputParameterB" ] = mParamB->getId().toString();
-    json[ "correlation" ] = 0.6;
-
-    Correlation restored { Correlation::fromJson( json, true ) };
-    Q_UNUSED( restored )
-
-    QCOMPARE( Correlation::getAll().size(), 1 );
-    Correlation *stored { Correlation::getAll().first() };
-
-    // updateFromJson() only stores the Ids — the InputParameter pointers are
-    // still unresolved at this point
-    QCOMPARE( stored->getInputParameterA(), nullptr );
-    QCOMPARE( stored->getInputParameterB(), nullptr );
-
-    // reconnectAllCorrelations() (called after loading a project) resolves
-    // the pointers from the stored Ids
-    Correlation::reconnectAllCorrelations();
-    QCOMPARE( stored->getInputParameterA(), mParamA );
-    QCOMPARE( stored->getInputParameterB(), mParamB );
+    Correlation conflict { nullptr, mParamA->getId(), mParamC->getId(), 0.2 };
+    QVERIFY( !Correlation::update( addedAB->getId(), &conflict ) );
 }
 
 
 void tst_correlation::applyDiff_addUpdateAndRemove() {
-    Correlation correlation { nullptr, mParamA, mParamB, 0.25 };
-    Correlation *added { correlation.appendToModel() };
+    Correlation corr { nullptr, mParamA->getId(), mParamB->getId(), 0.25 };
+    Correlation *added { corr.appendToModel() };
     QUuid id { added->getId() };
     QJsonObject afterAdd { added->toJson() };
 

@@ -9,12 +9,14 @@
 #include "uncertaintycalculation.h"
 #include "undostack.h"
 #include <QFile>
+#include <QRegularExpression>
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QString>
 #include <QStringList>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QUuid>
 #include <QUrl>
 #include <QtNumeric>
 #include <cmath>
@@ -50,7 +52,12 @@ private slots:
 
     void newProject_clearsEverything();
 
+    void userClearProject_clearsEverythingAndIsUndoable();
+
     void projectFromJson_addsNewUnit();
+
+    void getSelectedInputParameterReferences_returnsCorrectOutputs();
+    void getSelectedCorrelationReferences_returnsCorrectOutputs();
 };
 
 
@@ -106,7 +113,7 @@ void tst_uncertaintycalculation::addInputAndOutputParameter_compilesAndIsSelecte
 
     QCOMPARE( OutputParameter::getAll().size(), 1 );
     OutputParameter *added { OutputParameter::getByName( "Y1" ) };
-    QVERIFY( added != nullptr );
+    QVERIFY( added );
     QVERIFY( added->getValid() );
     QVERIFY( qAbs( added->getNominalValue() - 30. ) < 1e-9 );
 
@@ -146,11 +153,13 @@ void tst_uncertaintycalculation::addCorrelation_cascadesToOutputsAndIsUndoable(
     x1.setName( "X1" );
     calc.addInputParameter( &x1 );
     InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
 
     InputParameter x2 {};
     x2.setName( "X2" );
     calc.addInputParameter( &x2 );
     InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
 
     OutputParameter y1 {};
     y1.setName( "Y1" );
@@ -163,10 +172,7 @@ void tst_uncertaintycalculation::addCorrelation_cascadesToOutputsAndIsUndoable(
         addedOutputParam->getCombinedStdUncertainty()
     };
 
-    Correlation correlation {};
-    correlation.setInputParameterA( paramX1 );
-    correlation.setInputParameterB( paramX2 );
-    correlation.setCorrelation( 0.5 );
+    Correlation correlation { nullptr, paramX1->getId(), paramX2->getId(), 0.5};
     calc.addCorrelation( &correlation );
     QCOMPARE( Correlation::getAll().size(), 1 );
 
@@ -255,16 +261,15 @@ void tst_uncertaintycalculation::removeCorrelation_cascadesToOutputsAndIsUndoabl
     x1.setName( "X1" );
     calc.addInputParameter( &x1 );
     InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
 
     InputParameter x2 {};
     x2.setName( "X2" );
     calc.addInputParameter( &x2 );
     InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
 
-    Correlation correlation {};
-    correlation.setInputParameterA( paramX1 );
-    correlation.setInputParameterB( paramX2 );
-    correlation.setCorrelation( 0.5 );
+    Correlation correlation { nullptr, paramX1->getId(), paramX2->getId(), 0.5};
     calc.addCorrelation( &correlation );
     QCOMPARE( Correlation::getAll().size(), 1 );
 
@@ -331,16 +336,15 @@ void tst_uncertaintycalculation::removeInputParameter_cascadesToCorrelationsAndO
     x1.setName( "X1" );
     calc.addInputParameter( &x1 );
     InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
 
     InputParameter x2 {};
     x2.setName( "X2" );
     calc.addInputParameter( &x2 );
     InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
 
-    Correlation correlation {};
-    correlation.setInputParameterA( paramX1 );
-    correlation.setInputParameterB( paramX2 );
-    correlation.setCorrelation( 0.5 );
+    Correlation correlation { nullptr, paramX1->getId(), paramX2->getId(), 0.5};
     calc.addCorrelation( &correlation );
     QCOMPARE( Correlation::getAll().size(), 1 );
 
@@ -381,16 +385,15 @@ void tst_uncertaintycalculation::updateCorrelation_cascadesToOutputsAndIsUndoabl
     x1.setName( "X1" );
     calc.addInputParameter( &x1 );
     InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
 
     InputParameter x2 {};
     x2.setName( "X2" );
     calc.addInputParameter( &x2 );
     InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
 
-    Correlation correlation {};
-    correlation.setInputParameterA( paramX1 );
-    correlation.setInputParameterB( paramX2 );
-    correlation.setCorrelation( 0.5 );
+    Correlation correlation { nullptr, paramX1->getId(), paramX2->getId(), 0.5};
     calc.addCorrelation( &correlation );
 
     OutputParameter y1 {};
@@ -525,7 +528,7 @@ void tst_uncertaintycalculation::projectJson_roundTripInMemory() {
     QCOMPARE( InputParameter::getAll().size(), 2 );
     QCOMPARE( OutputParameter::getAll().size(), 1 );
     OutputParameter *restored { OutputParameter::getByName( "Y1" ) };
-    QVERIFY( restored != nullptr );
+    QVERIFY( restored );
     QVERIFY( restored->getValid() );
     QVERIFY(
         qAbs(
@@ -583,12 +586,12 @@ void tst_uncertaintycalculation::saveAndLoadProject_roundTripThroughFile() {
 
     QCOMPARE( InputParameter::getAll().size(), 1 );
     InputParameter *x1 { InputParameter::getByName( "X1" ) };
-    QVERIFY( x1 != nullptr );
+    QVERIFY( x1 );
     QCOMPARE( x1->getNominalValue(), 5. );
     QCOMPARE( x1->getStdUncertainty(), 0.5 );
 
     OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
-    QVERIFY( y1 != nullptr );
+    QVERIFY( y1 );
     QCOMPARE( y1->getUnit(), QString( "mm" ) );
     QCOMPARE( y1->getFormula(), QString( "2 * X1" ) );
     QCOMPARE( y1->getConfidence(), 0.93 );
@@ -608,6 +611,10 @@ void tst_uncertaintycalculation::saveAndLoadProject_roundTripThroughFile() {
 
 void tst_uncertaintycalculation::loadProject_invalidUrl_fails() {
     UncertaintyCalculation calc {};
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression( "Project file '' could not be loaded." )
+    );
     QVERIFY( !calc.loadProject( QUrl( "not-a-local-file" ) ) );
 }
 
@@ -662,7 +669,7 @@ void tst_uncertaintycalculation::runMonteCarlo_updatesSelectedOutputAndIsUndoabl
 
     // addOutputParameter() auto-selects the new row
     OutputParameter *selected { OutputParameter::getSelected() };
-    QVERIFY( selected != nullptr );
+    QVERIFY( selected );
     QVERIFY( !selected->getMonteCarloValid() );
 
     QSignalSpy finishedSpy { &calc, &UncertaintyCalculation::monteCarloFinished };
@@ -696,40 +703,283 @@ void tst_uncertaintycalculation::newProject_clearsEverything() {
     QVERIFY( !UndoStack::instance().canRedo() );
 }
 
+void tst_uncertaintycalculation::userClearProject_clearsEverythingAndIsUndoable(
+) {
+    UncertaintyCalculation calc {};
+
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
+
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
+
+    QCOMPARE( InputParameter::getAll().size(), 2 );
+
+    Correlation correlation { nullptr, paramX1->getId(), paramX2->getId(), 0.5};
+    calc.addCorrelation( &correlation );
+    QCOMPARE( Correlation::getAll().size(), 1 );
+    Correlation *addedCorr {
+        Correlation::getCorrelation( paramX1->getId(), paramX2->getId() )
+    };
+    QVERIFY( addedCorr );
+    QUuid corrId { addedCorr->getId() };
+
+    OutputParameter y1 {};
+    y1.setName( "Y1" );
+    y1.setFormula( "X1 + X2" );
+    calc.addOutputParameter( &y1 );
+    QCOMPARE( OutputParameter::getAll().size(), 1 );
+    OutputParameter *addedY1 { OutputParameter::getByName( "Y1" ) };
+    QVERIFY( addedY1 );
+    QVERIFY( addedY1->getValid() );
+    QVERIFY( addedY1->getCombinedStdUncertainty() - 1.732050808 < 1e-9 );
+
+    // Clear the project
+    calc.userClearProject();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( !UndoStack::instance().canRedo() );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( Correlation::getAll().size(), 0 );
+    QCOMPARE( OutputParameter::getAll().size(), 0 );
+
+    // Undo clearing the project
+    calc.undo();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( UndoStack::instance().canRedo() );
+    QCOMPARE( InputParameter::getAll().size(), 2 );
+    QCOMPARE( Correlation::getAll().size(), 1 );
+    QCOMPARE( OutputParameter::getAll().size(), 1 );
+    QVERIFY( Correlation::getById( corrId ) );
+    OutputParameter *restoredY1 { OutputParameter::getByName( "Y1" ) };
+    QVERIFY( restoredY1 );
+    QVERIFY( restoredY1->getValid() );
+    QVERIFY( restoredY1->getCombinedStdUncertainty() - 1.732050808 < 1e-9 );
+
+
+    // Redo clearing the project
+    calc.redo();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( !UndoStack::instance().canRedo() );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( Correlation::getAll().size(), 0 );
+    QCOMPARE( OutputParameter::getAll().size(), 0 );
+}
+
 
 void tst_uncertaintycalculation::projectFromJson_addsNewUnit() {
     UncertaintyCalculation calc1 {};
-    QStringList defaultUnits { calc1.getUnits() };
+    QStringList defaultUnits { calc1.unitsModel()->stringList() };
 
-    // An existing unit should not be added to the list
+    // An existing unit should not be added to the list by projectToJson()
     InputParameter x1 {};
     x1.setName( "X1" );
-    x1.setUnit( "m" );  // included in the default units list
+    x1.setUnit( "m" );  // Included in the default units list
     calc1.addInputParameter( &x1 );
     QCOMPARE( InputParameter::getAll().size(), 1 );
 
-    // An new unit should be added to the list
+    // An new unit should be added to the list by projectToJson()
     InputParameter x2 {};
     x2.setName( "X2" );
-    x2.setUnit( "not-existing-unit" );  // included in the default units list
+    x2.setUnit( "not-existing-unit" ); // Not included in the default units list
     calc1.addInputParameter( &x2 );
     QCOMPARE( InputParameter::getAll().size(), 2 );
 
     QJsonObject json { calc1.projectToJson() };
 
-    // Restore the project from json
+    // Make sure the symbol table is empty so the input parameters can be added
+    // again in a fresh UncertaintyCalculation object
+    calc1.newProject();
+
+    // Create a fresh UncertaintyCalculation object and make sure its units list
+    // is equal to the default
     UncertaintyCalculation calc2 {};
+    QCOMPARE( calc2.unitsModel()->stringList(), defaultUnits );
+
+    // Restore the project from json
     calc2.projectFromJson( json );
+
     // New units list should contain 'not-existing-unit'
-    QCOMPARE( calc2.getUnits().size(), defaultUnits.size() + 1 );
-    QVERIFY( calc2.getUnits().contains( "not-existing-unit" ) );
+    QCOMPARE(
+        calc2.unitsModel()->stringList().size(),
+        defaultUnits.size() + 1
+    );
+    QVERIFY( calc2.unitsModel()->stringList().contains( "not-existing-unit" ) );
+
+    // Make sure the unit list is sorted
+    QStringList sortedUnits { calc2.unitsModel()->stringList() };
+    sortedUnits.sort();
+    QCOMPARE( calc2.unitsModel()->stringList(), sortedUnits );
 
     // projectFromJson() parents the newly created objects to 'calc'. Clear the
     // models explicitly while 'calc' is stil alive, rather than relying on its
     // destructor to cascade-delete them (see the comment in
     // projectJson_roundTripInMemory() for details).
-    calc1.newProject();
     calc2.newProject();
+}
+
+
+void tst_uncertaintycalculation::getSelectedInputParameterReferences_returnsCorrectOutputs(
+) {
+    UncertaintyCalculation calc {};
+
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
+
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
+
+    InputParameter x3 {};
+    x3.setName( "X3" );
+    calc.addInputParameter( &x3 );
+    InputParameter *paramX3 { InputParameter::getByName( "X3" ) };
+    QVERIFY( paramX3 );
+
+    OutputParameter y1 {};
+    y1.setName( "Y1" );
+    y1.setFormula( "X1 + X2" );
+    calc.addOutputParameter( &y1 );
+    QVERIFY( OutputParameter::getByName( "Y1" )->getValid() );
+
+    OutputParameter y2 {};
+    y2.setName( "Y2" );
+    y2.setFormula( "X2 * 11 " );
+    calc.addOutputParameter( &y2 );
+
+    // Select X1 and check the references
+    InputParameter::getInputModel()->selectRow(
+        InputParameter::getRowIndex( paramX1->getId() )
+    );
+    QCOMPARE(
+        calc.getSelectedInputParameterReferences(),
+        "output parameter Y1"
+    );
+
+    // Select X2 and check the references
+    InputParameter::getInputModel()->selectRow(
+        InputParameter::getRowIndex( paramX2->getId() )
+        );
+    QCOMPARE(
+        calc.getSelectedInputParameterReferences(),
+        "output parameters Y1 and Y2"
+    );
+
+    // Add Y3 and check X2 references again
+    OutputParameter y3 {};
+    y3.setName( "Y3" );
+    y3.setFormula( "sqrt(X2)" );
+    calc.addOutputParameter( &y3 );
+    QCOMPARE(
+        calc.getSelectedInputParameterReferences(),
+        "output parameters Y1, Y2 and Y3"
+    );
+
+    // Select X3, not referenced
+    InputParameter::getInputModel()->selectRow(
+        InputParameter::getRowIndex( paramX3->getId() )
+    );
+    QCOMPARE( calc.getSelectedInputParameterReferences(), "" );
+}
+
+
+void tst_uncertaintycalculation::getSelectedCorrelationReferences_returnsCorrectOutputs(
+) {
+    UncertaintyCalculation calc {};
+
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    InputParameter *paramX1 { InputParameter::getByName( "X1" ) };
+    QVERIFY( paramX1 );
+
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    InputParameter *paramX2 { InputParameter::getByName( "X2" ) };
+    QVERIFY( paramX2 );
+
+    InputParameter x3 {};
+    x3.setName( "X3" );
+    calc.addInputParameter( &x3 );
+    InputParameter *paramX3 { InputParameter::getByName( "X3" ) };
+    QVERIFY( paramX3 );
+
+    InputParameter x4 {};
+    x4.setName( "X4" );
+    calc.addInputParameter( &x4 );
+    InputParameter *paramX4 { InputParameter::getByName( "X4" ) };
+    QVERIFY( paramX4 );
+
+    Correlation corr1 { nullptr, paramX1->getId(), paramX2->getId(), 0.5 };
+    calc.addCorrelation( &corr1 );
+    Correlation *addedCorr1 {
+        Correlation::getCorrelation( paramX1->getId(), paramX2->getId() )
+    };
+    QVERIFY( addedCorr1 );
+    QUuid corr1Id { addedCorr1->getId() };
+
+    Correlation corr2 { nullptr, paramX1->getId(), paramX3->getId(), -0.5 };
+    calc.addCorrelation( &corr2 );
+    Correlation *addedCorr2 {
+        Correlation::getCorrelation( paramX1->getId(), paramX3->getId() )
+    };
+    QVERIFY( addedCorr2 );
+    QUuid corr2Id { addedCorr2->getId() };
+
+    Correlation corr3 { nullptr, paramX1->getId(), paramX4->getId() };
+    calc.addCorrelation( &corr3 );
+    Correlation *addedCorr3 {
+        Correlation::getCorrelation( paramX1->getId(), paramX4->getId() )
+    };
+    QVERIFY( addedCorr3 );
+    QUuid corr3Id { addedCorr3->getId() };
+
+    OutputParameter y1 {};
+    y1.setName( "Y1" );
+    y1.setFormula( "X1 + X2" );
+    calc.addOutputParameter( &y1 );
+
+    OutputParameter y2 {};
+    y2.setName( "Y2" );
+    y2.setFormula( "X2 * 11 " );
+    calc.addOutputParameter( &y2 );
+
+    OutputParameter y3 {};
+    y3.setName( "Y3" );
+    y3.setFormula( "X1 * X3 + X2" );
+    calc.addOutputParameter( &y3 );
+
+    // Select Correlation X1-X2 and check the references
+    Correlation::getCorrelationModel()->selectRow(
+        Correlation::getRowIndex( corr1Id  )
+    );
+    QCOMPARE(
+        calc.getSelectedCorrelationReferences(),
+        "output parameters Y1 and Y3"
+    );
+
+    // Select Correlation X1-X3 and check the references
+    Correlation::getCorrelationModel()->selectRow(
+        Correlation::getRowIndex( corr2Id  )
+    );
+    QCOMPARE( calc.getSelectedCorrelationReferences(), "output parameter Y3" );
+
+    // Select Correlation X1-X4, no references
+    Correlation::getCorrelationModel()->selectRow(
+        Correlation::getRowIndex( corr3Id  )
+    );
+    QCOMPARE( calc.getSelectedCorrelationReferences(), "" );
 }
 
 

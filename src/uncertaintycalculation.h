@@ -229,9 +229,7 @@ private:
     ) const;
     QString projectToCSVString() const;
     QStringList getDistributionStrings() const;
-    QStringList getInputParameterReferences(
-        const InputParameter *inputParameter
-    ) const;
+    QStringList getInputParameterReferences( const QUuid &parameterId ) const;
     QStringList getMonteCarloResults() const;
     QUrl getProjectFilePath() const;
     bool canRedo() const;
