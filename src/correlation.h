@@ -7,7 +7,6 @@
 
 #include "data.h"
 #include "datatype.h"
-#include "inputparameter.h"
 #include "jsondiff.h"
 #include "modelcontrol.hpp"
 #include <QJsonArray>
@@ -30,8 +29,8 @@ class Correlation : public QObject, public Data {
 public:
     Correlation(
         QObject *parent = nullptr,
-        InputParameter *inputParameterA = nullptr,
-        InputParameter *inputParameterB = nullptr,
+        const QUuid &inputParameterAId = QUuid(),
+        const QUuid &inputParameterBId = QUuid(),
         double correlation = 0.
     );
     Correlation( const Correlation &cor );
@@ -42,8 +41,6 @@ public:
 
     Correlation *appendToModel();
     DataType dataType() const override;
-    InputParameter *getInputParameterA() const;
-    InputParameter *getInputParameterB() const;
     QJsonObject toJson() const override;
     QString getName( bool csvMode = false ) const override;
     QString toCSVString() const;
@@ -55,12 +52,8 @@ public:
     int columnCount() const override;
     void reset();
     void set( int column, const QVariant &value ) override;
-    void setInputParameterA( InputParameter *inputParameter = nullptr );
-    void setInputParameterAById( const QUuid &id );
-    void setInputParameterAId( const QUuid &id );
-    void setInputParameterB( InputParameter *inputParameter = nullptr );
-    void setInputParameterBById( const QUuid &id );
-    void setInputParameterBId( const QUuid &id );
+    void setInputParameterAId( const QUuid &id = QUuid() );
+    void setInputParameterBId( const QUuid &id = QUuid() );
     void updateFromJson( const QJsonObject &json ) override;
 
     Q_INVOKABLE QString getInputParameterNameA( bool csvMode = false ) const;
@@ -115,7 +108,6 @@ public:
     );
     static void notifyInputParameterChanged( const QUuid &id );
     static void onDisplayPrecisionChanged();
-    static void reconnectAllCorrelations();
     static void setSelectionLocked( bool locked );
 
     inline const static QList<int> columnWidths { 155, 155, 158 };
@@ -127,7 +119,6 @@ public:
 
 private:
     Correlation *insertIntoModel( int row );
-    void reconnectInputParameters();
 
     static bool sameInputParameters(
         const Correlation *corrA,
@@ -136,8 +127,6 @@ private:
     static double getMaxCorrelation();
     static double getMinCorrelation();
 
-    InputParameter *mInputParameterA;
-    InputParameter *mInputParameterB;
     QUuid mInputParameterAId;
     QUuid mInputParameterBId;
     double mCorrelation;

@@ -131,9 +131,6 @@ void UncertaintyCalculation::projectFromJson( const QJsonObject &json ) {
         }
     }
 
-    // Connect the new Correlation objects to their InputParameters
-    Correlation::reconnectAllCorrelations();
-
     updateUnits();
 
     emitAllResultsChanged();
@@ -201,10 +198,10 @@ QString UncertaintyCalculation::getSelectedCorrelationReferences() const {
     QString string {};
     const Correlation *correlation { Correlation::getSelected() };
     if ( correlation ) {
-        InputParameter *paramA { correlation->getInputParameterA() };
-        InputParameter *paramB { correlation->getInputParameterB() };
-        QStringList referencesA { getInputParameterReferences( paramA ) };
-        QStringList referencesB { getInputParameterReferences( paramB ) };
+        const QUuid idA { correlation->getInputParameterAId() };
+        const QUuid idB { correlation->getInputParameterBId() };
+        QStringList referencesA { getInputParameterReferences( idA ) };
+        QStringList referencesB { getInputParameterReferences( idB ) };
         QStringList referencesBoth {};
         for ( QString &nameA : referencesA ) {
             if ( referencesB.contains( nameA ) ) {
@@ -222,7 +219,8 @@ QString UncertaintyCalculation::getSelectedInputParameterReferences(
     // Return a string that lists the OutputParameters that are referencing the
     // selected InputParameter
     const InputParameter *inputParameter { InputParameter::getSelected() };
-    QStringList references { getInputParameterReferences( inputParameter ) };
+    const QUuid id { inputParameter ? inputParameter->getId() : QUuid {} };
+    QStringList references { getInputParameterReferences( id ) };
     return outputParameterReferencesToString( references );
 }
 
@@ -784,9 +782,6 @@ void UncertaintyCalculation::onTransactionApplied() {
         connectToOutputParameter( parameter );
     }
 
-    // Re-establish live pointers in Correlations from stored Ids
-    Correlation::reconnectAllCorrelations();
-
     // Recompile all OutputParameters without resetting Monte Carlo results
     OutputParameter::recompileAllExpressions( false );
 
@@ -905,18 +900,16 @@ QStringList UncertaintyCalculation::getDistributionStrings() const {
 
 
 QStringList UncertaintyCalculation::getInputParameterReferences(
-    const InputParameter *inputParameter
+    const QUuid &parameterId
 ) const {
     // Return a list of OutputParameter names that reference this
     // InputParameter
     QStringList references {};
-    if ( inputParameter ) {
+    if ( !parameterId.isNull() ) {
         for ( const OutputParameter *outputParam : OutputParameter::getAll() ) {
             if (
                 outputParam &&
-                outputParam->isInputParameterReferenced(
-                    inputParameter->getId()
-                )
+                outputParam->isInputParameterReferenced( parameterId )
             ) {
                 references.append( outputParam->getName() );
             }
