@@ -169,17 +169,16 @@ void tst_uncertaintycomponent::getCorrelationValue_usesRegisteredCorrelation() {
     a.setDistribution( Distribution::Type::normal );
     a.setStdUncertainty( 2. );
     InputParameter *paramA { a.appendToModel() };
+    QVERIFY( paramA );
 
     InputParameter b {};
     b.setName( "B" );
     b.setDistribution( Distribution::Type::normal );
     b.setStdUncertainty( 3. );
     InputParameter *paramB { b.appendToModel() };
+    QVERIFY( paramB );
 
-    Correlation correlation {};
-    correlation.setInputParameterA( paramA );
-    correlation.setInputParameterB( paramB );
-    correlation.setCorrelation( 0.5 );
+    Correlation correlation { nullptr, paramA->getId(), paramB->getId(), 0.5 };
     QVERIFY( correlation.appendToModel() );
 
     UncertaintyComponent componentA { paramA };
@@ -234,6 +233,7 @@ void tst_uncertaintycomponent::getWelchSatterthwaiteTerms_finiteDofCorrelatedCas
     a.setDOFInfinite( false );
     a.setDOF( 10 );
     InputParameter *paramA { a.appendToModel() };
+    QVERIFY( paramA );
 
     InputParameter b {};
     b.setName( "B" );
@@ -242,11 +242,9 @@ void tst_uncertaintycomponent::getWelchSatterthwaiteTerms_finiteDofCorrelatedCas
     b.setDOFInfinite( false );
     b.setDOF( 33 );
     InputParameter *paramB { b.appendToModel() };
+    QVERIFY( paramB );
 
-    Correlation correlation {};
-    correlation.setInputParameterA( paramA );
-    correlation.setInputParameterB( paramB );
-    correlation.setCorrelation( 0.5 );
+    Correlation correlation { nullptr, paramA->getId(), paramB->getId(), 0.5 };
     QVERIFY( correlation.appendToModel() );
 
     UncertaintyComponent componentA { paramA };
