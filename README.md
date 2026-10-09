@@ -271,7 +271,7 @@ Each output parameter defines a measurand expressed as a formula of input parame
 ### Build integration
 The main *Sigma* CMakeLists.txt contains a `SIGMA_BUILD_TESTS` option. When enabled, CMake adds the `tests` subdirectory and registers the test executables with CTest.
 
-Build and run the tests:
+From the project root, configure and build the project with tests enabled, then run the tests. The `build` directory is created in the project root and stores the generated build files and compiled binaries.
 ```bash
 cmake -B build -S . -DSIGMA_BUILD_TESTS=ON
 cmake --build build
