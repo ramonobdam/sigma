@@ -255,7 +255,7 @@ Each output parameter defines a measurand expressed as a formula of input parame
 
 | File | Focus |
 |---|---|
-| `tst_correlation` | Correlation validity, uniqueness, JSON round-trip, reconnection of input parameters, diff application |
+| `tst_correlation` | Correlation validity, uniqueness, JSON round-trip, diff application |
 | `tst_demoprojects` | Regression tests for all demo projects defined in `demo_projects.json`. Runs each project via the CLI and compares the saved `.sig` and exported `.csv` against reference results. |
 | `tst_diffutil` | Undo/redo snapshot/diff/transaction engine |
 | `tst_distribution` | Inverse-CDFs for all distributions, distribution/string mapping |
@@ -265,8 +265,8 @@ Each output parameter defines a measurand expressed as a formula of input parame
 | `tst_samplebatch` | Monte Carlo sample batch generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
 | `tst_statistics` | Mean/std-dev, coverage-interval bounds, histogram |
 | `tst_stringutils` | Number/CSV formatting helpers and Unicode locale behaviour |
-| `tst_uncertaintycalculation` | Add/remove/update input parameter/output parameter/correlation, delete cascades, JSON round-trip, project load/save, project export, undo/redo system |
-| `tst_uncertaintycomponent` | Input parameter properties, sensitivity (partial derivative), component/correlation contributions, Welch-Satterthwaite |
+| `tst_uncertaintycalculation` | Add/remove/update input parameter/output parameter/correlation, delete cascades, JSON round-trip, project load/save, project export, undo/redo system, units model, output parameter references |
+| `tst_uncertaintycomponent` | Input parameter properties, sensitivity (partial derivative), component/correlation contributions, Welch-Satterthwaite, correlated component uniqueness |
 
 ### Build integration
 The main *Sigma* CMakeLists.txt contains a `SIGMA_BUILD_TESTS` option. When enabled, CMake adds the `tests` subdirectory and registers the test executables with CTest.
