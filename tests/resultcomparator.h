@@ -69,6 +69,7 @@ private:
     void addDifference( const QString &difference );
 
     static TextTokens tokenize( const QString &text );
+    static QString normalizeLineEndings( const QString &text );
     static QString typeName( const QJsonValue &value );
 
     // Maximum number of differences that is reported per comparison
@@ -86,6 +87,8 @@ private:
     };
     static constexpr QLatin1StringView sProjectString { "project" };
     static constexpr QLatin1StringView sEndl { "\n" };
+    static constexpr QLatin1StringView sWindowsEndl { "\r\n" };
+    static constexpr QLatin1StringView sCarriageReturn { "\r" };
     static constexpr QLatin1StringView sEndlEllipsis { "\n..." };
     static constexpr QLatin1StringView sNumberOfLinesVsReferenceString {
         "Number of lines: %1 (reference: %2)"
