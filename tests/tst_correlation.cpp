@@ -5,7 +5,7 @@
 #include "correlation.h"
 #include "inputparameter.h"
 #include <QRegularExpression>
-#include <QUUid>
+#include <QUuid>
 #include <QTest>
 
 // Unit tests for Correlation: the class that stores the correlation
