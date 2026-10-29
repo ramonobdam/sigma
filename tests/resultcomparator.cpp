@@ -126,11 +126,17 @@ bool ResultComparator::compareCSVFiles(
         return false;
     }
 
+    // Normalize the line endings, so that the comparison does not depend on
+    // the platform or the git line ending settings
     const QStringList actualLines {
-        QString::fromUtf8( actualContent ).split( sEndl )
+        normalizeLineEndings(
+            QString::fromUtf8( actualContent )
+        ).split( sEndl )
     };
     const QStringList referenceLines {
-        QString::fromUtf8( referenceContent ).split( sEndl )
+        normalizeLineEndings(
+            QString::fromUtf8( referenceContent )
+        ).split( sEndl )
     };
 
     if ( actualLines.size() != referenceLines.size() ) {
@@ -448,6 +454,15 @@ ResultComparator::TextTokens ResultComparator::tokenize(
 
     tokens.literals.append( text.mid( position ) );
     return tokens;
+}
+
+
+QString ResultComparator::normalizeLineEndings( const QString &text ) {
+    // Convert Windows (CRLF) and old Mac (CR) line endings to LF
+    QString result { text };
+    result.replace( sWindowsEndl, sEndl );
+    result.replace( sCarriageReturn, sEndl );
+    return result;
 }
 
 
