@@ -6,9 +6,9 @@
 #include "samplebatch.h"
 #include "stringutils.h"
 #include <QFileInfo>
+#include <QLocale>
 #include <QRegularExpression>
 #include <QSet>
-#include <charconv>
 #include <vector>
 
 
@@ -16,11 +16,9 @@ namespace {
     // Appends value to buffer using the shortest representation that
     // round-trips exactly (locale independent)
     void appendDouble( QByteArray &buffer, double value ) {
-        char chars[ 32 ];
-        const std::to_chars_result result {
-            std::to_chars( chars, chars + sizeof( chars ), value )
-        };
-        buffer.append( chars, result.ptr - chars );
+        buffer.append(
+            QByteArray::number( value, 'g', QLocale::FloatingPointShortest )
+        );
     }
 }
 
