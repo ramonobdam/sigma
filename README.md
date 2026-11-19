@@ -270,7 +270,7 @@ Correlations define the statistical dependence between pairs of input parameters
 
 Correlations are skipped when they are invalid (an input parameter does not exist, both Ids refer to the same input parameter, or the coefficient is outside `[-1, 1]`) or when a correlation between the same input parameters was already defined.
 
-In the Monte Carlo simulation, the correlation coefficient is used as Pearson correlation when all input parameters of the measurement function have a `normal` distribution. Otherwise (including when an input parameter has a `student's t` or `none` distribution), it is interpreted as Spearman rank correlation.
+In the Monte Carlo simulation, the correlation coefficient of two normally distributed input parameters (`normal`, or `student's t` with infinite degrees of freedom) is used as Pearson correlation, as in the GUM uncertainty framework. When at least one of the two input parameters has another distribution, the coefficient is interpreted as Spearman rank correlation. This only depends on the two correlated input parameters, not on the other input parameters of the measurement function.
 
 ### Output parameters
 Each output parameter defines a measurand expressed as a measurement function (formula) of input parameters.

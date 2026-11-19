@@ -727,8 +727,6 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
             // Valid and at least one input parameter detected
             setError( sValidExpressionString + getVariables() );
 
-            bool allNormal { allComponentsNormal() };
-
             // Set latent correlation matrix
             mLatentCorrelation = Eigen::MatrixXd::Identity( n, n );
 
@@ -754,14 +752,29 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
                             );
 
                             double c { correlation->getCorrelation() };
-                            // Pearson correlation = latent correlation.
-                            // When not all components are normally distributed,
-                            // the entered correlation is interpreted as
-                            // Spearman rank correlation and converted to
-                            // Pearson correlation using
-                            // Pearson = 2 * sin( pi * Spearman / 6 )
-
-                            if ( !allNormal ) {
+                            // The interpretation of the entered correlation
+                            // depends only on the pair of input parameters:
+                            // - Both normal: the Pearson correlation of the
+                            //   inputs equals the latent correlation, so the
+                            //   entered correlation is used as Pearson
+                            //   correlation (as in the GUM framework).
+                            // - Otherwise: the entered correlation is
+                            //   interpreted as Spearman rank correlation,
+                            //   which is invariant under the inverse CDF
+                            //   mapping, and converted to the latent
+                            //   (Pearson) correlation using
+                            //   Pearson = 2 * sin( pi * Spearman / 6 )
+                            const bool bothNormal {
+                                Distribution::isNormal(
+                                    paramI->getDistribution(),
+                                    paramI->getDOFInfinite()
+                                ) &&
+                                Distribution::isNormal(
+                                    paramJ->getDistribution(),
+                                    paramJ->getDOFInfinite()
+                                )
+                            };
+                            if ( !bothNormal ) {
                                 c = 2. * std::sin( MathConstants::pi * c / 6. );
                             }
 
@@ -1148,22 +1161,6 @@ QString OutputParameter::getVariables() const {
         variableList.append( component.getName() );
     }
     return variableList.join( ", " );
-}
-
-
-bool OutputParameter::allComponentsNormal() const {
-    // Are all components referencing InputParameters with a Normal
-    // distribution?
-    for ( const UncertaintyComponent &component : mComponents ) {
-        InputParameter *inputParameter { component.getInputParameter() };
-        if (
-            !inputParameter ||
-            inputParameter->getDistribution() != Distribution::Type::normal
-        ) {
-            return false;
-        }
-    }
-    return true;
 }
 
 

@@ -38,6 +38,10 @@ private slots:
     void compile_negativeCorrelation_decreasesCombinedUncertainty();
     void compile_constantDistribution_doesNotContributeToUncertainty();
 
+    void latentCorrelation_normalPair_isPearsonDespiteOtherInputs();
+    void latentCorrelation_nonNormalPair_isConvertedFromSpearman();
+    void latentCorrelation_studentsT_isNormalOnlyForInfiniteDOF();
+
     void compile_endGaugeCalibration_matchesGumReferenceValues();
 
     void equality_dependsOnlyOnFormulaAndConfidence();
@@ -57,6 +61,16 @@ private:
         const OutputParameter &output,
         const QString &name
     );
+    static double latentCorrelation(
+        const OutputParameter &output,
+        const QString &nameA,
+        const QString &nameB
+    );
+
+    // Latent (Pearson) correlation for an entered Spearman rank correlation
+    static double spearmanToPearson( double spearman ) {
+        return 2. * std::sin( 3.14159265358979323846 * spearman / 6. );
+    }
 };
 
 
@@ -92,6 +106,27 @@ UncertaintyComponent tst_outputparameter::findComponent(
         }
     }
     return UncertaintyComponent {};
+}
+
+
+double tst_outputparameter::latentCorrelation(
+    const OutputParameter &output,
+    const QString &nameA,
+    const QString &nameB
+) {
+    // The rows and columns of the latent correlation matrix are in the order
+    // of the components
+    const QList<UncertaintyComponent> components { output.getComponents() };
+    int a { -1 };
+    int b { -1 };
+    for ( int i { 0 }; i < components.size(); ++i ) {
+        if ( components[ i ].getName() == nameA ) { a = i; }
+        if ( components[ i ].getName() == nameB ) { b = i; }
+    }
+    if ( a < 0 || b < 0 ) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return output.getLatentCorrelation()( a, b );
 }
 
 
@@ -198,6 +233,84 @@ void tst_outputparameter::compile_correlatedInputs_increaseCombinedUncertainty(
 
     // Without correlation the combined uncertainty would only be sqrt(2)
     QVERIFY( output.getCombinedStdUncertainty() > std::sqrt( 2. ) );
+}
+
+
+void tst_outputparameter::latentCorrelation_normalPair_isPearsonDespiteOtherInputs(
+) {
+    // A correlation between 2 normal inputs is used as Pearson correlation,
+    // also when the formula contains a constant and an (uncorrelated)
+    // uniform input
+    InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    InputParameter *x2 { addInput( "X2", 0., 1. ) };
+    QVERIFY( addInput( "K", 5., 0., Distribution::Type::none ) );
+    QVERIFY( addInput( "U", 0., 1., Distribution::Type::uniform ) );
+    QVERIFY( x1 && x2 );
+
+    Correlation correlation { nullptr, x1->getId(), x2->getId(), 0.5 };
+    QVERIFY( correlation.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2 + K + U" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    QCOMPARE( latentCorrelation( output, "X1", "X2" ), 0.5 );
+    QCOMPARE( latentCorrelation( output, "X2", "X1" ), 0.5 );
+    QCOMPARE( latentCorrelation( output, "X1", "U" ), 0. );
+    QCOMPARE( latentCorrelation( output, "X1", "K" ), 0. );
+}
+
+
+void tst_outputparameter::latentCorrelation_nonNormalPair_isConvertedFromSpearman(
+) {
+    // A correlation involving a non-normal input is interpreted as Spearman
+    // rank correlation, while a normal pair in the same formula is not
+    InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    InputParameter *x2 { addInput( "X2", 0., 1. ) };
+    InputParameter *u { addInput( "U", 0., 1., Distribution::Type::uniform ) };
+    QVERIFY( x1 && x2 && u );
+
+    Correlation normalPair { nullptr, x1->getId(), x2->getId(), 0.5 };
+    QVERIFY( normalPair.appendToModel() != nullptr );
+    Correlation mixedPair { nullptr, x1->getId(), u->getId(), 0.3 };
+    QVERIFY( mixedPair.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2 + U" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    QCOMPARE( latentCorrelation( output, "X1", "X2" ), 0.5 );
+    QCOMPARE( latentCorrelation( output, "X1", "U" ), spearmanToPearson( 0.3 ) );
+    QCOMPARE( latentCorrelation( output, "U", "X1" ), spearmanToPearson( 0.3 ) );
+}
+
+
+void tst_outputparameter::latentCorrelation_studentsT_isNormalOnlyForInfiniteDOF(
+) {
+    InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    InputParameter *tInfinite {
+        addInput( "T1", 0., 1., Distribution::Type::studentst, true )
+    };
+    InputParameter *tFinite {
+        addInput( "T2", 0., 1., Distribution::Type::studentst, false, 5 )
+    };
+    QVERIFY( x1 && tInfinite && tFinite );
+
+    Correlation infinitePair { nullptr, x1->getId(), tInfinite->getId(), 0.4 };
+    QVERIFY( infinitePair.appendToModel() != nullptr );
+    Correlation finitePair { nullptr, x1->getId(), tFinite->getId(), 0.4 };
+    QVERIFY( finitePair.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + T1 + T2" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    // Student's t with infinite DOF is the normal distribution
+    QCOMPARE( latentCorrelation( output, "X1", "T1" ), 0.4 );
+    QCOMPARE( latentCorrelation( output, "X1", "T2" ), spearmanToPearson( 0.4 ) );
 }
 
 

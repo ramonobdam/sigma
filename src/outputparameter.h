@@ -205,7 +205,6 @@ private:
     QString getEffectiveDOFAsString() const;
     QString getExpandedUncertaintyAsString( bool csvMode = false ) const;
     QString getVariables() const;
-    bool allComponentsNormal() const;
     void createConnections();
 
     static double getMaxConfidence();
