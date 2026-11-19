@@ -5,9 +5,9 @@ and also offers a Monte Carlo simulation approach ([JCGM 101:2008](https://doi.o
 Arbitrary measurement functions can be evaluated, and both independent and correlated input parameters are supported.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="resources\screenshots\Sigma_H1_main_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="resources\screenshots\Sigma_H1_main_light.png">
-  <img alt="Sigma screenshot" src="screenshot-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="resources/screenshots/Sigma_H1_main_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="resources/screenshots/Sigma_H1_main_light.png">
+  <img alt="Sigma screenshot" src="resources/screenshots/Sigma_H1_main_light.png">
 </picture>
 
 ## Demo video
@@ -63,19 +63,29 @@ Installers for Windows and macOS are bundled with the release. See the [latest r
 Compiling your own version of *Sigma* requires:
 - Qt 6.9+, including Qt Graphs ([Qt Installer](https://www.qt.io/development/download))
 - Qt Creator or the command-line tools CMake 3.16+ and Ninja
-- C++ compiler:
+- C++17 compiler:
   - Windows: MSVC 2019/2022 ([Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads)) or MinGW
-  - macOS: Xcode command-line tools (xcode-select --install)
+  - macOS: Xcode command-line tools (`xcode-select --install`)
+  - Linux: GCC or Clang
+
+From the project root, configure and build *Sigma* with:
+```bash
+cmake -B build -S .
+cmake --build build
+```
+The executable is created in the `build` directory (`build/Sigma.exe` on Windows, `build/Sigma.app` bundle on macOS, `build/bin/Sigma` on Linux). See [Automated tests](#automated-tests) for building and running the tests.
 
 ## Quick start guide
 1. Open *Sigma*
-2. Define the input parameters by clicking 'New' in the Input parameters panel or choosing 'Input parameters > Add new...' (Ctrl+Shift+I) from the main menu. See the GUM for details on how to set the input estimate, standard uncertainty, probability distribution and degrees of freedom. Note that the names of the input parameters must be unique and are case-insensitive, so 'X1' equals 'x1' and 'Δ' equals 'δ'.
-3. Create at least one output parameter by clicking 'New' in the Output parameters panel or choosing 'Output parameters > Add new...' (Ctrl+Shift+O) from the main menu. The measurement function of the output parameter defines the mathematical relation between the output value and the input parameters. The level of confidence specifies the required coverage probability of the expanded uncertainty interval. In other words, it gives the fraction of all possible output values that is contained in the expanded uncertainty interval.
-4. The combined uncertainty and uncertainty budget are shown in the results panel on the bottom of the interface.
-5. Choose 'Monte Carlo simulation > Start' (Ctrl+R) from the main menu to start the Monte Carlo simulation. The results can be found in the Monte Carlo simulation panel on the right.
-6. To save a project, choose 'Project > Save...' (Ctrl+S) from the main menu, enter the filename and localion, and click 'Save project'. The file extension of *Sigma* projects is 'sig'.
-7. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' (Ctrl+E) from the main menu. Subsequently, enter the filename and localion, and click 'Save CSV'.
-8. Application settings can be accessed via 'Sigma > Settings...' on Windows or 'Sigma > Preferences...' on macOS.
+2. Define the input parameters by clicking 'New' in the Input parameters panel or choosing 'Input parameters > Add new...' (Ctrl+Shift+I) from the main menu. Enter the input name, unit, input estimate, standard uncertainty, probability distribution type and degrees of freedom, and click 'Save input parameter'. See the GUM for details on how to determine these values. Note that the names of the input parameters must be unique and are case-insensitive, so 'X1' equals 'x1' and 'Δ' equals 'δ'. A name must start with a letter, may only contain letters, digits, underscores and periods (not at the end), and cannot be a mathematical function, operator or constant (e.g. `sin`, `and`, `pi`).
+3. Optionally, define the correlations between input parameters by clicking 'Correlations' in the Input parameters panel or choosing 'Input parameters > Correlations...' (Ctrl+Shift+C) from the main menu. Click 'New', select input parameters A and B, enter the correlation coefficient (-1 to 1), and click 'Save correlation'.
+4. Create at least one output parameter by clicking 'New' in the Output parameters panel or choosing 'Output parameters > Add new...' (Ctrl+Shift+O) from the main menu. Enter the output name, measurement function, unit and level of confidence, and click 'Save output parameter'. The measurement function of the output parameter defines the mathematical relation between the output value and the input parameters. The level of confidence specifies the required coverage probability of the expanded uncertainty interval. In other words, it gives the fraction of all possible output values that is contained in the expanded uncertainty interval.
+5. The combined uncertainty and the uncertainty components (uncertainty budget) of the selected output parameter are shown in the Combined uncertainty panel on the bottom of the interface.
+6. Select an output parameter and click 'Start' in the Monte Carlo simulation panel, or choose 'Monte Carlo simulation > Start' (Ctrl+R) from the main menu to start the Monte Carlo simulation. A running simulation can be stopped using 'Monte Carlo simulation > Stop' (Ctrl+T). The results can be found in the Monte Carlo simulation panel on the right. To also export the samples of the simulation to a CSV file, choose 'Monte Carlo simulation > Start and export samples...' (see [Exporting Monte Carlo samples](#exporting-monte-carlo-samples)).
+7. Changes can be undone and redone via the 'Edit' menu. 'Edit > Undo history...' (Ctrl+Shift+H) shows the history of all changes.
+8. To save a project, choose 'Project > Save' (Ctrl+S) or 'Project > Save As...' from the main menu, enter the filename and location, and click 'Save project'. The file extension of *Sigma* projects is 'sig'. When 'Project > Auto Save' is enabled, changes are saved automatically. When 'Project > Restore last project on startup' is enabled, the last project is opened when *Sigma* starts.
+9. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' (Ctrl+E) from the main menu. Subsequently, enter the filename and location, and click 'Save CSV'.
+10. Application settings (color scheme, project options, significant digits for the interface and CSV export, and the Monte Carlo convergence significant digits, batch size and maximum number of batches) can be accessed via 'Sigma > Settings...'. On macOS, this item is located in the application menu.
 
 ## Monte Carlo simulation
 - The simulation runs in batches of function evaluations (see the batch size setting). Each batch is split into chunks of 10,000 samples, each with its own random seed based on the batch and chunk number. The chunks are evaluated in parallel on all available CPU cores and combined in a fixed order.
@@ -90,32 +100,79 @@ The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects)
 
 ## Command-line interface
 ### Usage
-- Windows `Sigma [options]`
-- macOS `./Sigma.app/Contents/MacOS/Sigma [options]`
+- Windows: `Sigma [options]`
+- macOS: `./Sigma.app/Contents/MacOS/Sigma [options]`
+- Linux: `./Sigma [options]`
 
 | Option | Description |
 |:---------|:-------------|
-| `-h`, `--help` | Displays help on command-line options |
+| `-h`, `--help` | Displays help on command-line options (on Windows, `-?` is also supported) |
 | `-v`, `--version` | Displays version information |
 | `-H`, `--headless` | Runs *Sigma* without the GUI |
 | `--open <file>` | Opens a project from `<file>` |
 | `--run <par>` | Runs Monte Carlo simulation for output parameter `<par>` |
 | `--run-all` | Runs Monte Carlo simulation for all output parameters |
 | `--save <file>` | Saves the project to `<file>` |
-| `--export <file>` | Exports the results to CSV file |
+| `--export <file>` | Exports the results to CSV file `<file>` |
 | `--export-samples <file>` | Exports the Monte Carlo samples of `--run` to CSV `<file>` |
 | `--export-samples-dir <dir>` | Exports the Monte Carlo samples of `--run-all` to CSV files in `<dir>`, one file `<par>.csv` per output parameter |
 | `--to-json` | Prints the project data to stdout in JSON format |
 | `--from-json` | Loads the project data from stdin in JSON format |
-| `--csvdigits <digits>` | Sets the CSV export significant digits (1 to 20) |
-| `--mcdigits <digits>` | Sets the Monte Carlo significant digits (1 to 3) |
-| `--mcbatchsize <size>` | Sets the Monte Carlo batch size (1e+02 to 1e+06) |
-| `--mcmaxbatches <num>` | Sets the Monte Carlo maximum number of batches (1e+01 to 1e+05) |
+| `--csvdigits <digits>` | Sets the CSV export significant digits (1 to 20, default 10) |
+| `--mcdigits <digits>` | Sets the Monte Carlo significant digits (1 to 3, default 2) |
+| `--mcbatchsize <size>` | Sets the Monte Carlo batch size (1e+02 to 1e+06, default 1e+05) |
+| `--mcmaxbatches <num>` | Sets the Monte Carlo maximum number of batches (1e+01 to 1e+05, default 1e+03) |
 
-### Example
+### Processing order
+The options are always processed in the following order, regardless of the order in which they are given on the command line:
+1. `--help` or `--version`: the help or version information is printed and no other options are processed
+2. Setting options (`--csvdigits`, `--mcdigits`, `--mcbatchsize`, `--mcmaxbatches`)
+3. `--open`
+4. `--from-json`
+5. `--run`, with `--export-samples` when given
+6. `--run-all`, with `--export-samples-dir` when given
+7. `--save`
+8. `--export`
+9. `--to-json`
+
+`--export-samples` and `--export-samples-dir` are checked before the first simulation starts: they require `--run` and `--run-all` respectively. Processing stops at the first error, and *Sigma* exits with the corresponding [exit code](#exit-codes).
+
+### Notes
+- Without `--headless`, the GUI is started and the options are processed once the main window has been loaded. The GUI then remains open, unless an error occurred. If no project is loaded via `--open` or `--from-json` and 'Restore last project on startup' is enabled, the last project is opened.
+- In headless mode, the stored application settings are not used: the default settings apply, unless they are overruled by the setting options. In GUI mode, the setting options overrule the stored application settings and are stored when *Sigma* is closed.
+- The setting values may be given in scientific notation (e.g. `--mcbatchsize 1e4`). Non-integer values are rounded to the nearest integer.
+- Output parameter names given with `--run` are case-insensitive. Use quotes for names that contain spaces.
+- `--run-all` runs the Monte Carlo simulations of all output parameters one after the other, in the order in which they are defined in the project.
+- A Monte Carlo simulation fails when the output parameter is not available or invalid, or when the simulation does not converge within the maximum number of batches. A simulation runs at least 10 batches, see [Monte Carlo simulation](#monte-carlo-simulation).
+- `--from-json` adds the JSON project data to the current project. It can be combined with `--open` to add items to an existing project.
+- Error and warning messages (e.g. for invalid input parameters that are skipped while loading a project) are written to stderr.
+
+### Exit codes
+| Code | Description |
+|:-----|:------------|
+| `0` | Success |
+| `1` | Usage error: unknown option, invalid setting value, invalid JSON input, or `--export-samples` / `--export-samples-dir` without `--run` / `--run-all` |
+| `2` | Project could not be loaded (`--open`) |
+| `3` | Project could not be saved (`--save`) |
+| `4` | Monte Carlo simulation failed or output parameter not available (`--run`, `--run-all`) |
+| `5` | CSV file could not be exported (`--export`), or Monte Carlo samples could not be exported (`--export-samples`, `--export-samples-dir`) |
+| `130` | Interrupted by the user (Ctrl+C) |
+| `255` | The GUI could not be loaded |
+
+### Examples
 Open a project, run all Monte Carlo simulations in headless mode, save the project, and export the results:
 ```bash
 Sigma --headless --open project.sig --run-all --save project.sig --export export.csv
+```
+
+Run the Monte Carlo simulation for output parameter `Y1` with 1 significant digit and a batch size of 10,000, and print the results in JSON format:
+```bash
+Sigma -H --open project.sig --mcdigits 1 --mcbatchsize 1e4 --run Y1 --to-json
+```
+
+Create a project from a JSON file and save it as a *Sigma* project:
+```bash
+Sigma -H --from-json --save project.sig < project.json
 ```
 
 ### Exporting Monte Carlo samples
@@ -133,15 +190,25 @@ With `--export-samples-dir`, each file is named after its output parameter. Char
 *Sigma* projects (.sig) are loaded and saved in JSON format and can also be imported and exported using the `--from-json` and `--to-json` command-line options. The JSON format can be used to create projects programmatically or integrate *Sigma* with other tools.
 
 ### Structure
-A *Sigma* project JSON object contains three arrays:
+A *Sigma* project JSON object contains the *Sigma* version and three arrays:
 
 ```json
 {
+    "Sigma version":    "1.6.0",
     "inputParameters":  [ ... ],
     "correlations":     [ ... ],
     "outputParameters": [ ... ]
 }
 ```
+
+| Field              | Type   | Required | Description                                                  |
+|--------------------|--------|----------|--------------------------------------------------------------|
+| `Sigma version`    | string | no       | Version of *Sigma* that created the JSON. Written by *Sigma*, ignored when loading |
+| `inputParameters`  | array  | no       | Input parameters (see below)                                 |
+| `correlations`     | array  | no       | Correlations between input parameters (see below)            |
+| `outputParameters` | array  | no       | Output parameters (see below)                                |
+
+The input parameters are loaded first, followed by the correlations and the output parameters, regardless of the order of the fields in the JSON object.
 
 ### Input parameters
 Each input parameter defines a quantity with an associated probability distribution.
@@ -159,26 +226,28 @@ Each input parameter defines a quantity with an associated probability distribut
 }
 ```
 
-| Field            | Type    | Required | Description                                      |
-|------------------|---------|----------|--------------------------------------------------|
-| `Id`             | string  | no       | UUID in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format. Required when referenced in a correlation |
-| `name`           | string  | yes      | Unique identifier. Must start with a letter and cannot be a mathematical operator or constant (e.g. `sin`, `pi`) |
-| `unit`           | string  | no       | Unit of measurement                              |
-| `nominalValue`   | number  | yes      | Best estimate of the quantity                    |
-| `stdUncertainty` | number  | yes      | Standard uncertainty (≥0)                        |
-| `distribution`   | string  | yes      | Probability distribution (see below)             |
-| `DOFInfinite`    | boolean | yes      | `true` if degrees of freedom are infinite        |
-| `DOF`            | integer | no       | Degrees of freedom `[1, 1e6]`. Required when `DOFInfinite` is `false` |
+| Field            | Type    | Required | Default    | Description                                      |
+|------------------|---------|----------|------------|--------------------------------------------------|
+| `Id`             | string  | no       | generated  | UUID in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format. Required when referenced in a correlation |
+| `name`           | string  | yes      |            | Unique, case-insensitive name. Must start with a letter, may only contain letters, digits, underscores and periods (not at the end), and cannot be a mathematical function, operator or constant (e.g. `sin`, `and`, `pi`) |
+| `unit`           | string  | no       | `""`       | Unit of measurement                              |
+| `nominalValue`   | number  | no       | `0`        | Input estimate (best estimate of the quantity)   |
+| `stdUncertainty` | number  | no       | `1`        | Standard uncertainty (≥0). A negative value is replaced by its absolute value |
+| `distribution`   | string  | no       | `"normal"` | Probability distribution (see below). An unrecognized value is replaced by `"none"` |
+| `DOFInfinite`    | boolean | no       | `true`     | `true` if the degrees of freedom are infinite    |
+| `DOF`            | integer | no       | `1`        | Degrees of freedom in the range `[1, 1e6]`, used when `DOFInfinite` is `false`. Values outside the range are limited to the range |
+
+Input parameters with an invalid or duplicate name are skipped.
 
 #### Distributions
-| Value         | Description                  |
-|---------------|------------------------------|
-| `normal`      | Normal (Gaussian) distribution |
-| `uniform`     | Uniform (rectangular) distribution |
-| `triangular`  | Triangular distribution      |
-| `arcsine`     | Arcsine distribution         |
-| `student`     | Student's t-distribution     |
-| `none`        | Constant — no distribution   |
+| Value          | Description                  |
+|----------------|------------------------------|
+| `normal`       | Normal (Gaussian) distribution |
+| `uniform`      | Uniform (rectangular) distribution with half-width `√3 · stdUncertainty` |
+| `triangular`   | Symmetric triangular distribution with half-width `√6 · stdUncertainty` |
+| `arcsine`      | Arcsine (U-shaped) distribution with half-width `√2 · stdUncertainty` |
+| `student's t`  | Scaled and shifted Student's t-distribution with scale `stdUncertainty` and `DOF` degrees of freedom. Equal to the normal distribution when `DOFInfinite` is `true` |
+| `none`         | Constant — no distribution   |
 
 ### Correlations
 Correlations define the statistical dependence between pairs of input parameters. The input parameter Ids can be entered in arbitrary order. Only non-zero correlations need to be specified.
@@ -192,16 +261,19 @@ Correlations define the statistical dependence between pairs of input parameters
 }
 ```
 
-| Field               | Type   | Required | Description                                      |
-|---------------------|--------|----------|--------------------------------------------------|
-| `Id`                | string | no       | UUID of the correlation in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format |
-| `IdInputParameterA` | string | yes      | `Id` of the first input parameter                |
-| `IdInputParameterB` | string | yes      | `Id` of the second input parameter               |
-| `correlation`       | number | yes      | Correlation coefficient in the range `[-1, 1]`   |
+| Field               | Type   | Required | Default   | Description                                      |
+|---------------------|--------|----------|-----------|--------------------------------------------------|
+| `Id`                | string | no       | generated | UUID of the correlation in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format |
+| `IdInputParameterA` | string | yes      |           | `Id` of the first input parameter                |
+| `IdInputParameterB` | string | yes      |           | `Id` of the second input parameter               |
+| `correlation`       | number | no       | `0`       | Correlation coefficient in the range `[-1, 1]`   |
 
+Correlations are skipped when they are invalid (an input parameter does not exist, both Ids refer to the same input parameter, or the coefficient is outside `[-1, 1]`) or when a correlation between the same input parameters was already defined.
+
+In the Monte Carlo simulation, the correlation coefficient is used as Pearson correlation when all input parameters of the measurement function have a `normal` distribution. Otherwise (including when an input parameter has a `student's t` or `none` distribution), it is interpreted as Spearman rank correlation.
 
 ### Output parameters
-Each output parameter defines a measurand expressed as a formula of input parameters.
+Each output parameter defines a measurand expressed as a measurement function (formula) of input parameters.
 
 ```json
 {
@@ -213,13 +285,35 @@ Each output parameter defines a measurand expressed as a formula of input parame
 }
 ```
 
-| Field        | Type   | Required | Description                                                  |
-|--------------|--------|----------|--------------------------------------------------------------|
-| `Id`         | string | no       | UUID of the output parameter in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format |
-| `name`       | string | yes      | Unique identifier. Must be at least one character long       |
-| `unit`       | string | no       | Unit of measurement                                          |
-| `formula`    | string | yes      | Mathematical expression using input parameter names          |
-| `confidence` | number | yes      | Level of confidence — the required coverage probability of the expanded uncertainty interval in the range `(0, 1)`, e.g. `0.95` for 95% |
+| Field        | Type   | Required | Default   | Description                                                  |
+|--------------|--------|----------|-----------|--------------------------------------------------------------|
+| `Id`         | string | no       | generated | UUID of the output parameter in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format |
+| `name`       | string | yes      |           | Unique, case-insensitive name of at least one character      |
+| `unit`       | string | no       | `""`      | Unit of measurement                                          |
+| `formula`    | string | yes      |           | Measurement function: mathematical expression using input parameter names |
+| `confidence` | number | no       | `0.95`    | Level of confidence — the required coverage probability of the expanded uncertainty interval in the range `[0, 0.999]`, e.g. `0.95` for 95%. Values outside the range are limited to the range |
+| `monteCarlo` | object | no       |           | Monte Carlo simulation results (see below). Written by *Sigma* |
+
+Output parameters with an empty or duplicate name are skipped. Output parameters with an empty or invalid formula are loaded, but no results are calculated.
+
+#### Monte Carlo results
+When saving a project or using `--to-json`, *Sigma* adds a `monteCarlo` object with the Monte Carlo simulation results to each output parameter. The results are restored when the project is loaded. This object is not needed when creating a project manually. The Monte Carlo samples themselves are not stored (see [Exporting Monte Carlo samples](#exporting-monte-carlo-samples)).
+
+| Field                  | Type    | Description                                                     |
+|------------------------|---------|-----------------------------------------------------------------|
+| `valid`                | boolean | `true` if the simulation converged and the results are valid    |
+| `status`               | string  | Simulation status message                                       |
+| `mean`                 | number  | Output estimate (mean of the simulated output values)           |
+| `stdDeviation`         | number  | Standard uncertainty (standard deviation of the simulated output values) |
+| `lowerBound`           | number  | Lower bound of the coverage interval                            |
+| `higherBound`          | number  | Upper bound of the coverage interval                            |
+| `numericalTolerance`   | number  | Numerical tolerance of the standard uncertainty                 |
+| `histogramValues`      | array   | Histogram values of the simulated output distribution           |
+| `histogramXMin`        | number  | Minimum output value of the histogram                           |
+| `histogramXMax`        | number  | Maximum output value of the histogram                           |
+| `histogramYMax`        | number  | Maximum histogram value                                         |
+| `histogramLowerIndex`  | integer | Histogram bin index of the lower bound of the coverage interval |
+| `histogramHigherIndex` | integer | Histogram bin index of the upper bound of the coverage interval |
 
 ### Example
 ```json
@@ -265,8 +359,9 @@ Each output parameter defines a measurand expressed as a formula of input parame
 
 ### Notes
 
-- UUIDs are generated automatically by *Sigma* when saving a project. When creating JSON manually, UUIDs can be omitted unless correlations are defined, in which case `Id` must be specified for the referenced input parameters.
-- The `formula` field supports standard mathematical operators (`+`, `-`, `*`, `/`, `^`) and functions (`sin()`, `cos()`, `sqrt()`, `abs()`, `log()` etc.) via the [ExprTk](https://www.partow.net/programming/exprtk/index.html) expression parser.
+- Missing `Id` fields are generated automatically by *Sigma* when the project is loaded, and are included when the project is saved. When creating JSON manually, Ids can be omitted unless correlations are defined, in which case `Id` must be specified for the referenced input parameters. Ids without curly braces are also accepted.
+- Invalid values are reported on stderr. Values that are out of range are corrected as described above, and items that cannot be loaded are skipped.
+- The `formula` field supports standard mathematical operators (`+`, `-`, `*`, `/`, `%`, `^`) and functions (`sin()`, `cos()`, `sqrt()`, `exp()`, `abs()`, `log()`, `log10()` etc.) via the [ExprTk](https://www.partow.net/programming/exprtk/index.html) expression parser.
 - The mathematical constants `pi`, `epsilon` and `inf` are reserved and cannot be used as input parameter names.
 
 ## Automated tests
@@ -290,7 +385,7 @@ Each output parameter defines a measurand expressed as a formula of input parame
 | `tst_uncertaintycomponent` | Input parameter properties, sensitivity (partial derivative), component/correlation contributions, Welch-Satterthwaite, correlated component uniqueness |
 
 ### Build integration
-The main *Sigma* CMakeLists.txt contains a `SIGMA_BUILD_TESTS` option. When enabled, CMake adds the `tests` subdirectory and registers the test executables with CTest.
+The main *Sigma* CMakeLists.txt contains a `SIGMA_BUILD_TESTS` option, which is enabled by default. When enabled, CMake adds the `tests` subdirectory and registers the test executables with CTest. The tests require the Qt Test module; disable the option with `-DSIGMA_BUILD_TESTS=OFF` if it is not available.
 
 From the project root, configure and build the project with tests enabled, then run the tests. The `build` directory is created in the project root and stores the generated build files and compiled binaries.
 ```bash
