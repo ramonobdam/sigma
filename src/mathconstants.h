@@ -9,6 +9,7 @@ namespace MathConstants {
     constexpr double minInfinity { -std::numeric_limits<double>::infinity() };
     constexpr double nan { std::numeric_limits<double>::quiet_NaN() };
     constexpr double pi { 3.14159265358979323846264338327950288419716939937510 };
+    constexpr double invSqrt2 { 0.70710678118654752440084436210484903928483593 };
     constexpr int maxInt { std::numeric_limits<int>::max() };
 }
 

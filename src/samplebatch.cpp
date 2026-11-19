@@ -156,9 +156,22 @@ void SampleBatch::addVariablesToMixedCopulaSampler() {
         mOutputParameter->getComponents()
     };
     for ( const UncertaintyComponent &component : components ) {
-        mMixedCopulaSampler.addVariable( component.getInvCDF() );
+        if (
+            Distribution::isNormal(
+                component.getDistribution(),
+                component.getDOFInfinite()
+            )
+        ) {
+            // Normal variables are sampled directly (without the inverse CDF)
+            mMixedCopulaSampler.addNormalVariable(
+                component.getNominalValue(),
+                component.getStdUncertainty()
+            );
+        }
+        else {
+            mMixedCopulaSampler.addVariable( component.getInvCDF() );
+        }
     }
-
 }
 
 

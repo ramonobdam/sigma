@@ -6,6 +6,7 @@
 #include <QTest>
 #include <QtNumeric>
 #include <cmath>
+#include <vector>
 
 // Unit tests for the Distribution namespace: the inverse CDFs used to draw
 // samples for the Monte Carlo simulation and the distribution <-> string
@@ -20,8 +21,13 @@ private slots:
     void getDistributions_containsAllTypes();
 
     void normalCDF_isSymmetricAroundZero();
+    void normalCDF_lowerTailIsAccurate();
     void invCDFStandardNormal_boundsAndMedian();
     void invCDFStandardNormal_isMonotonicallyIncreasing();
+    void invCDFStandardNormal_knownQuantiles_data();
+    void invCDFStandardNormal_knownQuantiles();
+    void invCDFStandardNormal_roundTripIncludingTails();
+    void isNormal_normalAndInfiniteDofStudentsT();
 
     void invCDFNormal_medianEqualsMean();
     void invCDFUniform_boundsAndMedian();
@@ -124,6 +130,96 @@ void tst_distribution::invCDFStandardNormal_isMonotonicallyIncreasing() {
         QVERIFY( current > previous );
         previous = current;
     }
+}
+
+
+void tst_distribution::normalCDF_lowerTailIsAccurate() {
+    const double phiMinus6 { Distribution::normalCDF( -6. ) };
+    QVERIFY( qAbs( phiMinus6 / 9.865876450376946e-10 - 1. ) < 1e-12 );
+    const double phiMinus8 { Distribution::normalCDF( -8. ) };
+    QVERIFY( qAbs( phiMinus8 / 6.22096057427178e-16 - 1. ) < 1e-12 );
+}
+
+
+void tst_distribution::invCDFStandardNormal_knownQuantiles_data() {
+    QTest::addColumn<double>( "p" );
+    QTest::addColumn<double>( "z" );
+
+    // Central region
+    QTest::newRow( "0.5" ) << 0.5 << 0.;
+    QTest::newRow( "0.1" ) << 0.1 << -1.2815515655446004;
+    QTest::newRow( "0.9" ) << 0.9 << 1.2815515655446004;
+    // Intermediate tails
+    QTest::newRow( "0.05" ) << 0.05 << -1.6448536269514729;
+    QTest::newRow( "0.025" ) << 0.025 << -1.959963984540054;
+    QTest::newRow( "0.975" ) << 0.975 << 1.959963984540054;
+    QTest::newRow( "1e-10" ) << 1e-10 << -6.361340902404056;
+    // Far tail
+    QTest::newRow( "1e-20" ) << 1e-20 << -9.262340089798408;
+}
+
+
+void tst_distribution::invCDFStandardNormal_knownQuantiles() {
+    QFETCH( double, p );
+    QFETCH( double, z );
+    const double value { Distribution::invCDFStandardNormal( p ) };
+    QVERIFY2(
+        qAbs( value - z ) <= 1e-14 * qMax( qAbs( z ), 1. ),
+        qPrintable(
+            QString( "%1 (expected %2)" ).arg(
+                QString::number( value, 'g', 17 ),
+                QString::number( z, 'g', 17 )
+            )
+        )
+    );
+}
+
+
+void tst_distribution::invCDFStandardNormal_roundTripIncludingTails() {
+    // normalCDF( invCDFStandardNormal( p ) ) == p, from the far lower tail to
+    // the median, covering all 3 regions of the AS241 algorithm
+    std::vector<double> probabilities {};
+    for ( int exponent { -300 }; exponent <= -1; ++exponent ) {
+        probabilities.push_back( std::pow( 10., exponent ) );
+    }
+    for ( double p { 0.01 }; p < 0.5; p += 0.01 ) {
+        probabilities.push_back( p );
+    }
+
+    for ( double p : probabilities ) {
+        const double z { Distribution::invCDFStandardNormal( p ) };
+        const double roundTrip { Distribution::normalCDF( z ) };
+        QVERIFY2(
+            qAbs( roundTrip / p - 1. ) < 1e-12,
+            qPrintable(
+                QString( "p = %1, z = %2, normalCDF( z ) = %3" ).arg(
+                    QString::number( p, 'g', 17 ),
+                    QString::number( z, 'g', 17 ),
+                    QString::number( roundTrip, 'g', 17 )
+                )
+            )
+        );
+
+        // Symmetry around the median (only for p >= 0.01, since 1 - p can't
+        // be represented accurately enough for smaller p)
+        if ( p >= 0.01 ) {
+            QVERIFY(
+                qAbs( Distribution::invCDFStandardNormal( 1. - p ) + z ) <
+                1e-12 * qMax( qAbs( z ), 1. )
+            );
+        }
+    }
+}
+
+
+void tst_distribution::isNormal_normalAndInfiniteDofStudentsT() {
+    using Distribution::Type;
+    QVERIFY( Distribution::isNormal( Type::normal, false ) );
+    QVERIFY( Distribution::isNormal( Type::normal, true ) );
+    QVERIFY( Distribution::isNormal( Type::studentst, true ) );
+    QVERIFY( !Distribution::isNormal( Type::studentst, false ) );
+    QVERIFY( !Distribution::isNormal( Type::uniform, true ) );
+    QVERIFY( !Distribution::isNormal( Type::none, true ) );
 }
 
 

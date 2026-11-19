@@ -43,6 +43,9 @@ namespace Distribution {
         const QString &distributionString,
         Type &distribution
     );
+    // Returns true when the distribution is the normal distribution (also for
+    // a Student's t distribution with infinite DOF)
+    bool isNormal( Type distribution, bool dofInfinite );
     double invCDFStandardNormal( double p );
     double normalCDF( double z );
 }

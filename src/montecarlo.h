@@ -180,6 +180,8 @@ private:
     static constexpr QLatin1StringView sValidString { "valid" };
 
     // Numerical tolerance reduction factor according to JCGM:101 section 8.2:
+    // a tolerance of δ/5 is recommended for Monte Carlo results that are used
+    // to validate the GUM uncertainty framework
     static constexpr double sNumericalToleranceFactor { 5. };
 
     // Minimum number of batches before convergence is checked. JCGM:101

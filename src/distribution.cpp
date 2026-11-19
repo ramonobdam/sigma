@@ -7,7 +7,6 @@
 #include "third_party/alglib/specialfunctions.h"
 #include <QtAssert>
 #include <QMap>
-#include <array>
 #include <cmath>
 
 
@@ -63,7 +62,9 @@ namespace Distribution {
 
 
     double normalCDF( double z ) {
-        return 0.5 * ( 1. + std::erf( z / std::sqrt( 2. ) ) );
+        // erfc() instead of 1 + erf() avoids the loss of significant digits
+        // in the lower tail (where erf() approaches -1)
+        return 0.5 * std::erfc( -z * MathConstants::invSqrt2 );
     }
 
 
@@ -183,7 +184,9 @@ namespace Distribution {
 
 
     double invCDFStandardNormal( double p ) {
-        // Inverse standard normal CDF (Acklam approximation)
+        // Inverse standard normal CDF, accurate to about 1e-16 (full double
+        // precision): algorithm AS241 (PPND16) of M.J. Wichura, Applied
+        // Statistics 37(3), 1988, pp. 477-484
         if ( p <= 0. ) {
             return MathConstants::minInfinity;
         }
@@ -191,52 +194,85 @@ namespace Distribution {
             return MathConstants::maxInfinity;
         }
 
-        static const double a1 { -3.969683028665376e+01 };
-        static const double a2 {  2.209460984245205e+02 };
-        static const double a3 { -2.759285104469687e+02 };
-        static const double a4 {  1.383577518672690e+02 };
-        static const double a5 { -3.066479806614716e+01 };
-        static const double a6 {  2.506628277459239e+00 };
+        const double q { p - 0.5 };
 
-        static const double b1 { -5.447609879822406e+01 };
-        static const double b2 {  1.615858368580409e+02 };
-        static const double b3 { -1.556989798598866e+02 };
-        static const double b4 {  6.680131188771972e+01 };
-        static const double b5 { -1.328068155288572e+01 };
-
-        static const double c1 { -7.784894002430293e-03 };
-        static const double c2 { -3.223964580411365e-01 };
-        static const double c3 { -2.400758277161838e+00 };
-        static const double c4 { -2.549732539343734e+00 };
-        static const double c5 {  4.374664141464968e+00 };
-        static const double c6 {  2.938163982698783e+00 };
-
-        static const double d1 {  7.784695709041462e-03 };
-        static const double d2 {  3.224671290700398e-01 };
-        static const double d3 {  2.445134137142996e+00 };
-        static const double d4 {  3.754408661907416e+00 };
-
-        const double plow  { 0.02425 };
-        const double phigh { 1. - plow };
-
-        double q {};
-        double r {};
-
-        if ( p < plow ) {
-            q = std::sqrt(-2. * std::log(p));
-            return (((((c1*q + c2)*q + c3)*q + c4)*q + c5)*q + c6) /
-                   ((((d1*q + d2)*q + d3)*q + d4)*q + 1.);
+        if ( std::abs( q ) <= 0.425 ) {
+            // Central region: 0.075 <= p <= 0.925
+            const double r { 0.180625 - q * q };
+            return q *
+                (((((((2509.0809287301226727 * r +
+                       33430.575583588128105) * r +
+                      67265.770927008700853) * r +
+                     45921.953931549871457) * r +
+                    13731.693765509461125) * r +
+                   1971.5909503065514427) * r +
+                  133.14166789178437745) * r +
+                 3.387132872796366608) /
+                (((((((5226.495278852545925 * r +
+                       28729.085735721942674) * r +
+                      39307.89580009271061) * r +
+                     21213.794301586595867) * r +
+                    5394.1960214247511077) * r +
+                   687.1870074920579083) * r +
+                  42.313330701600911252) * r +
+                 1.);
         }
 
-        if ( p > phigh ) {
-            q = std::sqrt(-2. * std::log(1. - p));
-            return -(((((c1*q + c2)*q + c3)*q + c4)*q + c5)*q + c6) /
-                   ((((d1*q + d2)*q + d3)*q + d4)*q + 1.);
+        // Tails: r = sqrt( -ln( min( p, 1 - p ) ) )
+        double r { std::sqrt( -std::log( q < 0. ? p : 1. - p ) ) };
+        double value {};
+
+        if ( r <= 5. ) {
+            // Intermediate tail: up to about 1e-11 from 0 or 1
+            r -= 1.6;
+            value =
+                (((((((7.7454501427834140764e-4 * r +
+                       0.0227238449892691845833) * r +
+                      0.24178072517745061177) * r +
+                     1.27045825245236838258) * r +
+                    3.64784832476320460504) * r +
+                   5.7694972214606914055) * r +
+                  4.6303378461565452959) * r +
+                 1.42343711074968357734) /
+                (((((((1.05075007164441684324e-9 * r +
+                       5.475938084995344946e-4) * r +
+                      0.0151986665636164571966) * r +
+                     0.14810397642748007459) * r +
+                    0.68976733498510000455) * r +
+                   1.6763848301838038494) * r +
+                  2.05319162663775882187) * r +
+                 1.);
+        }
+        else {
+            // Far tail
+            r -= 5.;
+            value =
+                (((((((2.01033439929228813265e-7 * r +
+                       2.71155556874348757815e-5) * r +
+                      0.0012426609473880784386) * r +
+                     0.026532189526576123093) * r +
+                    0.29656057182850489123) * r +
+                   1.7848265399172913358) * r +
+                  5.4637849111641143699) * r +
+                 6.6579046435011037772) /
+                (((((((2.04426310338993978564e-15 * r +
+                       1.4215117583164458887e-7) * r +
+                      1.8463183175100546818e-5) * r +
+                     7.868691311456132591e-4) * r +
+                    0.0148753612908506148525) * r +
+                   0.13692988092273580531) * r +
+                  0.59983220655588793769) * r +
+                 1.);
         }
 
-        q = p - 0.5;
-        r = q * q;
-        return (((((a1*r + a2)*r + a3)*r + a4)*r + a5)*r + a6)*q /
-               (((((b1*r + b2)*r + b3)*r + b4)*r + b5)*r + 1.);
+        return q < 0. ? -value : value;
+    }
+
+
+    bool isNormal( Type distribution, bool dofInfinite ) {
+        // A Student's t distribution with infinite DOF is equal to the normal
+        // distribution
+        return distribution == Type::normal ||
+               ( distribution == Type::studentst && dofInfinite );
     }
 }

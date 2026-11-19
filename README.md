@@ -77,6 +77,12 @@ Compiling your own version of *Sigma* requires:
 7. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' (Ctrl+E) from the main menu. Subsequently, enter the filename and localion, and click 'Save CSV'.
 8. Application settings can be accessed via 'Sigma > Settings...' on Windows or 'Sigma > Preferences...' on macOS.
 
+## Monte Carlo simulation
+- The simulation runs in batches of function evaluations (see the batch size setting). Each batch is split into chunks of 10,000 samples, each with its own random seed based on the batch and chunk number. The chunks are evaluated in parallel on all available CPU cores and combined in a fixed order.
+- The batches are repeated until the results have stabilized, using the adaptive Monte Carlo procedure of [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008) section 7.9. After each batch, the estimate, the standard uncertainty and both endpoints of the coverage interval are determined for that batch, together with the standard deviations of the averages of these values over all batches so far. The simulation has converged when twice each of these standard deviations is within the numerical tolerance δ, which follows from the Monte Carlo significant digits setting (section 7.9.2). *Sigma* uses a tolerance of δ/5 for this criterion, as recommended in section 8.2 for Monte Carlo results that are used to validate the GUM uncertainty framework. This typically requires about 25 times as many function evaluations as a tolerance of δ. All batches are used for the results.
+- Convergence is checked from the 10th batch onwards, so a simulation runs at least 10 batches (10 × the batch size).
+- Monte Carlo results are reproducible: the same project and settings give the same samples and results on every machine and platform (Windows, macOS and Linux), regardless of the number of CPU cores. Only the last digits of the full precision values stored in project files may differ between platforms, due to differences in the platforms' math libraries.
+
 ## Demo projects
 The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects) folder contains *Sigma* project files for the calculation examples given in GUM parts [JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) and [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008). Note that the demo projects are also added to the installation folder when you use the installer.
 
@@ -271,11 +277,13 @@ Each output parameter defines a measurand expressed as a formula of input parame
 | `tst_correlation` | Correlation validity, uniqueness, JSON round-trip, diff application |
 | `tst_demoprojects` | Regression tests for all demo projects defined in `demo_projects.json`. Runs each project via the CLI and compares the saved `.sig` and exported `.csv` against reference results. |
 | `tst_diffutil` | Undo/redo snapshot/diff/transaction engine |
-| `tst_distribution` | Inverse-CDFs for all distributions, distribution/string mapping |
+| `tst_distribution` | Inverse-CDFs for all distributions, distribution/string mapping, normal CDF lower tail, inverse normal CDF accuracy (AS241) and round trip |
 | `tst_inputparameter` | Input parameter validation, ExprTk symbol table, JSON round-trip, model CRUD |
-| `tst_montecarlo` | Monte Carlo full simulation convergence loop, request stop, reset results, JSON round-trip |
+| `tst_mixedcopulasampler` | Portable uniform/normal generator (fixed values for a fixed seed on every platform), direct sampling of normal variables, latent correlation, inverse-CDF mapping |
+| `tst_montecarlo` | Monte Carlo full simulation convergence loop, request stop, reset results, JSON round-trip, sample export, results independent of the thread count, minimum number of batches |
 | `tst_outputparameter` | Output parameter expression compilation, correlation/error-handling cases, GUM budget calculation validated against the JCGM 100 Annex H.1 demo project's reference numbers |
 | `tst_samplebatch` | Monte Carlo sample batch generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
+| `tst_samplewriter` | CSV export of Monte Carlo samples (header, round-trip precision, no file without commit), valid and unique sample file names |
 | `tst_statistics` | Mean/std-dev, coverage-interval bounds, histogram |
 | `tst_stringutils` | Number/CSV formatting helpers and Unicode locale behaviour |
 | `tst_uncertaintycalculation` | Add/remove/update input parameter/output parameter/correlation, delete cascades, JSON round-trip, project load/save, project export, undo/redo system, units model, output parameter references |
