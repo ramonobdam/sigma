@@ -49,6 +49,8 @@ add_library( SigmaCore STATIC
     ${SIGMA_SRC_DIR}/resultsmodel.h
     ${SIGMA_SRC_DIR}/samplebatch.cpp
     ${SIGMA_SRC_DIR}/samplebatch.h
+    ${SIGMA_SRC_DIR}/samplewriter.cpp
+    ${SIGMA_SRC_DIR}/samplewriter.h
     ${SIGMA_SRC_DIR}/settings.cpp
     ${SIGMA_SRC_DIR}/settings.h
     ${SIGMA_SRC_DIR}/statistics.cpp
@@ -108,6 +110,7 @@ sigma_add_test( tst_correlation )
 sigma_add_test( tst_uncertaintycomponent )
 sigma_add_test( tst_outputparameter )
 sigma_add_test( tst_samplebatch )
+sigma_add_test( tst_samplewriter )
 sigma_add_test( tst_montecarlo )
 sigma_add_test( tst_diffutil )
 sigma_add_test( tst_uncertaintycalculation )

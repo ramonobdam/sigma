@@ -90,6 +90,33 @@ bool UncertaintyCalculation::getHistogramValid() const {
 }
 
 
+QString UncertaintyCalculation::getMonteCarloStatus() const {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter ) {
+        return parameter->getMonteCarloStatus();
+    }
+    return {};
+}
+
+
+QString UncertaintyCalculation::getSampleExportMessage() const {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter && !parameter->getLocked() ) {
+        return parameter->getMonteCarloSampleExportMessage();
+    }
+    return {};
+}
+
+
+bool UncertaintyCalculation::getSamplesExported() const {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter && !parameter->getLocked() ) {
+        return parameter->getMonteCarloSamplesExported();
+    }
+    return false;
+}
+
+
 bool UncertaintyCalculation::selectOutputParameterByName(
     const QString &name
 ) {
@@ -564,11 +591,11 @@ void UncertaintyCalculation::restoreState( int index ) {
 }
 
 
-void UncertaintyCalculation::runMonteCarlo() {
+void UncertaintyCalculation::runMonteCarlo( const QUrl &sampleExportUrl ) {
     OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && !parameter->getLocked() ) {
         mDiffUtil.takeSnapshot( parameter );
-        parameter->startMonteCarlo();
+        parameter->startMonteCarlo( sampleExportUrl );
         // Note that commitChanges() is called in onMonteCarloFinished()
     }
 }
@@ -772,6 +799,12 @@ void UncertaintyCalculation::onMonteCarloFinished() {
     QString name { parameter ? " " + parameter->getName() : "" };
     mDiffUtil.commitChanges( "Run Monte Carlo simulation" + name );
     emit monteCarloFinished();
+
+    // Report the result of the sample export (if requested for this run)
+    const QString exportMessage { getSampleExportMessage() };
+    if ( !exportMessage.isEmpty() ) {
+        emit sampleExportFinished( getSamplesExported(), exportMessage );
+    }
 }
 
 

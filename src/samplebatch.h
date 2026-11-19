@@ -24,15 +24,24 @@ class SampleBatch {
 public:
     SampleBatch(
         OutputParameter *outputParameter = nullptr,
-        int batchSize = 0,
+        int batchSize = 1,
         uint32_t randomSeed = 0
     );
 
     OutputParameter *getOutputParameter() const;
-    bool generateSamples();
+    // Generates the output value samples. When storeInputValues is true, the
+    // input values (i.e. the component values) of each sample are stored as
+    // well, see getInputValues().
+    bool generateSamples( bool storeInputValues = false );
     const QString &getError() const;
+    // The input values of all samples, stored row by row: the input values
+    // of sample i are at [ i * getNumberOfInputs(), ( i + 1 ) *
+    // getNumberOfInputs() ), in the order of the OutputParameter's components.
+    // Empty unless generateSamples( true ) was called.
+    const std::vector<double> &getInputValues() const;
     const std::vector<double> &getSamples() const;
     int getBatchSize() const;
+    int getNumberOfInputs() const;
     void setBatchSize( int batchSize );
     void setOutputParameter( OutputParameter *outputParameter );
     void setRandomSeed( uint32_t randomSeed );
@@ -46,6 +55,7 @@ private:
     QString mError;
     int mBatchSize;
     parser_t mParser;
+    std::vector<double> mInputValues;
     std::vector<double> mSamples;
     std::vector<double> mSymbolValues;
     symbol_table_t mSymbolTable;

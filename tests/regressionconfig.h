@@ -48,6 +48,7 @@ public:
     QString getError() const;
     QString getReferenceDirectory() const;
     QStringList getIgnoredCSVLinePrefixes() const;
+    QStringList getIgnoredCSVPatterns() const;
     QStringList getIgnoredJsonKeys() const;
     Tolerance getDefaultTolerance() const;
     bool load( const QString &fileName );
@@ -61,6 +62,9 @@ private:
     };
     static constexpr QLatin1StringView sIgnoredCSVLinePrefixesKey {
         "ignoredCSVLinePrefixes"
+    };
+    static constexpr QLatin1StringView sIgnoredCSVPatternsKey {
+        "ignoredCSVPatterns"
     };
     static constexpr QLatin1StringView sIgnoredJsonKeysKey {
         "ignoredJSONKeys"
@@ -119,6 +123,9 @@ private:
     static constexpr QLatin1StringView sEmptyArrayForProjectString {
         "Empty '%1' array for project %2"
     };
+    static constexpr QLatin1StringView sInvalidPatternString {
+        "Invalid regular expression in '%1': '%2' (%3)"
+    };
 
     static constexpr int sCommandLineDigits { 15 };
     static constexpr int sDefaultTimeoutSeconds { 600 };
@@ -136,6 +143,7 @@ private:
     QString mError;
     QString mReferenceDirectory;
     QStringList mIgnoredCSVLinePrefixes;
+    QStringList mIgnoredCSVPatterns;
     QStringList mIgnoredJsonKeys;
     Tolerance mDefaultTolerance;
     int mTimeoutSeconds;

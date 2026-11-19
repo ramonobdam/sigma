@@ -20,6 +20,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QUrl>
 #include <QVariant>
 #include <QtQmlIntegration/qqmlintegration.h>
 #include <string>
@@ -57,6 +58,8 @@ public:
     QString getComponentContributionAsString( int row ) const;
     QString getContributionAsString( int row, int column ) const;
     QString getCorrelationContributionAsString( int row ) const;
+    QString getMonteCarloSampleExportMessage() const;
+    QString getMonteCarloStatus( bool csvMode = false ) const;
     QString getTotalContributionAsString( int row ) const;
     QString histogramToCSVString() const;
     QString resultsToCSVString() const;
@@ -67,6 +70,7 @@ public:
     QVariant getResult( int column, bool csvMode = false ) const;
     QVariant headerData( int column ) const override;
     UncertaintyComponent *getComponent( int row ) const;
+    bool getMonteCarloSamplesExported() const;
     bool getMonteCarloValid() const;
     bool isInputParameterReferenced( const QUuid &id ) const;
     double getCombinedStdUncertainty() const;
@@ -96,7 +100,9 @@ public:
     void setLatentCorrelation( const Eigen::MatrixXd &rho );
     void setLocked( bool locked ) override;
     void setMonteCarlo( const MonteCarlo &monteCarlo );
-    void startMonteCarlo();
+    // Starts the Monte Carlo simulation in a separate thread. When
+    // sampleExportUrl is not empty, the samples are exported to that CSV file.
+    void startMonteCarlo( const QUrl &sampleExportUrl = {} );
     void stopMonteCarlo();
     void updateFromJson( const QJsonObject &json ) override;
 

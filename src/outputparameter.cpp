@@ -13,7 +13,6 @@
 #include <QtAssert>
 #include <QtLogging>
 #include <QtMinMax>
-#include <algorithm>
 #include <cmath>
 #include <deque>
 
@@ -305,6 +304,21 @@ UncertaintyComponent * OutputParameter::getComponent( int row ) const {
 }
 
 
+bool OutputParameter::getMonteCarloSamplesExported() const {
+    return mMonteCarlo.getSamplesExported();
+}
+
+
+QString OutputParameter::getMonteCarloSampleExportMessage() const {
+    return mMonteCarlo.getSampleExportMessage();
+}
+
+
+QString OutputParameter::getMonteCarloStatus( bool csvMode ) const {
+    return mMonteCarlo.getStatus( csvMode );
+}
+
+
 bool OutputParameter::getMonteCarloValid() const {
     return mMonteCarlo.getValid();
 }
@@ -550,7 +564,8 @@ void OutputParameter::setMonteCarlo( const MonteCarlo &monteCarlo ) {
 }
 
 
-void OutputParameter::startMonteCarlo() {
+void OutputParameter::startMonteCarlo( const QUrl &sampleExportUrl ) {
+    mMonteCarlo.setSampleExportUrl( sampleExportUrl );
     mMonteCarlo.start();
 }
 

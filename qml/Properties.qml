@@ -225,6 +225,7 @@ QtObject {
     property string calculatorIcon: "\uf1ec"
     property string symbolIcon: "α"
     property string titleBarCloseIcon: "🞨"
+    property string circleCheckIcon: "\uf058"
 
     // Default SplitView dimensions
     property int minWidthInputParam: 450

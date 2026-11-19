@@ -5,6 +5,7 @@
 #ifndef MONTECARLO_H
 #define MONTECARLO_H
 
+#include "samplewriter.h"
 #include "statistics.h"
 #include <QJsonObject>
 #include <QLatin1StringView>
@@ -14,6 +15,7 @@
 #include <QString>
 #include <QStringList>
 #include <QThread>
+#include <QUrl>
 
 // Forward declaration of OutputParameter (to avoid recursion loop)
 class OutputParameter;
@@ -44,6 +46,10 @@ public:
     QString histogramToCSVString() const;
     Statistics getOutputStatistics() const;
     bool getRequestStop() const;
+    bool getSamplesExported() const;
+    // The result of the sample export of the last run, empty when the last
+    // run didn't export samples
+    const QString &getSampleExportMessage() const;
     bool getValid() const;
     double getConvergenceFactor() const;
     double getHigherBound() const;
@@ -72,6 +78,10 @@ public:
     void setOutputParameter( OutputParameter *outputParameter );
     void setOutputStatistics( const Statistics &outputStat );
     void setRequestStop( bool requestStop );
+    // Sets the CSV file the samples of the next run are exported to. An empty
+    // url means no export. The url is used by one run only, it is cleared
+    // when the run starts. Returns false while a simulation is running.
+    bool setSampleExportUrl( const QUrl &url );
     void setStatus( const QString &status = sMonteNotCarloStarted );
     void setStdDeviation( double stdDeviation = 0. );
     void setValid( bool valid = false );
@@ -98,6 +108,7 @@ private:
     QString getHistogramBinsAsString() const;
     QString getHistogramValuesAsString() const;
     void calculateNumericalTolerance( double value, int digits );
+    bool openSampleWriter( SampleWriter &writer, const QUrl &url );
 
     OutputParameter *mOutputParameter;
     QList<double> mHistogramValues;
@@ -118,6 +129,12 @@ private:
     int mHistogramHigherIndex;
     int mHistogramLowerIndex;
 
+    // The sample export state belongs to a single run: it is deliberately not
+    // copied by the copy constructor and assignment operator
+    QUrl mSampleExportUrl;
+    QString mSampleExportMessage;
+    bool mSamplesExported;
+
     static constexpr QLatin1StringView sConvergedString {
         "Converged after %L1 function evaluations"
     };
@@ -129,6 +146,12 @@ private:
     };
     static constexpr QLatin1StringView sStoppedString {
         "Stopped after %L1 function evaluations"
+    };
+    static constexpr QLatin1StringView sSamplesExportedString {
+        "The Monte Carlo samples have been exported to '%1'"
+    };
+    static constexpr QLatin1StringView sSamplesNotExportedString {
+        "The Monte Carlo samples could not be exported: %1"
     };
 
     static constexpr QLatin1StringView sHigherBoundString { "higherBound" };
@@ -158,6 +181,22 @@ private:
 
     // Numerical tolerance reduction factor according to JCGM:101 section 8.2:
     static constexpr double sNumericalToleranceFactor { 5. };
+
+    // Minimum number of batches before convergence is checked. JCGM:101
+    // section 7.9.4 requires at least 2, but the standard deviations of the
+    // batch statistics are then estimated with only 1 degree of freedom and
+    // can be strongly underestimated. With 10 batches (9 degrees of freedom)
+    // premature convergence is unlikely. Before the minimum is reached, the
+    // convergence factor (progress) is limited to the fraction of the minimum
+    // number of batches that has been completed. Note that the lowest allowed
+    // value of the maximum number of batches setting (--mcmaxbatches) is 10 as
+    // well.
+    static constexpr int sMinNumOfBatches { 10 };
+
+    // Number of samples per chunk: the batches are split into chunks with
+    // their own random seed, which are evaluated in parallel. Changing this
+    // value changes the (reproducible) results.
+    static constexpr int sChunkSize { 10000 };
 };
 
 #endif // MONTECARLO_H

@@ -6,9 +6,15 @@
 #include "montecarlo.h"
 #include "outputparameter.h"
 #include "settings.h"
+#include <QFile>
+#include <QJsonObject>
 #include <QList>
+#include <QRegularExpression>
 #include <QStringList>
+#include <QTemporaryDir>
 #include <QTest>
+#include <QThreadPool>
+#include <QUrl>
 #include <QtNumeric>
 #include <cmath>
 
@@ -30,6 +36,12 @@ private slots:
     void run_additiveNormalModel_convergesToAnalyticStatistics();
     void run_requestStop_stopsWithoutConverging();
     void run_withoutOutputParameter_doesNothing();
+    void run_resultsDoNotDependOnThreadCount();
+    void run_convergesAfterMinimumNumberOfBatches();
+
+    void run_exportSamples_writesAllSamplesToCsv();
+    void run_exportSamples_stopped_writesNoFile();
+    void run_exportSamples_invalidFile_reportsError();
 
     void jsonRoundTrip();
     void copyConstructor_copiesAllFields();
@@ -142,6 +154,206 @@ void tst_montecarlo::run_withoutOutputParameter_doesNothing() {
     MonteCarlo mc { nullptr };
     mc.run();  // must not crash
     QVERIFY( !mc.getValid() );
+}
+
+
+void tst_montecarlo::run_resultsDoNotDependOnThreadCount() {
+    QStringList names { "X1", "X2" };
+    for ( const QString &name : names ) {
+        InputParameter parameter {};
+        parameter.setName( name );
+        parameter.setStdUncertainty( 1. );
+        parameter.appendToModel();
+    }
+
+    OutputParameter output {};
+    output.setFormula( "X1 * X2" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    // A batch size of several chunks, so the chunks are actually distributed
+    // over the threads
+    const int batchSize { Settings::getMonteCarloBatchSize() };
+    QVERIFY( Settings::setMonteCarloBatchSize( 25000 ) );
+
+    QThreadPool *pool { QThreadPool::globalInstance() };
+    const int maxThreadCount { pool->maxThreadCount() };
+
+    pool->setMaxThreadCount( 1 );
+    MonteCarlo singleThread { &output };
+    singleThread.run();
+
+    pool->setMaxThreadCount( 4 );
+    MonteCarlo multipleThreads { &output };
+    multipleThreads.run();
+
+    pool->setMaxThreadCount( maxThreadCount );
+    QVERIFY( Settings::setMonteCarloBatchSize( batchSize ) );
+
+    QVERIFY( singleThread.getValid() );
+    QCOMPARE( multipleThreads.toJson(), singleThread.toJson() );
+}
+
+
+void tst_montecarlo::run_convergesAfterMinimumNumberOfBatches() {
+    // With a constant input all batches give the same results, so the
+    // numerical tolerance criterion is met immediately and only the minimum
+    // number of batches (10) determines the convergence
+    InputParameter parameter {};
+    parameter.setName( "X1" );
+    parameter.setNominalValue( 5. );
+    parameter.setDistribution( Distribution::Type::none );
+    parameter.appendToModel();
+
+    OutputParameter output {};
+    output.setFormula( "X1" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    MonteCarlo mc { &output };
+    mc.run();
+    QVERIFY( mc.getValid() );
+
+    // Number of function evaluations from the status (without the group
+    // separators)
+    QString evaluations { mc.getStatus() };
+    evaluations.truncate( evaluations.indexOf( "function evaluations" ) );
+    evaluations.remove( QRegularExpression( "\\D" ) );
+
+    // Converged after exactly 10 batches (initTestCase() sets a batch size of
+    // 3000)
+    QCOMPARE( evaluations.toLongLong(), 10 * 3000 );
+    QCOMPARE( mc.getConvergenceFactor(), 1. );
+    QCOMPARE( mc.getMean(), 5. );
+    QCOMPARE( mc.getStdDeviation(), 0. );
+}
+
+
+namespace {
+    // Start of the message when the samples could not be exported
+    const QString sNotExported {
+        "The Monte Carlo samples could not be exported"
+    };
+
+    // Adds the input parameters X1 and X2 to the model and returns an
+    // OutputParameter Y = X1 + X2
+    void createSumModel( OutputParameter &output ) {
+        for ( const QString &name : { "X1", "X2" } ) {
+            InputParameter parameter {};
+            parameter.setName( name );
+            parameter.setStdUncertainty( 1. );
+            parameter.appendToModel();
+        }
+        output.setName( "Y" );
+        output.setFormula( "X1 + X2" );
+        output.setConfidence( 0.95 );
+        output.compile();
+    }
+}
+
+
+void tst_montecarlo::run_exportSamples_writesAllSamplesToCsv() {
+    OutputParameter output {};
+    createSumModel( output );
+    QVERIFY( output.getValid() );
+
+    QTemporaryDir dir {};
+    QVERIFY( dir.isValid() );
+    const QString path { dir.filePath( "samples.csv" ) };
+
+    MonteCarlo mc { &output };
+    QVERIFY( mc.setSampleExportUrl( QUrl::fromLocalFile( path ) ) );
+    mc.run();
+
+    QVERIFY( mc.getValid() );
+    QVERIFY( mc.getSamplesExported() );
+    QCOMPARE(
+        mc.getSampleExportMessage(),
+        QString( "The Monte Carlo samples have been exported to 'samples.csv'" )
+    );
+    // The export isn't part of the (saved) results, so the status is the same
+    // as for a run without export
+    QVERIFY( mc.getStatus().startsWith( "Converged after" ) );
+    QVERIFY( mc.getStatus().endsWith( "function evaluations" ) );
+    const QJsonObject jsonWithExport { mc.toJson() };
+
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::ReadOnly | QIODevice::Text ) );
+    QStringList header { QString( file.readLine() ).trimmed().split( ',' ) };
+    QCOMPARE( header.size(), 3 );
+    QCOMPARE( header.last(), QString( "\"Y\"" ) );
+    QVERIFY( header.contains( "\"X1\"" ) );
+    QVERIFY( header.contains( "\"X2\"" ) );
+
+    // Each row: X1 + X2 = Y
+    qint64 nRows { 0 };
+    double sum { 0. };
+    while ( !file.atEnd() ) {
+        const QStringList values {
+            QString( file.readLine() ).trimmed().split( ',' )
+        };
+        QCOMPARE( values.size(), 3 );
+        const double y { values[ 2 ].toDouble() };
+        QVERIFY(
+            qAbs( values[ 0 ].toDouble() + values[ 1 ].toDouble() - y ) < 1e-12
+        );
+        sum += y;
+        ++nRows;
+    }
+
+    // All samples used for the results are exported (the number of function
+    // evaluations in the status), and nothing else
+    QString evaluations { mc.getStatus() };
+    evaluations.truncate( evaluations.indexOf( "function evaluations" ) );
+    evaluations.remove( QRegularExpression( "\\D" ) );  // Group separators
+    QCOMPARE( nRows, evaluations.toLongLong() );
+    QVERIFY( qAbs( sum / nRows - mc.getMean() ) < 1e-9 );
+
+    // The export url applies to a single run only, and a rerun without export
+    // gives the same results (so no undo transaction is created)
+    mc.run();
+    QVERIFY( mc.getValid() );
+    QVERIFY( !mc.getSamplesExported() );
+    QVERIFY( mc.getSampleExportMessage().isEmpty() );
+    QCOMPARE( mc.toJson(), jsonWithExport );
+}
+
+
+void tst_montecarlo::run_exportSamples_stopped_writesNoFile() {
+    OutputParameter output {};
+    createSumModel( output );
+
+    QTemporaryDir dir {};
+    const QString path { dir.filePath( "samples.csv" ) };
+
+    MonteCarlo mc { &output };
+    QVERIFY( mc.setSampleExportUrl( QUrl::fromLocalFile( path ) ) );
+    mc.setRequestStop( true );
+    mc.run();
+
+    QVERIFY( !mc.getValid() );
+    QVERIFY( !mc.getSamplesExported() );
+    QVERIFY( mc.getSampleExportMessage().startsWith( sNotExported ) );
+    QVERIFY( !QFile::exists( path ) );
+}
+
+
+void tst_montecarlo::run_exportSamples_invalidFile_reportsError() {
+    OutputParameter output {};
+    createSumModel( output );
+
+    QTemporaryDir dir {};
+    const QString path { dir.filePath( "missing/samples.csv" ) };
+
+    MonteCarlo mc { &output };
+    QVERIFY( mc.setSampleExportUrl( QUrl::fromLocalFile( path ) ) );
+    mc.run();
+
+    QVERIFY( !mc.getValid() );
+    QVERIFY( !mc.getSamplesExported() );
+    QVERIFY( mc.getStatus().startsWith( sNotExported ) );
+    QVERIFY( mc.getSampleExportMessage().startsWith( sNotExported ) );
+    QVERIFY( !output.getLocked() );
 }
 
 

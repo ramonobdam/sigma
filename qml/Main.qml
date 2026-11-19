@@ -527,13 +527,19 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Monte Carlo simulation"
-                implicitWidth: 170
+                implicitWidth: 300
 
                 SigmaMenuBarMenuItem {
                     text: "Start"
                     shortcut: "Ctrl+R"
                     enabled: calculation.outputValid && !Properties.outputLocked
                     onTriggered: calculation.runMonteCarlo()
+                }
+
+                SigmaMenuBarMenuItem {
+                    text: "Start and export samples..."
+                    enabled: calculation.outputValid && !Properties.outputLocked
+                    onTriggered: samplesDialog.open()
                 }
 
                 SigmaMenuBarMenuItem {
@@ -1248,5 +1254,9 @@ ApplicationWindow {
 
     CSVDialog {
         id: csvDialog
+    }
+
+    SamplesDialog {
+        id: samplesDialog
     }
 }

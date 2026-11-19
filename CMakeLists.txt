@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.5.1 LANGUAGES CXX )
+project( Sigma VERSION 1.6.0 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -101,6 +101,7 @@ qt_add_qml_module( Sigma
         qml/ProjectFailed.qml
         qml/Properties.qml
         qml/RoundedRectangle.qml
+        qml/SamplesDialog.qml
         qml/SecondaryButton.qml
         qml/SettingsWindow.qml
         qml/SigmaBusyIndicator.qml
@@ -169,6 +170,8 @@ qt_add_qml_module( Sigma
         src/resultsmodel.h
         src/samplebatch.cpp
         src/samplebatch.h
+        src/samplewriter.cpp
+        src/samplewriter.h
         src/settings.cpp
         src/settings.h
         src/statistics.cpp

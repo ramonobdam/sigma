@@ -4,6 +4,8 @@
 
 #include "commandlineinterface.h"
 #include "exitcodes.h"
+#include "samplewriter.h"
+#include <QDir>
 #include <QEventLoop>
 #include <QGuiApplication>
 #include <QJsonDocument>
@@ -110,9 +112,32 @@ int CommandLineInterface::process() {
         mProjectLoaded = true;
     }
 
+    // The sample export options require the corresponding run option
+    if (
+        mParser.isSet( sExportSamplesOption ) && !mParser.isSet( sRunOption )
+    ) {
+        qCritical() << "--export-samples requires --run";
+        return static_cast<int>( ExitCode::UsageError );
+    }
+    if (
+        mParser.isSet( sExportSamplesDirOption ) &&
+        !mParser.isSet( sRunAllOption )
+    ) {
+        qCritical() << "--export-samples-dir requires --run-all";
+        return static_cast<int>( ExitCode::UsageError );
+    }
+
     if ( mParser.isSet( sRunOption ) ) {
         // Run Monte Carlo simulation for the specified output parameter
-        const int exitCode { runMonteCarlo( mParser.value( sRunOption ) ) };
+        QUrl sampleExportUrl {};
+        if ( mParser.isSet( sExportSamplesOption ) ) {
+            sampleExportUrl = QUrl::fromLocalFile(
+                mParser.value( sExportSamplesOption )
+            );
+        }
+        const int exitCode {
+            runMonteCarlo( mParser.value( sRunOption ), sampleExportUrl )
+        };
         if ( exitCode != static_cast<int>( ExitCode::Success ) ) {
             // An error occurred
             return exitCode;
@@ -121,9 +146,37 @@ int CommandLineInterface::process() {
 
     if ( mParser.isSet( sRunAllOption ) ) {
         // Run Monte Carlo simulation for all output parameters
+        QDir sampleExportDir {};
+        const bool exportSamples { mParser.isSet( sExportSamplesDirOption ) };
+        if ( exportSamples ) {
+            sampleExportDir.setPath( mParser.value( sExportSamplesDirOption ) );
+            if ( !sampleExportDir.mkpath( "." ) ) {
+                qCritical() << "Directory '" + sampleExportDir.path() +
+                               "' could not be created";
+                return static_cast<int>( ExitCode::ExportError );
+            }
+        }
+
         const QStringList names { mCalculation->getOutputParameterNames() };
-        for ( const QString &name : names ) {
-            const int exitCode { runMonteCarlo( name ) };
+        const QStringList fileNames { SampleWriter::uniqueFileNames( names ) };
+        for ( int i { 0 }; i < names.size(); ++i ) {
+            const QString &name { names.at( i ) };
+            QUrl sampleExportUrl {};
+            if ( exportSamples ) {
+                const QString &fileName { fileNames.at( i ) };
+                if ( fileName != name + ".csv" ) {
+                    // Report the changed file name (on stderr, so stdout
+                    // remains available for --to-json)
+                    qInfo().noquote() << QString(
+                        "Samples of output parameter '%1' are exported to "
+                        "'%2'"
+                    ).arg( name, fileName );
+                }
+                sampleExportUrl = QUrl::fromLocalFile(
+                    sampleExportDir.filePath( fileName )
+                );
+            }
+            const int exitCode { runMonteCarlo( name, sampleExportUrl ) };
             if ( exitCode != static_cast<int>( ExitCode::Success ) ) {
                 // An error occurred
                 return exitCode;
@@ -198,7 +251,10 @@ bool CommandLineInterface::headless( int argc, char *argv[] ) {
 }
 
 
-int CommandLineInterface::runMonteCarlo( const QString &name ) const {
+int CommandLineInterface::runMonteCarlo(
+    const QString &name,
+    const QUrl &sampleExportUrl
+) const {
     // Select the output parameter
     if ( mCalculation->selectOutputParameterByName( name ) ) {
         QEventLoop loop {};
@@ -209,20 +265,30 @@ int CommandLineInterface::runMonteCarlo( const QString &name ) const {
             &loop,
             &QEventLoop::quit
         );
-        mCalculation->runMonteCarlo();
+        mCalculation->runMonteCarlo( sampleExportUrl );
         loop.exec();  // wait for Monte Carlo to finish
 
-        if ( mCalculation->getHistogramValid() ) {
-            return static_cast<int>( ExitCode::Success );
-        }
-        else {
+        if ( !mCalculation->getHistogramValid() ) {
             qCritical() << QString(
                 "Monte Carlo simulation failed for output parameter '" +
                 name +
-                "'"
+                "': " +
+                mCalculation->getMonteCarloStatus()
             );
             return static_cast<int>( ExitCode::SimulationError );
         }
+        if (
+            !sampleExportUrl.isEmpty() && !mCalculation->getSamplesExported()
+        ) {
+            qCritical() << QString(
+                "Monte Carlo samples of output parameter '" +
+                name +
+                "' could not be exported: " +
+                mCalculation->getSampleExportMessage()
+            );
+            return static_cast<int>( ExitCode::ExportError );
+        }
+        return static_cast<int>( ExitCode::Success );
     }
     else {
         qCritical() << "Output parameter '" + name + "' not available";
@@ -256,6 +322,8 @@ void CommandLineInterface::initializeParser() {
     mParser.addOption( sRunAllOption );
     mParser.addOption( sSaveOption );
     mParser.addOption( sExportOption );
+    mParser.addOption( sExportSamplesOption );
+    mParser.addOption( sExportSamplesDirOption );
     mParser.addOption( sToJsonOption );
     mParser.addOption( sFromJsonOption );
 

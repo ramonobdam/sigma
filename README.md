@@ -97,6 +97,8 @@ The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects)
 | `--run-all` | Runs Monte Carlo simulation for all output parameters |
 | `--save <file>` | Saves the project to `<file>` |
 | `--export <file>` | Exports the results to CSV file |
+| `--export-samples <file>` | Exports the Monte Carlo samples of `--run` to CSV `<file>` |
+| `--export-samples-dir <dir>` | Exports the Monte Carlo samples of `--run-all` to CSV files in `<dir>`, one file `<par>.csv` per output parameter |
 | `--to-json` | Prints the project data to stdout in JSON format |
 | `--from-json` | Loads the project data from stdin in JSON format |
 | `--csvdigits <digits>` | Sets the CSV export significant digits (1 to 20) |
@@ -109,6 +111,17 @@ Open a project, run all Monte Carlo simulations in headless mode, save the proje
 ```bash
 Sigma --headless --open project.sig --run-all --save project.sig --export export.csv
 ```
+
+### Exporting Monte Carlo samples
+The samples of a Monte Carlo simulation can be exported to a CSV file, for example to use them as training data. Each row contains the values of the input components followed by the resulting output value; the header row contains their names. All samples used for the Monte Carlo results are exported, at full (round-trip) precision. The file is only written when the simulation converges. The samples are not stored in the project file.
+
+In the GUI, use *Monte Carlo simulation > Start and export samples...*. On the command line:
+```bash
+Sigma --headless --open project.sig --run Y --export-samples y_samples.csv
+Sigma --headless --open project.sig --run-all --export-samples-dir samples
+```
+
+With `--export-samples-dir`, each file is named after its output parameter. Characters that are not allowed in file names are replaced by `_`. When two output parameters would get the same file name (compared case-insensitively), `_2`, `_3`, etc. is appended in the order of the output parameters, and the changed file name is reported. The header row of each file contains the actual output parameter name.
 
 ## JSON Format
 *Sigma* projects (.sig) are loaded and saved in JSON format and can also be imported and exported using the `--from-json` and `--to-json` command-line options. The JSON format can be used to create projects programmatically or integrate *Sigma* with other tools.

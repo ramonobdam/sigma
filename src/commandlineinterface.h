@@ -13,6 +13,8 @@
 #include <QLatin1StringView>
 #include <QList>
 #include <QString>
+#include <QStringList>
+#include <QUrl>
 #include <cmath>
 #include <functional>
 
@@ -28,6 +30,12 @@
 // --run-all             Runs Monte Carlo simulation for all output parameters.
 // --save <file>         Saves the project to <file>.
 // --export <file>       Exports the results to CSV file.
+// --export-samples <file>
+//                       Exports the Monte Carlo samples of --run to CSV <file>.
+// --export-samples-dir <dir>
+//                       Exports the Monte Carlo samples of --run-all to CSV
+//                       files in <dir>, one file <par>.csv per output
+//                       parameter.
 // --to-json             Prints the project data to stdout in JSON format.
 // --from-json           Loads the project data from stdin in JSON format.
 // --csvdigits <digits>  Sets the CSV export significant digits (1 to 20).
@@ -55,7 +63,11 @@ public:
     static bool headless( int argc, char *argv[] );
 
 private:
-    int runMonteCarlo( const QString &name ) const;
+    int runMonteCarlo(
+        const QString &name,
+        const QUrl &sampleExportUrl = {}
+    ) const;
+
     void initializeParser();
     void setupSignalHandling();
 
@@ -174,6 +186,17 @@ private:
         "export",
         "Exports the results to CSV file.",
         "file"
+    };
+    inline static QCommandLineOption sExportSamplesOption {
+        "export-samples",
+        "Exports the Monte Carlo samples of --run to CSV <file>.",
+        "file"
+    };
+    inline static QCommandLineOption sExportSamplesDirOption {
+        "export-samples-dir",
+        "Exports the Monte Carlo samples of --run-all to CSV files in <dir>, "
+        "one file <par>.csv per output parameter.",
+        "dir"
     };
     inline static QCommandLineOption sHeadlessOption {
         { "H", "headless" },

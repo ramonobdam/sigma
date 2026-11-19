@@ -38,10 +38,13 @@ public:
     );
 
     QJsonObject projectToJson() const;
+    QString getMonteCarloStatus() const;
+    QString getSampleExportMessage() const;
     QString getProjectFileName() const;
     QStringList getOutputParameterNames() const;
     QStringList getUnits() const;
     bool getHistogramValid() const;
+    bool getSamplesExported() const;
     bool selectOutputParameterByName( const QString &name );
     void projectFromJson( const QJsonObject &json );
 
@@ -88,7 +91,10 @@ public:
     Q_INVOKABLE void removeInputParameter();
     Q_INVOKABLE void removeOutputParameter();
     Q_INVOKABLE void restoreState( int index );
-    Q_INVOKABLE void runMonteCarlo();
+    // Runs the Monte Carlo simulation for the selected output parameter. When
+    // sampleExportUrl is not empty, the samples are exported to that CSV file
+    // (only when the simulation converges).
+    Q_INVOKABLE void runMonteCarlo( const QUrl &sampleExportUrl = {} );
     Q_INVOKABLE void stopMonteCarlo();
     Q_INVOKABLE void updateCorrelation( const Correlation *correlation );
     Q_INVOKABLE void updateInputParameter( const InputParameter *parameter );
@@ -213,6 +219,8 @@ signals:
     void monteCarloResultsChanged();
     void monteCarloResultsListChanged();
     void histogramValuesChanged();
+    // Emitted after a Monte Carlo run with sample export has finished
+    void sampleExportFinished( bool exported, const QString &message );
     void outputLockedChanged();
     void projectFilePathChanged();
     void resultsChanged();

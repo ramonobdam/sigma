@@ -26,6 +26,7 @@ private slots:
     void generateSamples_singleNormalVariable_matchesAnalyticStatistics();
     void generateSamples_isReproducibleWithSameSeed();
     void generateSamples_differentSeedsProduceDifferentSamples();
+    void generateSamples_storeInputValues_storesOneRowPerSample();
 
     void generateSamples_invalidOutput_reportsError();
 
@@ -117,6 +118,49 @@ void tst_samplebatch::generateSamples_differentSeedsProduceDifferentSamples() {
     QVERIFY( batchB.generateSamples() );
 
     QVERIFY( batchA.getSamples() != batchB.getSamples() );
+}
+
+
+void tst_samplebatch::generateSamples_storeInputValues_storesOneRowPerSample() {
+    for ( const QString &name : { "X1", "X2" } ) {
+        InputParameter parameter {};
+        parameter.setName( name );
+        parameter.setStdUncertainty( 1. );
+        parameter.appendToModel();
+    }
+
+    OutputParameter output {};
+    output.setFormula( "X1 + 2 * X2" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    // The input values are stored in the order of the components
+    const QList<UncertaintyComponent> components { output.getComponents() };
+    QCOMPARE( components.size(), 2 );
+    const int iX1 { components[ 0 ].getName() == "X1" ? 0 : 1 };
+    const int iX2 { 1 - iX1 };
+
+    const int batchSize { 100 };
+    SampleBatch batch { &output, batchSize, 42 };
+    QVERIFY( batch.generateSamples( true ) );
+    QCOMPARE( batch.getNumberOfInputs(), 2 );
+
+    const std::vector<double> &inputs { batch.getInputValues() };
+    const std::vector<double> &outputs { batch.getSamples() };
+    QCOMPARE( static_cast<int>( outputs.size() ), batchSize );
+    QCOMPARE( static_cast<int>( inputs.size() ), 2 * batchSize );
+    for ( int i { 0 }; i < batchSize; ++i ) {
+        const double x1 { inputs[ 2 * i + iX1 ] };
+        const double x2 { inputs[ 2 * i + iX2 ] };
+        QVERIFY( qAbs( outputs[ i ] - ( x1 + 2 * x2 ) ) < 1e-12 );
+    }
+
+    // Storing the input values doesn't change the samples, and without
+    // storing no input values are kept
+    SampleBatch batchWithoutInputs { &output, batchSize, 42 };
+    QVERIFY( batchWithoutInputs.generateSamples() );
+    QCOMPARE( batchWithoutInputs.getSamples(), outputs );
+    QVERIFY( batchWithoutInputs.getInputValues().empty() );
 }
 
 
