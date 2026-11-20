@@ -1,6 +1,5 @@
 # Sigma - Measurement Uncertainty Toolkit 
-*Sigma – Measurement Uncertainty Toolkit* is a desktop application for interactive measurement uncertainty analysis. 
-It implements the classical GUM (Guide to the expression of Uncertainty in Measurement) method ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) for combined uncertainty and uncertainty budgets, 
+*Sigma – Measurement Uncertainty Toolkit* is a desktop and command-line application for interactive and automated measurement uncertainty analysis. It implements the classical GUM (Guide to the expression of Uncertainty in Measurement) method ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) for combined uncertainty and uncertainty budgets, 
 and also offers a Monte Carlo simulation approach ([JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008)) for more complex cases. 
 Arbitrary measurement functions can be evaluated, and both independent and correlated input parameters are supported.
 
@@ -47,7 +46,7 @@ For maintainability and reusability, *Sigma* is structured into separate UI, Orc
 - Orchestration of calculations and data flow
 - Transaction-based undo/redo system
 - Project file save/load (.sig)
-- CSV export
+- CSV/samples export
 
 ### Core layer (C++)
 - Data models
@@ -64,7 +63,7 @@ Compiling your own version of *Sigma* requires:
 - Qt 6.9+, including Qt Graphs ([Qt Installer](https://www.qt.io/development/download))
 - Qt Creator or the command-line tools CMake 3.16+ and Ninja
 - C++17 compiler:
-  - Windows: MSVC 2019/2022 ([Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads)) or MinGW
+  - Windows: MSVC 2022 or 2026 ([Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads)) or MinGW
   - macOS: Xcode command-line tools (`xcode-select --install`)
   - Linux: GCC or Clang
 
@@ -84,8 +83,8 @@ The executable is created in the `build` directory (`build/Sigma.exe` on Windows
 6. Select an output parameter and click 'Start' in the Monte Carlo simulation panel, or choose 'Monte Carlo simulation > Start' (Ctrl+R) from the main menu to start the Monte Carlo simulation. A running simulation can be stopped using 'Monte Carlo simulation > Stop' (Ctrl+T). The results can be found in the Monte Carlo simulation panel on the right. To also export the samples of the simulation to a CSV file, choose 'Monte Carlo simulation > Start and export samples...' (see [Exporting Monte Carlo samples](#exporting-monte-carlo-samples)).
 7. Changes can be undone and redone via the 'Edit' menu. 'Edit > Undo history...' (Ctrl+Shift+H) shows the history of all changes.
 8. To save a project, choose 'Project > Save' (Ctrl+S) or 'Project > Save As...' from the main menu, enter the filename and location, and click 'Save project'. The file extension of *Sigma* projects is 'sig'. When 'Project > Auto Save' is enabled, changes are saved automatically. When 'Project > Restore last project on startup' is enabled, the last project is opened when *Sigma* starts.
-9. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' (Ctrl+E) from the main menu. Subsequently, enter the filename and location, and click 'Save CSV'.
-10. Application settings (color scheme, project options, significant digits for the interface and CSV export, and the Monte Carlo convergence significant digits, batch size and maximum number of batches) can be accessed via 'Sigma > Settings...'. On macOS, this item is located in the application menu.
+9. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' (Ctrl+E) from the main menu. Subsequently, enter the filename and location, and click 'Save CSV'. Individual table cell values can also be copied to the clipboard via the right-click context menu.
+10. Application settings (color scheme, project options, significant digits for the interface and CSV export, and the Monte Carlo convergence significant digits, batch size and maximum number of batches) can be accessed via 'Sigma > Settings...'. On macOS use 'Sigma > Preferences...' in the application menu.
 
 ## Monte Carlo simulation
 - The simulation runs in batches of function evaluations (see the batch size setting). Each batch is split into chunks of 10,000 samples, each with its own random seed based on the batch and chunk number. The chunks are evaluated in parallel on all available CPU cores and combined in a fixed order.
@@ -203,7 +202,7 @@ A *Sigma* project JSON object contains the *Sigma* version and three arrays:
 
 | Field              | Type   | Required | Description                                                  |
 |--------------------|--------|----------|--------------------------------------------------------------|
-| `Sigma version`    | string | no       | Version of *Sigma* that created the JSON. Written by *Sigma*, ignored when loading |
+| `Sigma version`    | string | no       | Version of *Sigma* that created the JSON. Written by *Sigma*, ignored when loading. |
 | `inputParameters`  | array  | no       | Input parameters (see below)                                 |
 | `correlations`     | array  | no       | Correlations between input parameters (see below)            |
 | `outputParameters` | array  | no       | Output parameters (see below)                                |
@@ -228,26 +227,26 @@ Each input parameter defines a quantity with an associated probability distribut
 
 | Field            | Type    | Required | Default    | Description                                      |
 |------------------|---------|----------|------------|--------------------------------------------------|
-| `Id`             | string  | no       | generated  | UUID in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format. Required when referenced in a correlation |
+| `Id`             | string  | no       | generated  | UUID in `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}` format. Required when referenced in a correlation. |
 | `name`           | string  | yes      |            | Unique, case-insensitive name. Must start with a letter, may only contain letters, digits, underscores and periods (not at the end), and cannot be a mathematical function, operator or constant (e.g. `sin`, `and`, `pi`) |
 | `unit`           | string  | no       | `""`       | Unit of measurement                              |
 | `nominalValue`   | number  | no       | `0`        | Input estimate (best estimate of the quantity)   |
-| `stdUncertainty` | number  | no       | `1`        | Standard uncertainty (≥0). A negative value is replaced by its absolute value |
-| `distribution`   | string  | no       | `"normal"` | Probability distribution (see below). An unrecognized value is replaced by `"none"` |
-| `DOFInfinite`    | boolean | no       | `true`     | `true` if the degrees of freedom are infinite    |
-| `DOF`            | integer | no       | `1`        | Degrees of freedom in the range `[1, 1e6]`, used when `DOFInfinite` is `false`. Values outside the range are limited to the range |
+| `stdUncertainty` | number  | no       | `1`        | Standard uncertainty (≥0). A negative value is replaced by its absolute value. |
+| `distribution`   | string  | no       | `"normal"` | Probability distribution (see below). An unrecognized value is replaced by `"none"`. |
+| `DOFInfinite`    | boolean | no       | `true`     | `true` if the degrees of freedom are infinite.    |
+| `DOF`            | integer | no       | `1`        | Degrees of freedom in the range `[1, 1e6]`, used when `DOFInfinite` is `false`. Values outside the range are limited to the range. |
 
 Input parameters with an invalid or duplicate name are skipped.
 
 #### Distributions
-| Value          | Description                  |
-|----------------|------------------------------|
-| `normal`       | Normal (Gaussian) distribution |
-| `uniform`      | Uniform (rectangular) distribution with half-width `√3 · stdUncertainty` |
-| `triangular`   | Symmetric triangular distribution with half-width `√6 · stdUncertainty` |
-| `arcsine`      | Arcsine (U-shaped) distribution with half-width `√2 · stdUncertainty` |
-| `student's t`  | Scaled and shifted Student's t-distribution with scale `stdUncertainty` and `DOF` degrees of freedom. Equal to the normal distribution when `DOFInfinite` is `true` |
-| `none`         | Constant — no distribution   |
+| Value              | Description                  |
+|--------------------|------------------------------|
+| `normal`           | Normal (Gaussian) distribution |
+| `uniform`          | Uniform (rectangular) distribution with half-width `√3 · stdUncertainty` |
+| `triangular`       | Symmetric triangular distribution with half-width `√6 · stdUncertainty` |
+| `arcsine`          | Arcsine (U-shaped) distribution with half-width `√2 · stdUncertainty` |
+| <code>student's&nbsp;t</code>| Scaled and shifted Student's t-distribution with scale `stdUncertainty` and `DOF` degrees of freedom. Equal to the normal distribution when `DOFInfinite` is `true` |
+| `none`             | Constant — no distribution   |
 
 ### Correlations
 Correlations define the statistical dependence between pairs of input parameters. The input parameter Ids can be entered in arbitrary order. Only non-zero correlations need to be specified.
@@ -270,7 +269,7 @@ Correlations define the statistical dependence between pairs of input parameters
 
 Correlations are skipped when they are invalid (an input parameter does not exist, both Ids refer to the same input parameter, or the coefficient is outside `[-1, 1]`) or when a correlation between the same input parameters was already defined.
 
-In the Monte Carlo simulation, the correlation coefficient of two normally distributed input parameters (`normal`, or `student's t` with infinite degrees of freedom) is used as Pearson correlation, as in the GUM uncertainty framework. When at least one of the two input parameters has another distribution, the coefficient is interpreted as Spearman rank correlation. This only depends on the two correlated input parameters, not on the other input parameters of the measurement function.
+In the Monte Carlo simulation, the correlation coefficient of two normally distributed input parameters (`normal`, or <code>student's&nbsp;t</code> with infinite degrees of freedom) is used as Pearson correlation, as in the GUM uncertainty framework. When at least one of the two input parameters has another distribution, the coefficient is interpreted as Spearman rank correlation. This only depends on the two correlated input parameters, not on the other input parameters of the measurement function.
 
 ### Output parameters
 Each output parameter defines a measurand expressed as a measurement function (formula) of input parameters.
@@ -291,8 +290,8 @@ Each output parameter defines a measurand expressed as a measurement function (f
 | `name`       | string | yes      |           | Unique, case-insensitive name of at least one character      |
 | `unit`       | string | no       | `""`      | Unit of measurement                                          |
 | `formula`    | string | yes      |           | Measurement function: mathematical expression using input parameter names |
-| `confidence` | number | no       | `0.95`    | Level of confidence — the required coverage probability of the expanded uncertainty interval in the range `[0, 0.999]`, e.g. `0.95` for 95%. Values outside the range are limited to the range |
-| `monteCarlo` | object | no       |           | Monte Carlo simulation results (see below). Written by *Sigma* |
+| `confidence` | number | no       | `0.95`    | Level of confidence — the required coverage probability of the expanded uncertainty interval in the range `[0, 0.999]`, e.g. `0.95` for 95%. Values outside the range are limited to the range. |
+| `monteCarlo` | object | no       |           | Monte Carlo simulation results (see below). Written by *Sigma*. |
 
 Output parameters with an empty or duplicate name are skipped. Output parameters with an empty or invalid formula are loaded, but no results are calculated.
 
