@@ -137,7 +137,7 @@ int SampleBatch::getNumberOfInputs() const {
 void SampleBatch::setBatchSize( int batchSize ) {
     if ( batchSize < sMinBatchSize ) {
         mBatchSize = sMinBatchSize;
-        qCritical() << sInvalidBatchSizeString.arg(
+        qCritical().noquote() << sInvalidBatchSizeString.arg(
             QString::number( batchSize, 'f', 0 ),
             QString::number( mBatchSize, 'f', 0 )
         );

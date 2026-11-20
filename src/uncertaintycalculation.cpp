@@ -326,13 +326,14 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     // When loading fails, the currently open project (incl. its project file
     // path) is left untouched
     if ( !url.isLocalFile() || !loadFile.open( QIODevice::ReadOnly ) ) {
-        qCritical() << QString( sLoadFailedString ).arg( path );
+        qCritical().noquote() << QString( sLoadFailedString ).arg( path );
         return false;
     }
     QJsonObject project {};
     QString error {};
     if ( !parseProjectJson( loadFile.readAll(), project, error ) ) {
-        qCritical() << QString( sLoadFailedString ).arg( path ) + " " + error;
+        qCritical().noquote() <<
+            QString( sLoadFailedString ).arg( path ) + " " + error;
         return false;
     }
     clearProject( false );  // Currently open project should not be saved
@@ -354,7 +355,7 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
         !url.isLocalFile() ||
         !csvFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qCritical() << QString( sCSVFailedString ).arg( path );
+        qCritical().noquote() << QString( sCSVFailedString ).arg( path );
         return false;
     }
     QTextStream out( &csvFile );
@@ -362,7 +363,7 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
     out.flush();
     if ( !csvFile.commit() ) {
         // Writing failed (e.g. disk full), the existing file is left untouched
-        qCritical() << QString( sCSVFailedString ).arg( path );
+        qCritical().noquote() << QString( sCSVFailedString ).arg( path );
         return false;
     }
     return true;
@@ -385,7 +386,7 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
         !url.isLocalFile() ||
         !saveFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qCritical() << QString( sSaveFailedString ).arg( path );
+        qCritical().noquote() << QString( sSaveFailedString ).arg( path );
         resetProjectFilePath();
         return false;
     }
@@ -393,7 +394,7 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
     saveFile.write( QJsonDocument( project ).toJson() );
     if ( !saveFile.commit() ) {
         // Writing failed (e.g. disk full), the existing file is left untouched
-        qCritical() << QString( sSaveFailedString ).arg( path );
+        qCritical().noquote() << QString( sSaveFailedString ).arg( path );
         return false;
     }
     setProjectFilePath( url );

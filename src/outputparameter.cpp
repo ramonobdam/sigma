@@ -807,7 +807,7 @@ void OutputParameter::setConfidence( double confidence ) {
     }
     if ( !valid ) {
         int precison { Settings::getDefaultDisplayPrecision() };
-        qCritical() << sInvalidConfidenceString.arg(
+        qCritical().noquote() << sInvalidConfidenceString.arg(
             StringUtils::doubleToString( confidence, precison ),
             StringUtils::doubleToString( mConfidence, precison )
         );
@@ -1108,7 +1108,7 @@ OutputParameter * OutputParameter::insertIntoModel( int row ) {
         const int boundedRow { qBound( 0, row, mOutputModel.rowCount() ) };
         return mOutputModel.insertRow( boundedRow, *this );
     }
-    qCritical() << sInsertErrorString.arg( mName );
+    qCritical().noquote() << sInsertErrorString.arg( mName );
     return nullptr;
 }
 

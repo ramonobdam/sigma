@@ -564,11 +564,11 @@ void Correlation::setSelectionLocked( bool locked ) {
 Correlation * Correlation::insertIntoModel( int row ) {
     // Insert this Correlation into the model at row if it is valid and unique
     if ( !getValid() ) {
-        qCritical() << sInvalidCorrelationString;
+        qCritical().noquote() << sInvalidCorrelationString;
         return nullptr;
     }
     if ( !isUnique() ) {
-        qCritical() << sNonUniqueCorrelationString;
+        qCritical().noquote() << sNonUniqueCorrelationString;
         return nullptr;
     }
     const int boundedRow { qBound( 0, row, mCorrelationModel.rowCount() ) };

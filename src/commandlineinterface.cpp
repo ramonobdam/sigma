@@ -49,7 +49,7 @@ const {
 int CommandLineInterface::process() {
     // Use parse() instead of process() to avoid exit()
     if ( !mParser.parse( mApp->arguments() ) ) {
-        qCritical() << mParser.errorText();
+        qCritical().noquote() << mParser.errorText();
         return static_cast<int>( ExitCode::UsageError );
     }
 
@@ -79,7 +79,7 @@ int CommandLineInterface::process() {
                     msg.size() - sPreFix.size() - sPostFix.size()
                 );
                 msg += " could not be set: " + value;
-                qCritical() << msg;
+                qCritical().noquote() << msg;
                 return static_cast<int>( ExitCode::UsageError );
             }
         }
@@ -119,14 +119,14 @@ int CommandLineInterface::process() {
     if (
         mParser.isSet( sExportSamplesOption ) && !mParser.isSet( sRunOption )
     ) {
-        qCritical() << "--export-samples requires --run";
+        qCritical().noquote() << "--export-samples requires --run";
         return static_cast<int>( ExitCode::UsageError );
     }
     if (
         mParser.isSet( sExportSamplesDirOption ) &&
         !mParser.isSet( sRunAllOption )
     ) {
-        qCritical() << "--export-samples-dir requires --run-all";
+        qCritical().noquote() << "--export-samples-dir requires --run-all";
         return static_cast<int>( ExitCode::UsageError );
     }
 
@@ -154,8 +154,9 @@ int CommandLineInterface::process() {
         if ( exportSamples ) {
             sampleExportDir.setPath( mParser.value( sExportSamplesDirOption ) );
             if ( !sampleExportDir.mkpath( "." ) ) {
-                qCritical() << "Directory '" + sampleExportDir.path() +
-                               "' could not be created";
+                qCritical().noquote() <<
+                    "Directory '" + sampleExportDir.path() +
+                    "' could not be created";
                 return static_cast<int>( ExitCode::ExportError );
             }
         }
@@ -272,7 +273,7 @@ int CommandLineInterface::runMonteCarlo(
         loop.exec();  // wait for Monte Carlo to finish
 
         if ( !mCalculation->getHistogramValid() ) {
-            qCritical() << QString(
+            qCritical().noquote() << QString(
                 "Monte Carlo simulation failed for output parameter '" +
                 name +
                 "': " +
@@ -283,7 +284,7 @@ int CommandLineInterface::runMonteCarlo(
         if (
             !sampleExportUrl.isEmpty() && !mCalculation->getSamplesExported()
         ) {
-            qCritical() << QString(
+            qCritical().noquote() << QString(
                 "Monte Carlo samples of output parameter '" +
                 name +
                 "' could not be exported: " +
@@ -294,7 +295,8 @@ int CommandLineInterface::runMonteCarlo(
         return static_cast<int>( ExitCode::Success );
     }
     else {
-        qCritical() << "Output parameter '" + name + "' not available";
+        qCritical().noquote() <<
+            "Output parameter '" + name + "' not available";
         return static_cast<int>( ExitCode::SimulationError );
     }
 }
@@ -342,7 +344,7 @@ void CommandLineInterface::setupSignalHandling() {
     std::signal(
         SIGINT,
         []( int ) {
-            qInfo() << "Interrupted by user";
+            qInfo().noquote() << "Interrupted by user";
             std::exit( static_cast<int> ( ExitCode::Interrupted ) );
         }
     );
