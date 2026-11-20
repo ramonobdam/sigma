@@ -52,6 +52,7 @@ private slots:
 
     void newProject_clearsEverything();
     void newProject_autoSave_keepsOpenProjectFile();
+    void autoSave_savesChangesOrKeepsThemUnsaved();
 
     void userClearProject_clearsEverythingAndIsUndoable();
 
@@ -732,6 +733,39 @@ void tst_uncertaintycalculation::newProject_autoSave_keepsOpenProjectFile() {
     QVERIFY( calc.property( "projectFilePath" ).toUrl().isEmpty() );
     QVERIFY( file.open( QIODevice::ReadOnly ) );
     QCOMPARE( file.readAll(), savedProject );
+}
+
+
+void tst_uncertaintycalculation::autoSave_savesChangesOrKeepsThemUnsaved() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "project.sig" ) };
+
+    UncertaintyCalculation calc {};
+    QVERIFY( Settings::setAutoSaveProject( true ) );
+
+    // Without a project file the changes can't be Auto Saved and must remain
+    // unsaved ('unsavedChanges' is a Q_PROPERTY with a private getter)
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    const bool unsavedWithoutFile { calc.property( "unsavedChanges" ).toBool() };
+
+    // With a project file the changes are Auto Saved
+    const bool saved { calc.saveProject( QUrl::fromLocalFile( path ) ) };
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    const bool unsavedWithFile { calc.property( "unsavedChanges" ).toBool() };
+
+    QVERIFY( Settings::setAutoSaveProject( false ) );
+
+    QVERIFY( unsavedWithoutFile );
+    QVERIFY( saved );
+    QVERIFY( !unsavedWithFile );
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    QVERIFY( file.readAll().contains( "\"X2\"" ) );
 }
 
 

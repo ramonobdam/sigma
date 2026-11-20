@@ -1305,9 +1305,14 @@ void UncertaintyCalculation::setProjectFilePath( const QUrl &projectFilePath ) {
 
 
 void UncertaintyCalculation::setUnsavedChanges( bool unsavedChanges ) {
-    if ( unsavedChanges && Settings::getAutoSaveProject() ) {
-        // Auto Save the changes.
-        saveProject();
+    if (
+        unsavedChanges &&
+        Settings::getAutoSaveProject() &&
+        saveProject()
+    ) {
+        // The changes are Auto Saved (saveProject() resets the unsaved
+        // changes). When saving isn't possible, e.g. for a project without a
+        // project file, the changes remain unsaved.
         return;
     }
     mUnsavedChanges = unsavedChanges;
