@@ -459,32 +459,34 @@ bool Correlation::remove( const QUuid &id ) {
 
 
 bool Correlation::update( const QUuid &id, Correlation *correlation ) {
-    // The new correlation has to be unique or use the same InputParameters as
-    // the original correlation
+    // The new correlation has to be valid and unique, or use the same
+    // InputParameters as the original correlation
     Correlation *originalCorrelation { getById( id ) };
     Q_ASSERT_X(
         originalCorrelation,
         "Correlation::update",
         "Original correlation not found"
     );
-    if (
-        correlation &&
-        originalCorrelation &&
-        (
-            correlationIsUnique( correlation, false ) ||
-            sameInputParameters( correlation, originalCorrelation )
-        )
-    ) {
-        bool correlationUpdated =
-            mCorrelationModel.updateById( id, *correlation );
-        Q_ASSERT_X(
-            correlationUpdated,
-            "Correlation::update",
-            "Correlation could not be updated"
-        );
-        return correlationUpdated;
+    if ( !correlation || !originalCorrelation || !correlation->getValid() ) {
+        qCritical().noquote() << sInvalidCorrelationUpdateString;
+        return false;
     }
-    return false;
+    if (
+        !correlationIsUnique( correlation, false ) &&
+        !sameInputParameters( correlation, originalCorrelation )
+    ) {
+        qCritical().noquote() << sNonUniqueCorrelationUpdateString;
+        return false;
+    }
+    const bool correlationUpdated {
+        mCorrelationModel.updateById( id, *correlation ) != nullptr
+    };
+    Q_ASSERT_X(
+        correlationUpdated,
+        "Correlation::update",
+        "Correlation could not be updated"
+    );
+    return correlationUpdated;
 }
 
 

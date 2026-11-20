@@ -145,8 +145,14 @@ private:
     static constexpr QLatin1StringView sInvalidCorrelationString {
         "Invalid correlation could not be inserted into the model"
     };
+    static constexpr QLatin1StringView sInvalidCorrelationUpdateString {
+        "Invalid correlation could not be updated in the model"
+    };
     static constexpr QLatin1StringView sNonUniqueCorrelationString {
         "Non-unique correlation could not be inserted into the model"
+    };
+    static constexpr QLatin1StringView sNonUniqueCorrelationUpdateString {
+        "Non-unique correlation could not be updated in the model"
     };
     static constexpr double sMaxCorrelation { 1. };
     static constexpr double sMinCorrelation { -1. };

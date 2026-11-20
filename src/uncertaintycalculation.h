@@ -102,9 +102,9 @@ public:
     // (only when the simulation converges).
     Q_INVOKABLE void runMonteCarlo( const QUrl &sampleExportUrl = {} );
     Q_INVOKABLE void stopMonteCarlo();
-    Q_INVOKABLE void updateCorrelation( const Correlation *correlation );
-    Q_INVOKABLE void updateInputParameter( const InputParameter *parameter );
-    Q_INVOKABLE void updateOutputParameter( const OutputParameter *parameter );
+    Q_INVOKABLE bool updateCorrelation( const Correlation *correlation );
+    Q_INVOKABLE bool updateInputParameter( const InputParameter *parameter );
+    Q_INVOKABLE bool updateOutputParameter( const OutputParameter *parameter );
     Q_INVOKABLE void userClearProject();
     Q_INVOKABLE void undo();
     Q_INVOKABLE void redo();

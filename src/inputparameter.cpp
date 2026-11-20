@@ -494,6 +494,9 @@ bool InputParameter::update( const QUuid &id, InputParameter *parameter ) {
             }
         }
     }
+    qCritical().noquote() << sUpdateErrorString.arg(
+        parameter ? parameter->getName() : QString()
+    );
     return false;
 }
 

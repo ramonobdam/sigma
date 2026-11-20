@@ -1004,6 +1004,9 @@ bool OutputParameter::update( const QUuid &id, OutputParameter *parameter ) {
         );
         return parameterUpdated;
     }
+    qCritical().noquote() << sUpdateErrorString.arg(
+        parameter ? parameter->getName() : QString()
+    );
     return false;
 }
 

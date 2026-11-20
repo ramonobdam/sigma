@@ -253,6 +253,9 @@ private:
     static constexpr QLatin1StringView sUncertaintyComponentsHeaderString {
         "Uncertainty components "
     };
+    static constexpr QLatin1StringView sUpdateErrorString {
+        "Invalid output parameter '%1' could not be updated in the model"
+    };
     static constexpr double sMaxConfidence { 0.999 };
     static constexpr double sMinConfidence { 0. };
     static constexpr int sErrorCodeLength { 9 };

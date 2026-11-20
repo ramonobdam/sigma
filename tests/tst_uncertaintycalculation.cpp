@@ -41,6 +41,9 @@ private slots:
     void removeInputParameter_cascadesToCorrelationsAndOutputsAndIsUndoable();
     void updateCorrelation_cascadesToOutputsAndIsUndoable();
     void updateInputParameter_cascadesToOutputsAndIsUndoable();
+    void updateCorrelation_failure_changesNothing();
+    void updateInputParameter_failure_changesNothing();
+    void updateOutputParameter_failure_changesNothing();
 
     void projectJson_roundTripInMemory();
     void saveAndLoadProject_roundTripThroughFile();
@@ -495,6 +498,152 @@ void tst_uncertaintycalculation::updateInputParameter_cascadesToOutputsAndIsUndo
     // Redo must make Y1 invalid again
     calc.redo();
     QVERIFY( !addedOutputParam->getValid() );
+}
+
+
+namespace {
+    // Adds the input parameters X1, X2 and X3, the correlations X1-X2 and
+    // X1-X3, and the output parameters Y1 = X1 + X2 + X3 and Y2 = X1, and runs
+    // the Monte Carlo simulation of Y1. Returns false when the Monte Carlo
+    // simulation didn't give valid results.
+    bool addProjectWithMonteCarloResults( UncertaintyCalculation &calc ) {
+        for ( const QString &name : { "X1", "X2", "X3" } ) {
+            InputParameter parameter {};
+            parameter.setName( name );
+            parameter.setStdUncertainty( 1. );
+            calc.addInputParameter( &parameter );
+        }
+        const InputParameter *x1 { InputParameter::getByName( "X1" ) };
+        const InputParameter *x2 { InputParameter::getByName( "X2" ) };
+        const InputParameter *x3 { InputParameter::getByName( "X3" ) };
+        if ( !x1 || !x2 || !x3 ) return false;
+
+        Correlation correlation12 { nullptr, x1->getId(), x2->getId(), 0.5 };
+        calc.addCorrelation( &correlation12 );
+        Correlation correlation13 { nullptr, x1->getId(), x3->getId(), 0.3 };
+        calc.addCorrelation( &correlation13 );
+
+        OutputParameter y1 {};
+        y1.setName( "Y1" );
+        y1.setFormula( "X1 + X2 + X3" );
+        calc.addOutputParameter( &y1 );
+        OutputParameter y2 {};
+        y2.setName( "Y2" );
+        y2.setFormula( "X1" );
+        calc.addOutputParameter( &y2 );
+
+        OutputParameter *addedY1 { OutputParameter::getByName( "Y1" ) };
+        if ( !addedY1 ) return false;
+        OutputParameter::getOutputModel()->selectRow(
+            OutputParameter::getRowIndex( addedY1->getId() )
+        );
+        QSignalSpy finishedSpy {
+            &calc,
+            &UncertaintyCalculation::monteCarloFinished
+        };
+        calc.runMonteCarlo();
+        return finishedSpy.wait( 30000 ) && addedY1->getMonteCarloValid();
+    }
+}
+
+
+void tst_uncertaintycalculation::updateCorrelation_failure_changesNothing() {
+    UncertaintyCalculation calc {};
+    QVERIFY( addProjectWithMonteCarloResults( calc ) );
+    const OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
+    const InputParameter *x1 { InputParameter::getByName( "X1" ) };
+    const InputParameter *x2 { InputParameter::getByName( "X2" ) };
+    const InputParameter *x3 { InputParameter::getByName( "X3" ) };
+    const Correlation *correlation12 {
+        Correlation::getCorrelation( x1->getId(), x2->getId() )
+    };
+    QVERIFY( correlation12 );
+    const int stackSize { UndoStack::instance().getStackSize() };
+    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+
+    // Changing X1-X2 into X1-X3, which already exists, must fail
+    Correlation::getCorrelationModel()->selectRow(
+        Correlation::getRowIndex( correlation12->getId() )
+    );
+    Correlation conflict { nullptr, x1->getId(), x3->getId(), 0.9 };
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Non-unique correlation could not be updated in the model"
+        )
+    );
+    QVERIFY( !calc.updateCorrelation( &conflict ) );
+
+    QCOMPARE( Correlation::getAll().size(), 2 );
+    QCOMPARE(
+        Correlation::getCorrelation( x1->getId(), x2->getId() )
+            ->getCorrelation(),
+        0.5
+    );
+    QVERIFY( y1->getMonteCarloValid() );
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
+    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
+}
+
+
+void tst_uncertaintycalculation::updateInputParameter_failure_changesNothing() {
+    UncertaintyCalculation calc {};
+    QVERIFY( addProjectWithMonteCarloResults( calc ) );
+    const OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
+    InputParameter *x1 { InputParameter::getByName( "X1" ) };
+    const int stackSize { UndoStack::instance().getStackSize() };
+    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+
+    // Renaming X1 to X2, which already exists, must fail
+    InputParameter::getInputModel()->selectRow(
+        InputParameter::getRowIndex( x1->getId() )
+    );
+    InputParameter renamed { *x1 };
+    renamed.setName( "X2" );
+    renamed.setStdUncertainty( 2. );
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid input parameter 'X2' could not be updated in the model"
+        )
+    );
+    QVERIFY( !calc.updateInputParameter( &renamed ) );
+
+    QCOMPARE( InputParameter::getAll().size(), 3 );
+    QCOMPARE( InputParameter::getByName( "X1" ), x1 );
+    QCOMPARE( x1->getStdUncertainty(), 1. );
+    QVERIFY( y1->getMonteCarloValid() );
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
+    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
+}
+
+
+void tst_uncertaintycalculation::updateOutputParameter_failure_changesNothing(
+) {
+    UncertaintyCalculation calc {};
+    QVERIFY( addProjectWithMonteCarloResults( calc ) );
+    OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
+    const int stackSize { UndoStack::instance().getStackSize() };
+    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+
+    // Renaming Y1 to Y2, which already exists, must fail
+    OutputParameter renamed { *y1 };
+    renamed.setName( "Y2" );
+    renamed.setFormula( "X1 - X2" );
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid output parameter 'Y2' could not be updated in the model"
+        )
+    );
+    QVERIFY( !calc.updateOutputParameter( &renamed ) );
+
+    QCOMPARE( OutputParameter::getAll().size(), 2 );
+    QCOMPARE( OutputParameter::getByName( "Y1" ), y1 );
+    QCOMPARE( y1->getFormula(), QString( "X1 + X2 + X3" ) );
+    QVERIFY( y1->getMonteCarloValid() );
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
+    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
 }
 
 

@@ -688,7 +688,7 @@ void UncertaintyCalculation::stopMonteCarlo() {
 }
 
 
-void UncertaintyCalculation::updateCorrelation(
+bool UncertaintyCalculation::updateCorrelation(
     const Correlation *correlation
 ) {
     QUuid id { Correlation::getSelectedId() };
@@ -711,7 +711,11 @@ void UncertaintyCalculation::updateCorrelation(
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalCorrelation );
 
-        Correlation::update( id, &newCorrelation );
+        if ( !Correlation::update( id, &newCorrelation ) ) {
+            // The model is unchanged: no recompilation, transaction or unsaved
+            // changes
+            return false;
+        }
 
         if ( recompile ) {
             // Recompile to check the original InputParameters
@@ -738,11 +742,13 @@ void UncertaintyCalculation::updateCorrelation(
         );
 
         setUnsavedChanges( true );
+        return true;
     }
+    return false;
 }
 
 
-void UncertaintyCalculation::updateInputParameter(
+bool UncertaintyCalculation::updateInputParameter(
     const InputParameter *parameter
 ) {
     QUuid id { InputParameter::getSelectedId() };
@@ -764,7 +770,11 @@ void UncertaintyCalculation::updateInputParameter(
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalParameter );
 
-        InputParameter::update( id, &newParameter);
+        if ( !InputParameter::update( id, &newParameter ) ) {
+            // The model is unchanged: no recompilation, transaction or unsaved
+            // changes
+            return false;
+        }
 
         if ( recompile ) {
             // All invalid expressions are recompiled plus any that reference
@@ -775,11 +785,13 @@ void UncertaintyCalculation::updateInputParameter(
         diffUtil.commitChanges( "Update input parameter " + originalName );
 
         setUnsavedChanges( true );
+        return true;
     }
+    return false;
 }
 
 
-void UncertaintyCalculation::updateOutputParameter(
+bool UncertaintyCalculation::updateOutputParameter(
     const OutputParameter *parameter
 ) {
     QUuid id { OutputParameter::getSelectedId() };
@@ -807,13 +819,18 @@ void UncertaintyCalculation::updateOutputParameter(
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalParameter );
 
-        OutputParameter::update( id, &newParameter);
+        if ( !OutputParameter::update( id, &newParameter ) ) {
+            // The model is unchanged: no transaction or unsaved changes
+            return false;
+        }
         emitAllResultsChanged();
 
         diffUtil.commitChanges( "Update output parameter " + originalName );
 
         setUnsavedChanges( true );
+        return true;
     }
+    return false;
 }
 
 
