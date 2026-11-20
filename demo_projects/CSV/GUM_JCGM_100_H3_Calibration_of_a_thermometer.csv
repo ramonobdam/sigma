@@ -22,10 +22,10 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components b:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"t","°C",30,0,none,infinite,0.00218,0,0.0%,0.0%,0.0%,
-"t0","°C",20,0,none,infinite,-0.00218,0,0.0%,0.0%,0.0%,
-"y1","°C",-0.1712,0.0029,normal,9,1,0.0029,49.0%,-105.3%,-56.3%,
-"y2","",0.00218,0.00067,normal,9,9.999999998,0.006699999999,261.6%,-105.3%,156.3%,
+"t","°C",30,0,none,infinite,0.00218,0,0.0%,0.0%,0.0%
+"t0","°C",20,0,none,infinite,-0.00218,0,0.0%,0.0%,0.0%
+"y1","°C",-0.1712,0.0029,normal,9,1,0.0029,49.0%,-105.3%,-56.3%
+"y2","",0.00218,0.00067,normal,9,9.999999998,0.006699999999,261.6%,-105.3%,156.3%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence

@@ -28,18 +28,18 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components δY0:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"X10","",0,0.005,normal,infinite,0,0,-,-,-,
-"X2","",0,0.005,normal,infinite,0,0,-,-,-,
+"X10","",0,0.005,normal,infinite,0,0,-,-,-
+"X2","",0,0.005,normal,infinite,0,0,-,-,-
 
 "Uncertainty components δY1:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"X11","",0.01,0.005,normal,infinite,0.02,0.0001,100.0%,-0.0%,100.0%,
-"X2","",0,0.005,normal,infinite,-2.258754526e-15,1.129377263e-17,0.0%,-0.0%,-0.0%,
+"X11","",0.01,0.005,normal,infinite,0.02,0.0001,100.0%,-0.0%,100.0%
+"X2","",0,0.005,normal,infinite,-2.258754526e-15,1.129377263e-17,0.0%,-0.0%,-0.0%
 
 "Uncertainty components δY2:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"X15","",0.05,0.005,normal,infinite,0.1,0.0005,100.0%,0.0%,100.0%,
-"X2","",0,0.005,normal,infinite,0,0,0.0%,0.0%,0.0%,
+"X15","",0.05,0.005,normal,infinite,0.1,0.0005,100.0%,0.0%,100.0%
+"X2","",0,0.005,normal,infinite,0,0,0.0%,0.0%,0.0%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence

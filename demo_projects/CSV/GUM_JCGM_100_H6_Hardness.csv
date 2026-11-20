@@ -21,13 +21,13 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components h:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"d","HRC",36,0,none,infinite,-0.9999999999,0,0.0%,0.0%,0.0%,
-"d_k","HRC",0,0.201246118,normal,4,-0.9999999975,0.2012461175,13.2%,0.0%,13.2%,
-"z","HRC",0,0.04490731195,normal,infinite,-0.9999999975,0.04490731184,0.7%,0.0%,0.7%,
-"z_S","HRC",0,0.04082482905,normal,infinite,-0.9999999975,0.04082482895,0.5%,0.0%,0.5%,
-"δ","HRC",0,0.02886751346,uniform,infinite,-0.9999999975,0.02886751339,0.3%,0.0%,0.3%,
-"Δ_b","HRC",0,0.1102270384,triangular,infinite,-0.9999999975,0.1102270381,4.0%,0.0%,4.0%,
-"Δ_S","HRC",0,0.5,normal,infinite,-0.9999999975,0.4999999987,81.4%,0.0%,81.4%,
+"d","HRC",36,0,none,infinite,-0.9999999999,0,0.0%,0.0%,0.0%
+"d_k","HRC",0,0.201246118,normal,4,-0.9999999975,0.2012461175,13.2%,0.0%,13.2%
+"z","HRC",0,0.04490731195,normal,infinite,-0.9999999975,0.04490731184,0.7%,0.0%,0.7%
+"z_S","HRC",0,0.04082482905,normal,infinite,-0.9999999975,0.04082482895,0.5%,0.0%,0.5%
+"δ","HRC",0,0.02886751346,uniform,infinite,-0.9999999975,0.02886751339,0.3%,0.0%,0.3%
+"Δ_b","HRC",0,0.1102270384,triangular,infinite,-0.9999999975,0.1102270381,4.0%,0.0%,4.0%
+"Δ_S","HRC",0,0.5,normal,infinite,-0.9999999975,0.4999999987,81.4%,0.0%,81.4%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence

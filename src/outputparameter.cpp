@@ -152,7 +152,7 @@ QString OutputParameter::componentsToCSVString() const {
             // combined standard uncertainty of the OutputParameter
             for ( int column { columns - 3 }; column < columns; ++column ) {
                 result += getContributionAsString( row, column );
-                if ( column < columns ) {
+                if ( column < columns - 1 ) {
                     result += StringUtils::csvSeparator;
                 }
             }

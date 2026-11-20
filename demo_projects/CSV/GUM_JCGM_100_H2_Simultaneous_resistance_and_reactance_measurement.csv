@@ -27,20 +27,20 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components R:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"I","A",0.019661,9.5e-06,normal,4,-6496.728036,0.06171891634,77.8%,-98.0%,-20.2%,
-"V","V",4.999,0.0032,normal,4,25.55154429,0.08176494174,136.5%,-199.7%,-63.1%,
-"Φ","rad",1.04446,0.00075,normal,4,-219.8465119,0.1648848839,555.2%,-371.8%,183.3%,
+"I","A",0.019661,9.5e-06,normal,4,-6496.728036,0.06171891634,77.8%,-98.0%,-20.2%
+"V","V",4.999,0.0032,normal,4,25.55154429,0.08176494174,136.5%,-199.7%,-63.1%
+"Φ","rad",1.04446,0.00075,normal,4,-219.8465119,0.1648848839,555.2%,-371.8%,183.3%
 
 "Uncertainty components X:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"I","A",0.019661,9.5e-06,normal,4,-11181.85809,0.1062276519,12.9%,13.7%,26.6%,
-"V","V",4.999,0.0032,normal,4,43.978098,0.1407299136,22.6%,19.4%,42.1%,
-"Φ","rad",1.04446,0.00075,normal,4,127.7321699,0.09579912745,10.5%,20.8%,31.3%,
+"I","A",0.019661,9.5e-06,normal,4,-11181.85809,0.1062276519,12.9%,13.7%,26.6%
+"V","V",4.999,0.0032,normal,4,43.978098,0.1407299136,22.6%,19.4%,42.1%
+"Φ","rad",1.04446,0.00075,normal,4,127.7321699,0.09579912745,10.5%,20.8%,31.3%
 
 "Uncertainty components Z:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"I","A",0.019661,9.5e-06,normal,4,-12932.18564,0.1228557636,27.0%,12.9%,39.8%,
-"V","V",4.999,0.0032,normal,4,50.86211281,0.162758761,47.3%,12.9%,60.2%,
+"I","A",0.019661,9.5e-06,normal,4,-12932.18564,0.1228557636,27.0%,12.9%,39.8%
+"V","V",4.999,0.0032,normal,4,50.86211281,0.162758761,47.3%,12.9%,60.2%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence

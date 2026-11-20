@@ -27,24 +27,24 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components Y1:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"X1_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%,
-"X2_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%,
-"X3_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%,
-"X4_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%,
+"X1_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%
+"X2_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%
+"X3_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%
+"X4_n","",0,1,normal,infinite,1,1,25.0%,0.0%,25.0%
 
 "Uncertainty components Y2:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"X1_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%,
-"X2_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%,
-"X3_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%,
-"X4_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%,
+"X1_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%
+"X2_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%
+"X3_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%
+"X4_u","",0,1,uniform,infinite,1,1,25.0%,0.0%,25.0%
 
 "Uncertainty components Y3:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"X1_u","",0,1,uniform,infinite,1,1,1.0%,0.0%,1.0%,
-"X2_u","",0,1,uniform,infinite,1,1,1.0%,0.0%,1.0%,
-"X3_u","",0,1,uniform,infinite,1,1,1.0%,0.0%,1.0%,
-"X5_u","",0,10,uniform,infinite,1,10,97.1%,0.0%,97.1%,
+"X1_u","",0,1,uniform,infinite,1,1,1.0%,0.0%,1.0%
+"X2_u","",0,1,uniform,infinite,1,1,1.0%,0.0%,1.0%
+"X3_u","",0,1,uniform,infinite,1,1,1.0%,0.0%,1.0%
+"X5_u","",0,10,uniform,infinite,1,10,97.1%,0.0%,97.1%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence

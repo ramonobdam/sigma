@@ -21,13 +21,13 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components δ_m:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"m_nom","mg",100000,0,none,infinite,-1,0,0.0%,0.0%,0.0%,
-"m_Rc","mg",100000,0.05,normal,infinite,1,0.05,86.2%,0.0%,86.2%,
-"δm_Rc","mg",1.234,0.02,normal,infinite,1.000002937,0.02000005874,13.8%,0.0%,13.8%,
-"ρ_a","kg/m³",1.2,0.05773502692,uniform,infinite,0,0,0.0%,0.0%,0.0%,
-"ρ_a0","kg/m³",1.2,0,none,infinite,0,0,0.0%,0.0%,0.0%,
-"ρ_R","kg/m³",8000,0.02886751346,uniform,infinite,0,0,0.0%,0.0%,0.0%,
-"ρ_w","kg/m³",8000,577.3502692,uniform,infinite,0,0,0.0%,0.0%,0.0%,
+"m_nom","mg",100000,0,none,infinite,-1,0,0.0%,0.0%,0.0%
+"m_Rc","mg",100000,0.05,normal,infinite,1,0.05,86.2%,0.0%,86.2%
+"δm_Rc","mg",1.234,0.02,normal,infinite,1.000002937,0.02000005874,13.8%,0.0%,13.8%
+"ρ_a","kg/m³",1.2,0.05773502692,uniform,infinite,0,0,0.0%,0.0%,0.0%
+"ρ_a0","kg/m³",1.2,0,none,infinite,0,0,0.0%,0.0%,0.0%
+"ρ_R","kg/m³",8000,0.02886751346,uniform,infinite,0,0,0.0%,0.0%,0.0%
+"ρ_w","kg/m³",8000,577.3502692,uniform,infinite,0,0,0.0%,0.0%,0.0%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence

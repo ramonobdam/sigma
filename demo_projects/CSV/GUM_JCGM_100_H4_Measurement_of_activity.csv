@@ -23,11 +23,11 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components A_x:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"A_S","Bq/g",0.1368,0.0018,normal,infinite,3.142846065,0.005657122918,46.1%,0.0%,46.1%,
-"m_S","g",5.0192,0.005,normal,infinite,0.08565933649,0.0004282966824,0.3%,0.0%,0.3%,
-"m_X","g",5.0571,0.001,normal,infinite,-0.08501736998,8.501736998e-05,0.0%,0.0%,0.0%,
-"R_S","min⁻¹",206.09,3.79,normal,5,-0.002086182453,0.007906631496,90.1%,-31.1%,59.0%,
-"R_x","min⁻¹",652.6,6.42,normal,5,0.0006588129662,0.004229579243,25.8%,-31.1%,-5.4%,
+"A_S","Bq/g",0.1368,0.0018,normal,infinite,3.142846065,0.005657122918,46.1%,0.0%,46.1%
+"m_S","g",5.0192,0.005,normal,infinite,0.08565933649,0.0004282966824,0.3%,0.0%,0.3%
+"m_X","g",5.0571,0.001,normal,infinite,-0.08501736998,8.501736998e-05,0.0%,0.0%,0.0%
+"R_S","min⁻¹",206.09,3.79,normal,5,-0.002086182453,0.007906631496,90.1%,-31.1%,59.0%
+"R_x","min⁻¹",652.6,6.42,normal,5,0.0006588129662,0.004229579243,25.8%,-31.1%,-5.4%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence

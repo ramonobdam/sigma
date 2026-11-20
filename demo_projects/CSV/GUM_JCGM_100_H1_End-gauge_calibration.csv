@@ -20,12 +20,12 @@ Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees
 
 "Uncertainty components l:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
-"d","nm",215,9.7,normal,25,1.000012307,9.70011938,9.4%,0.0%,9.4%,
-"l_S","nm",50000623,25,normal,18,1,25,62.2%,0.0%,62.2%,
-"α_S","°C⁻¹",1.15e-05,1.2e-06,uniform,infinite,0,0,0.0%,0.0%,0.0%,
-"δα","°C⁻¹",0,5.8e-07,uniform,50,-5000062.304,2.900036136,0.8%,0.0%,0.8%,
-"δθ","°C",0,0.029,uniform,2,-575.0060081,16.67517424,27.7%,0.0%,27.7%,
-"θ","°C",0.1,0.41,normal,infinite,0,0,0.0%,0.0%,0.0%,
+"d","nm",215,9.7,normal,25,1.000012307,9.70011938,9.4%,0.0%,9.4%
+"l_S","nm",50000623,25,normal,18,1,25,62.2%,0.0%,62.2%
+"α_S","°C⁻¹",1.15e-05,1.2e-06,uniform,infinite,0,0,0.0%,0.0%,0.0%
+"δα","°C⁻¹",0,5.8e-07,uniform,50,-5000062.304,2.900036136,0.8%,0.0%,0.8%
+"δθ","°C",0,0.029,uniform,2,-575.0060081,16.67517424,27.7%,0.0%,27.7%
+"θ","°C",0.1,0.41,normal,infinite,0,0,0.0%,0.0%,0.0%
 
 Monte Carlo simulation:
 Output name,Unit,Simulation status,Numerical tolerance,Output estimate,Standard uncertainty,Expanded uncertainty,Level of confidence
