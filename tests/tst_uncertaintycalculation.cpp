@@ -57,6 +57,7 @@ private slots:
     void saveCSV_writesExpectedSections();
 
     void runMonteCarlo_updatesSelectedOutputAndIsUndoable();
+    void undoRedoRestoreState_whileMonteCarloRuns_areIgnored();
 
     void newProject_clearsEverything();
     void newProject_autoSave_keepsOpenProjectFile();
@@ -983,6 +984,80 @@ void tst_uncertaintycalculation::runMonteCarlo_updatesSelectedOutputAndIsUndoabl
     QVERIFY( UndoStack::instance().canUndo() );
     calc.undo();
     QVERIFY( !selected->getMonteCarloValid() );
+}
+
+
+void tst_uncertaintycalculation::undoRedoRestoreState_whileMonteCarloRuns_areIgnored(
+) {
+    UncertaintyCalculation calc {};
+
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    x1.setStdUncertainty( 1. );
+    calc.addInputParameter( &x1 );
+    OutputParameter y1 {};
+    y1.setName( "Y1" );
+    y1.setFormula( "X1" );
+    calc.addOutputParameter( &y1 );
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+
+    // Undo adding X2, so that both undo and redo are possible
+    calc.undo();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( UndoStack::instance().canRedo() );
+    const int lockedCursor { UndoStack::instance().getCursor() };
+
+    // Run a simulation of Y1 that takes long enough to call the functions
+    // while it runs (the simulation thread locks the OutputParameter)
+    OutputParameter *addedY1 { OutputParameter::getByName( "Y1" ) };
+    QVERIFY( addedY1 );
+    OutputParameter::getOutputModel()->selectRow(
+        OutputParameter::getRowIndex( addedY1->getId() )
+    );
+    QVERIFY( Settings::setMonteCarloDigits( 3 ) );
+    QVERIFY( Settings::setMonteCarloBatchSize( 100000 ) );
+    QVERIFY( Settings::setMonteCarloMaxNumOfBatches( 1000 ) );
+    QSignalSpy finishedSpy {
+        &calc,
+        &UncertaintyCalculation::monteCarloFinished
+    };
+    calc.runMonteCarlo();
+    QTRY_VERIFY_WITH_TIMEOUT(
+        calc.property( "outputLocked" ).toBool(),
+        10000
+    );
+
+    calc.undo();
+    const int cursorAfterUndo { UndoStack::instance().getCursor() };
+    calc.redo();
+    const int cursorAfterRedo { UndoStack::instance().getCursor() };
+    calc.restoreState( 0 );
+    const int cursorAfterRestore { UndoStack::instance().getCursor() };
+    const qsizetype numberOfInputs { InputParameter::getAll().size() };
+    const qsizetype numberOfOutputs { OutputParameter::getAll().size() };
+
+    calc.stopMonteCarlo();
+    const bool finished { finishedSpy.wait( 30000 ) };
+    QVERIFY( Settings::setMonteCarloDigits( 1 ) );
+    QVERIFY( Settings::setMonteCarloBatchSize( 3000 ) );
+    QVERIFY( Settings::setMonteCarloMaxNumOfBatches( 300 ) );
+
+    QCOMPARE( cursorAfterUndo, lockedCursor );
+    QCOMPARE( cursorAfterRedo, lockedCursor );
+    QCOMPARE( cursorAfterRestore, lockedCursor );
+    QCOMPARE( numberOfInputs, 1 );
+    QCOMPARE( numberOfOutputs, 1 );
+    QVERIFY( finished );
+
+    // Once the simulation has finished, restoreState() works again (state 0
+    // is the empty project)
+    QVERIFY( !calc.property( "outputLocked" ).toBool() );
+    calc.restoreState( 0 );
+    QCOMPARE( UndoStack::instance().getCursor(), 0 );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( OutputParameter::getAll().size(), 0 );
 }
 
 

@@ -665,7 +665,9 @@ void UncertaintyCalculation::removeOutputParameter() {
 
 
 void UncertaintyCalculation::restoreState( int index ) {
-    UndoStack::instance().restoreState( index );
+    if ( !getOutputLocked() ) {
+        UndoStack::instance().restoreState( index );
+    }
 }
 
 
