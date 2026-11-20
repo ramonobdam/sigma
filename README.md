@@ -65,9 +65,9 @@ For maintainability and reusability, *Sigma* is structured into separate UI, Orc
   - Data input
   - Results visualization
   - Custom QML components
-- #### CLI (Command-Line Interface)
+- #### CLI (Command-line Interface)
   - Headless project automation
-  - Monte Carlo simulation via command-line
+  - Monte Carlo simulation via the command line
   - JSON import/export
 
 ### Orchestration layer (C++)
@@ -121,9 +121,9 @@ The executable is created in the `build` directory (`build/Sigma.exe` on Windows
 - Monte Carlo results are reproducible: the same project and settings give the same samples and results on every machine and platform (Windows, macOS and Linux), regardless of the number of CPU cores. Only the last digits of the full precision values stored in project files may differ between platforms, due to differences in the platforms' math libraries.
 
 ## Demo projects
-The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects) folder contains *Sigma* project files for the calculation examples given in GUM parts [JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) and [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008). Note that the demo projects are also added to the installation folder when you use the installer.
+The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects) folder contains *Sigma* project files (`.sig`) and reference CSV exports for the calculation examples given in GUM parts [JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) and [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008). Note that the demo projects are also added to the installation folder when you use the installer.
 
-*Sigma* projects can be opened using 'Project > Open...' (Ctrl+O) from the main menu.
+*Sigma* projects can be opened using 'Project > Open...' (Ctrl+O) from the main menu or via `--open <file>` on the command line.
 
 ## Command-line interface
 ### Usage
@@ -390,6 +390,7 @@ When saving a project or using `--to-json`, *Sigma* adds a `monteCarlo` object w
 - Invalid values are reported on stderr. Values that are out of range are corrected as described above, and items that cannot be loaded are skipped.
 - The `formula` field supports standard mathematical operators (`+`, `-`, `*`, `/`, `%`, `^`) and functions (`sin()`, `cos()`, `sqrt()`, `exp()`, `abs()`, `log()`, `log10()` etc.) via the [ExprTk](https://www.partow.net/programming/exprtk/index.html) expression parser.
 - The mathematical constants `pi`, `epsilon` and `inf` are reserved and cannot be used as input parameter names.
+- Leading and trailing whitespace in `name`, `unit`, `distribution`, and `formula` strings is trimmed automatically.
 
 ## Automated tests
 *Sigma* contains a Qt Test based test suite containing unit and regression tests.
