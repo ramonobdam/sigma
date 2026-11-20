@@ -463,6 +463,10 @@ int OutputParameter::getEffectiveDOF() const {
     // Calculate the effective DOF
     if ( denominator > 0. ) {
         double effectiveDOF { std::floor( numerator / denominator ) };
+        // Values that cannot be represented by an int are considered infinite
+        if ( effectiveDOF >= static_cast<double>( MathConstants::maxInt ) ) {
+            return MathConstants::maxInt;
+        }
         return static_cast<int> ( effectiveDOF );
     }
 
