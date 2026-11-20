@@ -9,6 +9,34 @@ Arbitrary measurement functions can be evaluated, and both independent and corre
   <img alt="Sigma screenshot" src="resources/screenshots/Sigma_H1_main_light.png">
 </picture>
 
+## Table of contents
+- [Demo video](#demo-video)
+- [Design considerations](#design-considerations)
+- [Architecture](#architecture)
+  - [UI layer](#ui-layer)
+  - [Orchestration layer (C++)](#orchestration-layer-c)
+  - [Core layer (C++)](#core-layer-c)
+- [Installation](#installation)
+- [Quick start guide](#quick-start-guide)
+- [Monte Carlo simulation](#monte-carlo-simulation)
+- [Demo projects](#demo-projects)
+- [Command-line interface](#command-line-interface)
+  - [Usage](#usage)
+  - [Processing order](#processing-order)
+  - [Notes](#notes)
+  - [Exit codes](#exit-codes)
+  - [Examples](#examples)
+  - [Exporting Monte Carlo samples](#exporting-monte-carlo-samples)
+- [JSON format](#json-format)
+  - [Structure](#structure)
+  - [Input parameters](#input-parameters)
+  - [Correlations](#correlations)
+  - [Output parameters](#output-parameters)
+  - [Example](#example)
+  - [Notes](#notes-1)
+- [Automated tests](#automated-tests)
+  - [Build integration](#build-integration)
+
 ## Demo video
 Watch a short demo video on [YouTube](https://youtu.be/Oq3ydIS2QOc)
 
