@@ -293,7 +293,12 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
     }
     QTextStream out( &csvFile );
     out << projectToCSVString();
-    csvFile.commit();
+    out.flush();
+    if ( !csvFile.commit() ) {
+        // Writing failed (e.g. disk full), the existing file is left untouched
+        qCritical() << QString( sCSVFailedString ).arg( path );
+        return false;
+    }
     return true;
 }
 
@@ -320,7 +325,11 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
     }
     QJsonObject project { projectToJson() };
     saveFile.write( QJsonDocument( project ).toJson() );
-    saveFile.commit();
+    if ( !saveFile.commit() ) {
+        // Writing failed (e.g. disk full), the existing file is left untouched
+        qCritical() << QString( sSaveFailedString ).arg( path );
+        return false;
+    }
     setProjectFilePath( url );
     setUnsavedChanges( false );
     return true;
