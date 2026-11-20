@@ -147,6 +147,9 @@ private:
     static constexpr QLatin1StringView sStoppedString {
         "Stopped after %L1 function evaluations"
     };
+    static constexpr QLatin1StringView sNotPossibleString {
+        "Monte Carlo simulation not possible: %1"
+    };
     static constexpr QLatin1StringView sSamplesExportedString {
         "The Monte Carlo samples have been exported to '%1'"
     };

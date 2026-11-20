@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "montecarlo.h"
+#include "mixedcopulasampler.hpp"
 #include "outputparameter.h"
 #include "samplebatch.h"
 #include "samplewriter.h"
@@ -370,9 +371,23 @@ void MonteCarlo::run() {
         double stdDevAllSamples { 0. };
         mValid = true;
 
+        // The latent correlation matrix of the output parameter must be valid
+        // (positive semi-definite). This is checked before the first batch, so
+        // that inconsistent correlations are reported immediately.
+        if (
+            !CorrelationMatrix::isValid(
+                mOutputParameter->getLatentCorrelation()
+            )
+        ) {
+            mValid = false;
+            setStatus(
+                sNotPossibleString.arg( CorrelationMatrix::sInconsistentString )
+            );
+        }
+
         // Open the sample export file before the first batch, so an invalid
         // file is reported immediately instead of after the simulation
-        if ( exportSamples ) {
+        if ( exportSamples && mValid ) {
             mValid = openSampleWriter( sampleWriter, sampleExportUrl );
         }
 

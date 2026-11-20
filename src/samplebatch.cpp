@@ -49,9 +49,17 @@ bool SampleBatch::generateSamples( bool storeInputValues ) {
         mOutputParameter->getLatentCorrelation()
     );
     addVariablesToMixedCopulaSampler();
+    fillSymbolTable();
+
+    // Check once that samples can be generated (the latent correlation matrix
+    // is valid and matches the components), so that the expression is never
+    // evaluated without new random values
+    if ( !mMixedCopulaSampler.canSample( mSymbolValues.size() ) ) {
+        mError = CorrelationMatrix::sInconsistentString;
+        return false;
+    }
 
     // Compile the expression
-    fillSymbolTable();
     expression_t expr {};
     expr.register_symbol_table( mSymbolTable );
     if ( mParser.compile( mOutputParameter->getFormulaStdWString(), expr ) ) {

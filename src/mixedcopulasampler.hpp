@@ -6,6 +6,7 @@
 #define MIXEDCOPULASAMPLER_HPP
 
 #include "distribution.h"
+#include <QLatin1StringView>
 #include <QList>
 #include <cmath>
 #include <cstdint>
@@ -13,6 +14,62 @@
 #include <third_party/Eigen/Dense>
 #include <utility>
 #include <vector>
+
+// Functions to check and factorize a correlation matrix rho, i.e. to determine
+// a matrix L such that rho = L·Lᵀ, so that y = L·z ~ N(0,rho) for
+// z ~ N(0,I). A correlation matrix is valid when it is positive semi-definite.
+namespace CorrelationMatrix {
+    // Relative tolerance for the eigenvalues: eigenvalues down to
+    // -sEigenvalueTolerance · (largest eigenvalue) are considered to be 0, to
+    // allow for rounding errors
+    constexpr double sEigenvalueTolerance { 1e-10 };
+
+    // Message for an invalid (not positive semi-definite) correlation matrix
+    constexpr QLatin1StringView sInconsistentString {
+        "The correlations between the input parameters are inconsistent "
+        "(the correlation matrix is not positive semi-definite)"
+    };
+
+    // Factorizes rho and returns true when rho is a valid correlation matrix.
+    // The Cholesky decomposition is used when possible (positive definite
+    // rho). Otherwise, e.g. for correlations of exactly -1 or 1 (positive
+    // semi-definite rho), the factorization L = V·Λ^½ from the
+    // eigendecomposition rho = V·Λ·Vᵀ is used. JCGM 101:2008 section 6.4.8.4
+    // note 1 allows any factorization of this form.
+    inline bool factorize( const Eigen::MatrixXd &rho, Eigen::MatrixXd &L ) {
+        if ( rho.rows() == 0 ) {
+            L = rho;
+            return true;
+        }
+
+        const Eigen::LLT<Eigen::MatrixXd> llt( rho );
+        if ( llt.info() == Eigen::Success ) {
+            L = llt.matrixL();
+            return true;
+        }
+
+        const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver( rho );
+        if ( solver.info() != Eigen::Success ) {
+            return false;
+        }
+        const Eigen::VectorXd &eigenvalues { solver.eigenvalues() };  // Ascending
+        const double largest { eigenvalues.maxCoeff() };
+        if ( eigenvalues.minCoeff() < -sEigenvalueTolerance * largest ) {
+            // Not positive semi-definite: the correlations are inconsistent
+            return false;
+        }
+        L = solver.eigenvectors() *
+            eigenvalues.cwiseMax( 0. ).cwiseSqrt().asDiagonal();
+        return true;
+    }
+
+    // Returns true when rho is a valid (positive semi-definite) correlation
+    // matrix
+    inline bool isValid( const Eigen::MatrixXd &rho ) {
+        Eigen::MatrixXd L {};
+        return factorize( rho, L );
+    }
+}
 
 // Template class that generates samples for correlated marginal distributions
 // via inverse CDFs. Dependence is modeled in a latent normal space and mapped
@@ -75,10 +132,16 @@ public:
     }
 
 
-    void getRandomSymbolValues( std::vector<double> &values ) {
-        size_t n { mVariables.size() };
+    // Generates a sample of the variables in values. Returns false (and leaves
+    // values unchanged) when the sampler is not ready, e.g. because the latent
+    // correlation matrix is not valid.
+    bool getRandomSymbolValues( std::vector<double> &values ) {
+        if ( !canSample( values.size() ) ) {
+            return false;
+        }
 
-        if ( n > 0 && mL.rows() == n && values.size() == n && mReady ) {
+        const size_t n { mVariables.size() };
+        if ( n > 0 ) {
             // Step 1: Multivariate normal sampling via Cholesky factor
             for ( int i = 0; i < n; ++i ) {
                 // Independent standard normal samples
@@ -107,6 +170,24 @@ public:
                 }
             }
         }
+        return true;
+    }
+
+
+    bool isReady() const {
+        return mReady;
+    }
+
+
+    // Returns true when samples can be generated for numberOfValues values:
+    // the latent correlation matrix is valid and matches the variables. These
+    // conditions don't change between samples, so it is sufficient to check
+    // them once before generating a series of samples.
+    bool canSample( size_t numberOfValues ) const {
+        const size_t n { mVariables.size() };
+        return mReady &&
+               static_cast<size_t>( mL.rows() ) == n &&
+               numberOfValues == n;
     }
 
 
@@ -116,21 +197,18 @@ public:
     }
 
 
-    void setLatentCorrelation( const Eigen::MatrixXd &rho ) {
-        // Perform Cholesky decomposition of the correlation matrix and store
-        // the Cholesky factor L:
-        // Lower triangular matrix L, such that rho = L * LT
-        Eigen::LLT<Eigen::MatrixXd> llt( rho );
-        if ( llt.info() != Eigen::Success ) {
-            // Decomponsition failed; latent correlation matrix not positive
-            // definite
-            mReady = false;
-            return;
+    // Sets the latent correlation matrix rho and determines the factor L, such
+    // that rho = L·Lᵀ (see CorrelationMatrix::factorize()). Returns false (and
+    // the sampler is not ready) when rho is not a valid correlation matrix.
+    bool setLatentCorrelation( const Eigen::MatrixXd &rho ) {
+        mReady = CorrelationMatrix::factorize( rho, mL );
+        if ( !mReady ) {
+            mL = {};
+            return false;
         }
-        mL = llt.matrixL();
         mZ.resize( mL.rows() );
         mY.resize( mL.rows() );
-        mReady = true;
+        return true;
     }
 
 

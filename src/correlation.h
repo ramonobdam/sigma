@@ -59,6 +59,10 @@ public:
     Q_INVOKABLE QString getInputParameterNameA( bool csvMode = false ) const;
     Q_INVOKABLE QString getInputParameterNameB( bool csvMode = false ) const;
     Q_INVOKABLE bool isUnique( bool checkCurrentSelection = false ) const;
+    // Returns true when this correlation is consistent with the other
+    // correlations: together they must form a valid (positive semi-definite)
+    // correlation matrix of all input parameters
+    Q_INVOKABLE bool isConsistent( bool checkCurrentSelection = false ) const;
     Q_INVOKABLE bool setInputParameterAByName( const QString &name );
     Q_INVOKABLE bool setInputParameterBByName( const QString &name );
     Q_INVOKABLE double getCorrelation() const;

@@ -299,6 +299,8 @@ Correlations are skipped when they are invalid (an input parameter does not exis
 
 In the Monte Carlo simulation, the correlation coefficient of two normally distributed input parameters (`normal`, or <code>student's&nbsp;t</code> with infinite degrees of freedom) is used as Pearson correlation, as in the GUM uncertainty framework. When at least one of the two input parameters has another distribution, the coefficient is interpreted as Spearman rank correlation. This only depends on the two correlated input parameters, not on the other input parameters of the measurement function.
 
+Correlation coefficients of exactly -1 and 1 (fully correlated input parameters) are supported. Together, the correlations must be consistent: they must form a valid (positive semi-definite) correlation matrix. For example, when A and B, and A and C are strongly positively correlated, B and C can't be strongly negatively correlated. Correlations that are not specified are 0. In the GUI, a warning is shown when a correlation is inconsistent with the other correlations. It can still be saved, since correlations are entered one by one (e.g. with A–B = 0.9, adding A–C = 0.9 is only consistent once B–C is added as well). As long as the correlations are inconsistent, the Monte Carlo simulation of an output parameter that uses them is not possible and reports this in its status. For the Monte Carlo simulation, the correlation matrix is factorized using the Cholesky decomposition or, when that is not possible (e.g. for correlations of -1 or 1), using the eigendecomposition, which is allowed by [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008) section 6.4.8.4 note 1.
+
 ### Output parameters
 Each output parameter defines a measurand expressed as a measurement function (formula) of input parameters.
 
@@ -397,13 +399,13 @@ When saving a project or using `--to-json`, *Sigma* adds a `monteCarlo` object w
 
 | File | Focus |
 |---|---|
-| `tst_correlation` | Correlation validity, uniqueness, JSON round-trip, diff application |
+| `tst_correlation` | Correlation validity, uniqueness, consistency with the other correlations, JSON round-trip, diff application |
 | `tst_demoprojects` | Regression tests for all demo projects defined in `demo_projects.json`. Runs each project via the CLI and compares the saved `.sig` and exported `.csv` against reference results. |
 | `tst_diffutil` | Undo/redo snapshot/diff/transaction engine |
 | `tst_distribution` | Inverse-CDFs for all distributions, distribution/string mapping, normal CDF lower tail, inverse normal CDF accuracy (AS241) and round trip |
 | `tst_inputparameter` | Input parameter validation, ExprTk symbol table, JSON round-trip, model CRUD |
-| `tst_mixedcopulasampler` | Portable uniform/normal generator (fixed values for a fixed seed on every platform), direct sampling of normal variables, latent correlation, inverse-CDF mapping |
-| `tst_montecarlo` | Monte Carlo full simulation convergence loop, request stop, reset results, JSON round-trip, sample export, results independent of the thread count, minimum number of batches |
+| `tst_mixedcopulasampler` | Portable uniform/normal generator (fixed values for a fixed seed on every platform), direct sampling of normal variables, latent correlation, inverse-CDF mapping, correlation matrix factorization (incl. correlations of -1 and 1), invalid correlation matrix |
+| `tst_montecarlo` | Monte Carlo full simulation convergence loop, request stop, reset results, JSON round-trip, sample export, results independent of the thread count, minimum number of batches, perfect and inconsistent correlations |
 | `tst_outputparameter` | Output parameter expression compilation, correlation/error-handling cases, GUM budget calculation validated against the JCGM 100 Annex H.1 demo project's reference numbers |
 | `tst_samplebatch` | Monte Carlo sample batch generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
 | `tst_samplewriter` | CSV export of Monte Carlo samples (header, round-trip precision, no file without commit), valid and unique sample file names |

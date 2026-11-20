@@ -2,6 +2,7 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
+#include "correlation.h"
 #include "inputparameter.h"
 #include "montecarlo.h"
 #include "outputparameter.h"
@@ -15,6 +16,7 @@
 #include <QTest>
 #include <QThreadPool>
 #include <QUrl>
+#include <tuple>
 #include <QtNumeric>
 #include <cmath>
 
@@ -38,6 +40,8 @@ private slots:
     void run_withoutOutputParameter_doesNothing();
     void run_resultsDoNotDependOnThreadCount();
     void run_convergesAfterMinimumNumberOfBatches();
+    void run_perfectCorrelation_matchesGumFramework();
+    void run_inconsistentCorrelations_isNotPossible();
 
     void run_exportSamples_writesAllSamplesToCsv();
     void run_exportSamples_stopped_writesNoFile();
@@ -60,6 +64,7 @@ void tst_montecarlo::initTestCase() {
 
 void tst_montecarlo::cleanup() {
     OutputParameter::clearModel();
+    Correlation::clearModel();
     InputParameter::clearModel();
 }
 
@@ -226,6 +231,83 @@ void tst_montecarlo::run_convergesAfterMinimumNumberOfBatches() {
     QCOMPARE( mc.getConvergenceFactor(), 1. );
     QCOMPARE( mc.getMean(), 5. );
     QCOMPARE( mc.getStdDeviation(), 0. );
+}
+
+
+void tst_montecarlo::run_perfectCorrelation_matchesGumFramework() {
+    // Y = X1 + X2 with u(X1) = u(X2) = 1: u(Y) = 2 for r = 1 and 0 for r = -1
+    for ( double r : { 1., -1. } ) {
+        InputParameter *x1 {};
+        InputParameter *x2 {};
+        for ( const QString &name : { "X1", "X2" } ) {
+            InputParameter parameter {};
+            parameter.setName( name );
+            parameter.setStdUncertainty( 1. );
+            ( name == "X1" ? x1 : x2 ) = parameter.appendToModel();
+        }
+        QVERIFY( x1 && x2 );
+        Correlation correlation { nullptr, x1->getId(), x2->getId(), r };
+        QVERIFY( correlation.appendToModel() );
+
+        OutputParameter output {};
+        output.setFormula( "X1 + X2" );
+        output.compile();
+        QVERIFY( output.getValid() );
+
+        const double expected { r > 0. ? 2. : 0. };
+        QVERIFY( qAbs( output.getCombinedStdUncertainty() - expected ) < 1e-9 );
+
+        MonteCarlo mc { &output };
+        mc.run();
+        QVERIFY2( mc.getValid(), qPrintable( mc.getStatus() ) );
+        QVERIFY( qAbs( mc.getStdDeviation() - expected ) < 0.05 );
+
+        cleanup();
+    }
+}
+
+
+void tst_montecarlo::run_inconsistentCorrelations_isNotPossible() {
+    // r12 = r13 = 0.9 and r23 = -0.9 can't occur together
+    QList<InputParameter *> inputs {};
+    for ( const QString &name : { "X1", "X2", "X3" } ) {
+        InputParameter parameter {};
+        parameter.setName( name );
+        parameter.setStdUncertainty( 1. );
+        inputs.append( parameter.appendToModel() );
+        QVERIFY( inputs.last() );
+    }
+    const QList<std::tuple<int, int, double>> pairs {
+        { 0, 1, 0.9 }, { 0, 2, 0.9 }, { 1, 2, -0.9 }
+    };
+    for ( const auto &[ a, b, r ] : pairs ) {
+        Correlation correlation {
+            nullptr, inputs[ a ]->getId(), inputs[ b ]->getId(), r
+        };
+        QVERIFY( correlation.appendToModel() );
+    }
+
+    // An output parameter that only uses X1 and X2 is not affected
+    OutputParameter partial {};
+    partial.setFormula( "X1 + X2" );
+    partial.compile();
+    MonteCarlo partialMc { &partial };
+    partialMc.run();
+    QVERIFY2( partialMc.getValid(), qPrintable( partialMc.getStatus() ) );
+
+    // An output parameter that uses all 3 can't be simulated
+    OutputParameter output {};
+    output.setFormula( "X1 + X2 + X3" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    MonteCarlo mc { &output };
+    mc.run();
+    QVERIFY( !mc.getValid() );
+    QVERIFY(
+        mc.getStatus().startsWith( "Monte Carlo simulation not possible" )
+    );
+    QVERIFY( !output.getLocked() );
 }
 
 

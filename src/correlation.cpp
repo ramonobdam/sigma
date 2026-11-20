@@ -4,8 +4,10 @@
 
 #include "correlation.h"
 #include "inputparameter.h"
+#include "mixedcopulasampler.hpp"
 #include "settings.h"
 #include "stringutils.h"
+#include <QHash>
 #include <QtAssert>
 #include <QtLogging>
 
@@ -223,6 +225,44 @@ QString Correlation::getInputParameterNameB( bool csvMode ) const {
 
 bool Correlation::isUnique( bool checkCurrentSelection ) const {
     return correlationIsUnique( this, checkCurrentSelection );
+}
+
+
+bool Correlation::isConsistent( bool checkCurrentSelection ) const {
+    // Is this (proposed) correlation consistent with the correlations in the
+    // model? The correlations between all input parameters must form a valid
+    // (positive semi-definite) correlation matrix, independent of the output
+    // parameters that use them. When checkCurrentSelection = true, this
+    // correlation replaces the currently selected one (i.e. edit mode).
+    const QList<InputParameter *> &parameters { InputParameter::getAll() };
+    QHash<QUuid, int> index {};
+    for ( int i { 0 }; i < parameters.size(); ++i ) {
+        index.insert( parameters[ i ]->getId(), i );
+    }
+
+    const int n { static_cast<int>( parameters.size() ) };
+    Eigen::MatrixXd rho { Eigen::MatrixXd::Identity( n, n ) };
+    const auto setCorrelation = [ & ]( const Correlation *correlation ) {
+        const int a { index.value( correlation->getInputParameterAId(), -1 ) };
+        const int b { index.value( correlation->getInputParameterBId(), -1 ) };
+        if ( a >= 0 && b >= 0 && a != b ) {
+            rho( a, b ) = correlation->getCorrelation();
+            rho( b, a ) = correlation->getCorrelation();
+        }
+    };
+
+    const Correlation *selected {
+        checkCurrentSelection ? mCorrelationModel.getSelected() : nullptr
+    };
+    const QList<Correlation *> &correlations { getAll() };
+    for ( const Correlation *correlation : correlations ) {
+        if ( correlation != selected ) {
+            setCorrelation( correlation );
+        }
+    }
+    setCorrelation( this );
+
+    return CorrelationMatrix::isValid( rho );
 }
 
 
