@@ -178,7 +178,7 @@ The options are always processed in the following order, regardless of the order
 | Code | Description |
 |:-----|:------------|
 | `0` | Success |
-| `1` | Usage error: unknown option, invalid setting value, invalid JSON input, or `--export-samples` / `--export-samples-dir` without `--run` / `--run-all` |
+| `1` | Usage error: unknown option, invalid setting value, invalid project JSON input (`--from-json`, see [JSON format](#json-format)), or `--export-samples` / `--export-samples-dir` without `--run` / `--run-all` |
 | `2` | Project could not be loaded (`--open`) |
 | `3` | Project could not be saved (`--save`) |
 | `4` | Monte Carlo simulation failed or output parameter not available (`--run`, `--run-all`) |
@@ -236,6 +236,13 @@ A *Sigma* project JSON object contains the *Sigma* version and three arrays:
 | `outputParameters` | array  | no       | Output parameters (see below)                                |
 
 The input parameters are loaded first, followed by the correlations and the output parameters, regardless of the order of the fields in the JSON object.
+
+Before a project is loaded (from a project file or via `--from-json`), its structure is checked. The project is not loaded, and the currently open project is kept, when:
+- the data is not valid JSON or not a JSON object,
+- `inputParameters`, `correlations` or `outputParameters` is not an array of objects,
+- a non-empty JSON object contains none of the fields above (e.g. a JSON file that is not a *Sigma* project).
+
+An empty JSON object (`{}`) is a valid, empty project.
 
 ### Input parameters
 Each input parameter defines a quantity with an associated probability distribution.
@@ -411,7 +418,7 @@ When saving a project or using `--to-json`, *Sigma* adds a `monteCarlo` object w
 | `tst_samplewriter` | CSV export of Monte Carlo samples (header, round-trip precision, no file without commit), valid and unique sample file names |
 | `tst_statistics` | Mean/std-dev, coverage-interval bounds, histogram |
 | `tst_stringutils` | Number/CSV formatting helpers and Unicode locale behaviour |
-| `tst_uncertaintycalculation` | Add/remove/update input parameter/output parameter/correlation, delete cascades, JSON round-trip, project load/save, project export, undo/redo system, units model, output parameter references |
+| `tst_uncertaintycalculation` | Add/remove/update input parameter/output parameter/correlation, delete cascades, JSON round-trip, project load/save (incl. invalid project files and Auto Save), project export, undo/redo system, units model, output parameter references |
 | `tst_uncertaintycomponent` | Input parameter properties, sensitivity (partial derivative), component/correlation contributions, Welch-Satterthwaite, correlated component uniqueness |
 
 ### Build integration

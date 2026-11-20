@@ -85,7 +85,14 @@ int main( int argc, char *argv[] ) {
                     !CLI.getProjectLoaded()
                 ) {
                     QUrl lastUrl { appSettings.getLastProjectFilePath() };
-                    calculation.loadProject( lastUrl );
+                    if (
+                        !lastUrl.isEmpty() &&
+                        !calculation.loadProject( lastUrl )
+                    ) {
+                        // Don't try to restore the project again on the next
+                        // startup
+                        appSettings.setLastProjectFilePath( QUrl() );
+                    }
                 }
             },
             Qt::QueuedConnection

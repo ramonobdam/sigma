@@ -13,8 +13,11 @@
 #include <QtLogging>
 #include <QFile>
 #include <QIODeviceBase>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonParseError>
 #include <QJsonValue>
+#include <QLatin1StringView>
 #include <QList>
 #include <QRegularExpression>
 #include <QSaveFile>
@@ -121,6 +124,64 @@ bool UncertaintyCalculation::selectOutputParameterByName(
     const QString &name
 ) {
     return OutputParameter::selectRowByName( name );
+}
+
+
+bool UncertaintyCalculation::parseProjectJson(
+    const QByteArray &data,
+    QJsonObject &project,
+    QString &error
+) {
+    // Parse the project data and check its structure (see the JSON format in
+    // the README): all fields are optional, but the data must be a JSON object
+    // and the documented fields must have the right type. A non-empty object
+    // must contain at least one of the documented fields.
+    QJsonParseError parseError {};
+    const QJsonDocument doc { QJsonDocument::fromJson( data, &parseError ) };
+    if ( parseError.error != QJsonParseError::NoError ) {
+        error = QString( sInvalidJsonString ).arg(
+            QString::number( parseError.offset ),
+            parseError.errorString()
+        );
+        return false;
+    }
+    if ( !doc.isObject() ) {
+        error = sNotAnObjectString;
+        return false;
+    }
+
+    const QJsonObject json { doc.object() };
+    bool containsProjectField { json.contains( sVersionString ) };
+    for (
+        const QLatin1StringView field : {
+            sInputParametersString,
+            sCorrelationsString,
+            sOutputParametersString
+        }
+    ) {
+        if ( !json.contains( field ) ) continue;
+
+        containsProjectField = true;
+        const QJsonValue value { json[ field ] };
+        if ( !value.isArray() ) {
+            error = QString( sFieldNotAnArrayString ).arg( field );
+            return false;
+        }
+        const QJsonArray elements { value.toArray() };
+        for ( const QJsonValue &element : elements ) {
+            if ( !element.isObject() ) {
+                error = QString( sElementNotAnObjectString ).arg( field );
+                return false;
+            }
+        }
+    }
+    if ( !json.isEmpty() && !containsProjectField ) {
+        error = sNoProjectFieldsString;
+        return false;
+    }
+
+    project = json;
+    return true;
 }
 
 
@@ -262,15 +323,20 @@ bool UncertaintyCalculation::inputParameterIsConstant(
 bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     QString path { url.toLocalFile() };
     QFile loadFile( path );
+    // When loading fails, the currently open project (incl. its project file
+    // path) is left untouched
     if ( !url.isLocalFile() || !loadFile.open( QIODevice::ReadOnly ) ) {
         qCritical() << QString( sLoadFailedString ).arg( path );
-        resetProjectFilePath();
         return false;
     }
-    QByteArray projectData = loadFile.readAll();
-    QJsonDocument projectDoc( QJsonDocument::fromJson( projectData ) );
+    QJsonObject project {};
+    QString error {};
+    if ( !parseProjectJson( loadFile.readAll(), project, error ) ) {
+        qCritical() << QString( sLoadFailedString ).arg( path ) + " " + error;
+        return false;
+    }
     clearProject( false );  // Currently open project should not be saved
-    projectFromJson( projectDoc.object() );
+    projectFromJson( project );
     setProjectFilePath( url );
     setUnsavedChanges( false );
 

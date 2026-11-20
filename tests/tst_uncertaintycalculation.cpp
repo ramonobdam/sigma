@@ -45,6 +45,11 @@ private slots:
     void projectJson_roundTripInMemory();
     void saveAndLoadProject_roundTripThroughFile();
     void loadProject_invalidUrl_fails();
+    void parseProjectJson_checksTheStructure_data();
+    void parseProjectJson_checksTheStructure();
+    void loadProject_invalidProject_keepsOpenProject();
+    void loadProject_missingFile_keepsProjectFilePath();
+    void loadProject_emptyObject_loadsEmptyProject();
 
     void saveCSV_writesExpectedSections();
 
@@ -618,6 +623,140 @@ void tst_uncertaintycalculation::loadProject_invalidUrl_fails() {
         QRegularExpression( "Project file '' could not be loaded." )
     );
     QVERIFY( !calc.loadProject( QUrl( "not-a-local-file" ) ) );
+}
+
+
+void tst_uncertaintycalculation::parseProjectJson_checksTheStructure_data() {
+    QTest::addColumn<QByteArray>( "data" );
+    QTest::addColumn<bool>( "valid" );
+
+    // All fields are optional
+    QTest::newRow( "empty object" ) << QByteArray( "{}" ) << true;
+    QTest::newRow( "version only" )
+        << QByteArray( R"({ "Sigma version": "1.6.0" })" ) << true;
+    QTest::newRow( "all fields" )
+        << QByteArray(
+               R"({ "Sigma version": "1.6.0", "inputParameters": [ {} ], )"
+               R"("correlations": [], "outputParameters": [ {} ] })"
+           )
+        << true;
+    QTest::newRow( "unknown field next to a project field" )
+        << QByteArray( R"({ "inputParameters": [], "comment": "test" })" )
+        << true;
+
+    QTest::newRow( "invalid JSON" )
+        << QByteArray( R"({ "inputParameters": [ )" ) << false;
+    QTest::newRow( "no JSON" ) << QByteArray( "Sigma project" ) << false;
+    QTest::newRow( "empty data" ) << QByteArray() << false;
+    QTest::newRow( "array" ) << QByteArray( "[ {} ]" ) << false;
+    QTest::newRow( "field not an array" )
+        << QByteArray( R"({ "inputParameters": { "name": "X1" } })" )
+        << false;
+    QTest::newRow( "element not an object" )
+        << QByteArray( R"({ "outputParameters": [ {}, 1 ] })" ) << false;
+    QTest::newRow( "no project fields" )
+        << QByteArray( R"({ "name": "package", "version": "1.0.0" })" )
+        << false;
+}
+
+
+void tst_uncertaintycalculation::parseProjectJson_checksTheStructure() {
+    QFETCH( QByteArray, data );
+    QFETCH( bool, valid );
+
+    QJsonObject project {};
+    QString error {};
+    QCOMPARE(
+        UncertaintyCalculation::parseProjectJson( data, project, error ),
+        valid
+    );
+    QCOMPARE( error.isEmpty(), valid );
+}
+
+
+void tst_uncertaintycalculation::loadProject_invalidProject_keepsOpenProject() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl projectUrl {
+        QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) )
+    };
+    const QString invalidPath { tempDir.filePath( "invalid.sig" ) };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( projectUrl ) );
+    QVERIFY( UndoStack::instance().canUndo() );
+
+    QFile invalidFile { invalidPath };
+    QVERIFY( invalidFile.open( QIODevice::WriteOnly ) );
+    invalidFile.write( R"({ "inputParameters": [ )" );
+    invalidFile.close();
+
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression( "Project file '.*invalid\\.sig' could not be loaded" )
+    );
+    QVERIFY( !calc.loadProject( QUrl::fromLocalFile( invalidPath ) ) );
+
+    // The open project is left untouched ('projectFilePath' and
+    // 'unsavedChanges' are Q_PROPERTYs with a private getter)
+    QCOMPARE( InputParameter::getAll().size(), 1 );
+    QVERIFY( InputParameter::getByName( "X1" ) );
+    QCOMPARE( calc.property( "projectFilePath" ).toUrl(), projectUrl );
+    QVERIFY( !calc.property( "unsavedChanges" ).toBool() );
+    QVERIFY( UndoStack::instance().canUndo() );
+}
+
+
+void tst_uncertaintycalculation::loadProject_missingFile_keepsProjectFilePath(
+) {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl projectUrl {
+        QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) )
+    };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( projectUrl ) );
+
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression( "Project file '.*missing\\.sig' could not be loaded" )
+    );
+    QVERIFY(
+        !calc.loadProject(
+            QUrl::fromLocalFile( tempDir.filePath( "missing.sig" ) )
+        )
+    );
+
+    QCOMPARE( InputParameter::getAll().size(), 1 );
+    QCOMPARE( calc.property( "projectFilePath" ).toUrl(), projectUrl );
+}
+
+
+void tst_uncertaintycalculation::loadProject_emptyObject_loadsEmptyProject() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "empty.sig" ) };
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::WriteOnly ) );
+    file.write( "{}" );
+    file.close();
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+
+    const QUrl url { QUrl::fromLocalFile( path ) };
+    QVERIFY( calc.loadProject( url ) );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( calc.property( "projectFilePath" ).toUrl(), url );
 }
 
 

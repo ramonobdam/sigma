@@ -9,7 +9,7 @@
 #include <QEventLoop>
 #include <QGuiApplication>
 #include <QJsonDocument>
-#include <QJsonParseError>
+#include <QJsonObject>
 #include <QLocale>
 #include <QStringList>
 #include <QTextStream>
@@ -98,17 +98,20 @@ int CommandLineInterface::process() {
         // Load project data in JSON format from stdin
         QTextStream in { stdin };
         QString jsonString { in.readAll() };
-        QJsonParseError error {};
-        QJsonDocument doc {
-            QJsonDocument::fromJson( jsonString.toUtf8(), &error )
-        };
-
-        if ( error.error != QJsonParseError::NoError ) {
-            qCritical() << "Invalid JSON:" << error.errorString();
+        QJsonObject project {};
+        QString error {};
+        if (
+            !UncertaintyCalculation::parseProjectJson(
+                jsonString.toUtf8(),
+                project,
+                error
+            )
+        ) {
+            qCritical().noquote() << "Invalid project JSON:" << error;
             return static_cast<int>( ExitCode::UsageError );
         }
 
-        mCalculation->projectFromJson( doc.object() );
+        mCalculation->projectFromJson( project );
         mProjectLoaded = true;
     }
 
