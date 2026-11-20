@@ -51,6 +51,7 @@ private slots:
     void runMonteCarlo_updatesSelectedOutputAndIsUndoable();
 
     void newProject_clearsEverything();
+    void newProject_autoSave_keepsOpenProjectFile();
 
     void userClearProject_clearsEverythingAndIsUndoable();
 
@@ -702,6 +703,37 @@ void tst_uncertaintycalculation::newProject_clearsEverything() {
     QVERIFY( !UndoStack::instance().canUndo() );
     QVERIFY( !UndoStack::instance().canRedo() );
 }
+
+
+void tst_uncertaintycalculation::newProject_autoSave_keepsOpenProjectFile() {
+    // With Auto Save enabled, a new project must not overwrite the file of the
+    // project that was open
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "project.sig" ) };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( QUrl::fromLocalFile( path ) ) );
+
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    const QByteArray savedProject { file.readAll() };
+    file.close();
+
+    QVERIFY( Settings::setAutoSaveProject( true ) );
+    calc.newProject();
+    QVERIFY( Settings::setAutoSaveProject( false ) );
+
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    // 'projectFilePath' is exposed as a Q_PROPERTY with a private getter
+    QVERIFY( calc.property( "projectFilePath" ).toUrl().isEmpty() );
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    QCOMPARE( file.readAll(), savedProject );
+}
+
 
 void tst_uncertaintycalculation::userClearProject_clearsEverythingAndIsUndoable(
 ) {

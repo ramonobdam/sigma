@@ -489,8 +489,10 @@ void UncertaintyCalculation::addUnit( const QString &name ) {
 }
 
 void UncertaintyCalculation::newProject() {
-    clearProject();
+    // Reset the project file path first: with Auto Save enabled, clearing the
+    // project would otherwise save the empty project to the open project file
     resetProjectFilePath();
+    clearProject();
 
     // Remove transactions from the previous project
     UndoStack::instance().clear();
