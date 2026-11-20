@@ -775,6 +775,9 @@ bool UncertaintyCalculation::updateInputParameter(
             // changes
             return false;
         }
+        // The selected InputParameter changed (e.g. its name, as shown in the
+        // menus)
+        emit inputParameterChanged();
 
         if ( recompile ) {
             // All invalid expressions are recompiled plus any that reference

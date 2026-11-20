@@ -484,7 +484,16 @@ void tst_uncertaintycalculation::updateInputParameter_cascadesToOutputsAndIsUndo
     );
     InputParameter updatedX1 { x1 };
     updatedX1.setName( "X2" );
-    calc.updateInputParameter( &updatedX1 );
+    QSignalSpy inputSpy {
+        &calc,
+        &UncertaintyCalculation::inputParameterChanged
+    };
+    QVERIFY( calc.updateInputParameter( &updatedX1 ) );
+
+    // The name of the selected InputParameter changed ('inputName' is a
+    // Q_PROPERTY with a private getter)
+    QVERIFY( inputSpy.count() > 0 );
+    QCOMPARE( calc.property( "inputName" ).toString(), QString( "X2" ) );
 
     // The OutputParameter Y1 must now be invalid because X1 is missing
     QVERIFY( !addedOutputParam->getValid() );
