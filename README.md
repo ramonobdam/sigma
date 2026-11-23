@@ -20,6 +20,7 @@ Arbitrary measurement functions can be evaluated, and both independent and corre
 - [Quick start guide](#quick-start-guide)
 - [GUM uncertainty framework](#gum-uncertainty-framework)
 - [Monte Carlo simulation](#monte-carlo-simulation)
+  - [Exporting Monte Carlo samples](#exporting-monte-carlo-samples)
 - [Demo projects](#demo-projects)
 - [Command-line interface](#command-line-interface)
   - [Usage](#usage)
@@ -27,7 +28,6 @@ Arbitrary measurement functions can be evaluated, and both independent and corre
   - [Notes](#notes)
   - [Exit codes](#exit-codes)
   - [Examples](#examples)
-  - [Exporting Monte Carlo samples](#exporting-monte-carlo-samples)
 - [JSON format](#json-format)
   - [Structure](#structure)
   - [Input parameters](#input-parameters)
@@ -135,6 +135,17 @@ The executable is created in the `build` directory (`build/Sigma.exe` on Windows
 - Convergence is checked from the 10th batch onwards, so a simulation runs at least 10 batches (10 × the batch size).
 - Monte Carlo results are reproducible: the same project and settings give the same samples and results on every machine and platform (Windows, macOS and Linux), regardless of the number of CPU cores. Only the last digits of the full precision values stored in project files may differ between platforms, due to differences in the platforms' math libraries.
 
+### Exporting Monte Carlo samples
+The samples of a Monte Carlo simulation can be exported to a CSV file, for example to use them as training data. Each row contains the values of the input components followed by the resulting output value; the header row contains their names. All samples used for the Monte Carlo results are exported, at full (round-trip) precision. The file is only written when the simulation converges. The samples are not stored in the project file.
+
+In the GUI, use *Monte Carlo simulation > Start and export samples...*. On the command line:
+```bash
+Sigma --headless --open project.sig --run Y --export-samples y_samples.csv
+Sigma --headless --open project.sig --run-all --export-samples-dir samples
+```
+
+With `--export-samples-dir`, each file is named after its output parameter. Characters that are not allowed in file names are replaced by `_`. When two output parameters would get the same file name (compared case-insensitively), `_2`, `_3`, etc. is appended in the order of the output parameters, and the changed file name is reported. The header row of each file contains the actual output parameter name.
+
 ## Demo projects
 The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects) folder contains *Sigma* project files (`.sig`) and reference CSV exports for the calculation examples given in GUM parts [JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) and [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008). Note that the demo projects are also added to the installation folder when you use the installer.
 
@@ -217,17 +228,6 @@ Create a project from a JSON file and save it as a *Sigma* project:
 ```bash
 Sigma -H --from-json --save project.sig < project.json
 ```
-
-### Exporting Monte Carlo samples
-The samples of a Monte Carlo simulation can be exported to a CSV file, for example to use them as training data. Each row contains the values of the input components followed by the resulting output value; the header row contains their names. All samples used for the Monte Carlo results are exported, at full (round-trip) precision. The file is only written when the simulation converges. The samples are not stored in the project file.
-
-In the GUI, use *Monte Carlo simulation > Start and export samples...*. On the command line:
-```bash
-Sigma --headless --open project.sig --run Y --export-samples y_samples.csv
-Sigma --headless --open project.sig --run-all --export-samples-dir samples
-```
-
-With `--export-samples-dir`, each file is named after its output parameter. Characters that are not allowed in file names are replaced by `_`. When two output parameters would get the same file name (compared case-insensitively), `_2`, `_3`, etc. is appended in the order of the output parameters, and the changed file name is reported. The header row of each file contains the actual output parameter name.
 
 ## JSON Format
 *Sigma* projects (.sig) are loaded and saved in JSON format and can also be imported and exported using the `--from-json` and `--to-json` command-line options. The JSON format can be used to create projects programmatically or integrate *Sigma* with other tools.
