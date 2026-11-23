@@ -85,7 +85,7 @@ public:
     double getMonteCarloConvergenceFactor() const;
     double getTotalContribution( int row ) const;
     int columnCount() const override;
-    int getEffectiveDOF() const;
+    double getEffectiveDOF() const;
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
     int getNumberOfComponents() const;
@@ -202,7 +202,7 @@ private:
     OutputParameter *insertIntoModel( int row );
     QString getCombinedStdUncertaintyAsString( bool csvMode = false ) const;
     QString getCoverageFactorAsString( bool csvMode = false ) const;
-    QString getEffectiveDOFAsString() const;
+    QString getEffectiveDOFAsString( bool csvMode = false ) const;
     QString getExpandedUncertaintyAsString( bool csvMode = false ) const;
     QString getVariables() const;
     void createConnections();
@@ -259,7 +259,7 @@ private:
     static constexpr double sMaxConfidence { 0.999 };
     static constexpr double sMinConfidence { 0. };
     static constexpr int sErrorCodeLength { 9 };
-    static constexpr int sMinEffectiveDOF { 1 };
+    static constexpr double sMinEffectiveDOF { 1. };
 };
 
 #endif // OUTPUTPARAMETER_H

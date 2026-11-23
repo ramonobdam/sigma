@@ -2,7 +2,7 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
-#include "third_party/alglib/specialfunctions.h"
+#include "distribution.h"
 #include "mathconstants.h"
 #include "outputparameter.h"
 #include "settings.h"
@@ -236,7 +236,7 @@ QStringList OutputParameter::getResults( bool csvMode ) const {
         results[ 1 ] = getUnit( csvMode );
         results[ 2 ] = getNominalValueAsString( csvMode );
         results[ 3 ] = getCombinedStdUncertaintyAsString( csvMode );
-        results[ 4 ] = getEffectiveDOFAsString();
+        results[ 4 ] = getEffectiveDOFAsString( csvMode );
         results[ 5 ] = getCoverageFactorAsString( csvMode );
         results[ 6 ] = getExpandedUncertaintyAsString( csvMode );
         results[ 7 ] = getConfidenceAsString();
@@ -276,7 +276,7 @@ QVariant OutputParameter::getResult( int column, bool csvMode ) const {
         case 3:
             return getCombinedStdUncertaintyAsString( csvMode );
         case 4:
-            return getEffectiveDOFAsString();
+            return getEffectiveDOFAsString( csvMode );
         case 5:
             return getCoverageFactorAsString( csvMode );
         case 6:
@@ -400,16 +400,13 @@ double OutputParameter::getCorrelationContribution( int row ) const {
 
 
 double OutputParameter::getCoverageFactor() const {
-    // Use the inverse cumulative distribution of student's t to determine the
-    // coverage factor based on the effective DOF and the level of confidence
-    // [-]. Note that invstudenttdistribution gives the leftsided inverse of the
-    // student't t-distribution, hence p = 0.5 * ( 1. - confidence ).
-    int DOF { getEffectiveDOF() };
-    double confidence { getConfidence() };
-    if ( DOF > 0 && confidence >= 0. && confidence < 1. ) {
-        return std::abs(
-            alglib::invstudenttdistribution( DOF, 0.5 * ( 1. - confidence ) )
-        );
+    // The coverage factor is the Student's t quantile for the effective DOF
+    // (also non-integer) such that the interval [-k, k] contains the fraction
+    // 'confidence' of the distribution (JCGM 100:2008 G.4.1) [-]
+    const double DOF { getEffectiveDOF() };
+    const double confidence { getConfidence() };
+    if ( DOF > 0. && confidence >= 0. && confidence < 1. ) {
+        return Distribution::coverageFactor( confidence, DOF );
     }
     return 0.;
 }
@@ -450,9 +447,10 @@ int OutputParameter::columnCount() const {
 }
 
 
-int OutputParameter::getEffectiveDOF() const {
-    // Calculate the effective degrees of freedom using the 'Welch-Satterthwaite
-    // Relation for Correlated Errors' (H. Castrup)
+double OutputParameter::getEffectiveDOF() const {
+    // Calculate the effective degrees of freedom using the Welch-Satterthwaite
+    // formula (JCGM 100:2008 G.4.1), extended for correlated input parameters
+    // by the 'Welch-Satterthwaite Relation for Correlated Errors' (H. Castrup)
     double numerator { std::pow( getCombinedStdUncertainty(), 4 ) };
     double denominator { 0. };
 
@@ -463,24 +461,34 @@ int OutputParameter::getEffectiveDOF() const {
 
     // Calculate the effective DOF
     if ( denominator > 0. ) {
-        double effectiveDOF { std::floor( numerator / denominator ) };
+        double effectiveDOF { numerator / denominator };
         // Values that cannot be represented by an int are considered infinite
         if ( effectiveDOF >= static_cast<double>( MathConstants::maxInt ) ) {
-            return MathConstants::maxInt;
+            return MathConstants::maxInfinity;
         }
+        if ( !Settings::getTruncateEffectiveDOF() ) {
+            return effectiveDOF;
+        }
+
+        // Truncate to the next lower integer (JCGM 100:2008 G.4.1 note 1).
         // With negative correlations, the effective DOF can be below 1 (and
         // would be truncated to 0, giving a coverage factor of 0). It's limited
-        // to the minimum DOF of the input parameters instead. Note that such a
-        // low value indicates that the GUM uncertainty framework is not
-        // reliable for this output parameter.
-        return std::max(
-            static_cast<int> ( effectiveDOF ),
-            sMinEffectiveDOF
-        );
+        // to 1 instead. Note that such a low value indicates that the GUM
+        // uncertainty framework is not reliable for this output parameter.
+        return std::max( std::floor( effectiveDOF ), sMinEffectiveDOF );
     }
 
-    // Infinite DOF
-    return MathConstants::maxInt;
+    if ( denominator < 0. ) {
+        // With negative correlations, the denominator of the extension for
+        // correlated input parameters can be negative (for a valid correlation
+        // matrix), which is outside the valid domain of the formula. The
+        // effective DOF are limited to 1 (with and without truncation) as a
+        // conservative value instead of being treated as infinite.
+        return sMinEffectiveDOF;
+    }
+
+    // Infinite DOF (all input parameters have infinite DOF)
+    return MathConstants::maxInfinity;
 }
 
 
@@ -1152,12 +1160,18 @@ QString OutputParameter::getCoverageFactorAsString( bool csvMode ) const {
 }
 
 
-QString OutputParameter::getEffectiveDOFAsString() const {
-    int DOF { getEffectiveDOF() };
-    if ( DOF < MathConstants::maxInt ) {
+QString OutputParameter::getEffectiveDOFAsString( bool csvMode ) const {
+    const double DOF { getEffectiveDOF() };
+    if ( std::isinf( DOF ) ) {
+        return StringUtils::infinite;
+    }
+    if ( Settings::getTruncateEffectiveDOF() ) {
         return QString::number( DOF, 'f', 0 );
     }
-    return StringUtils::infinite;
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+    return StringUtils::doubleToString( DOF, precision );
 }
 
 

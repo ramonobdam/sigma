@@ -3,8 +3,10 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "correlation.h"
+#include "distribution.h"
 #include "inputparameter.h"
 #include "outputparameter.h"
+#include "settings.h"
 #include <QRegularExpression>
 #include <QSignalSpy>
 #include <QTest>
@@ -37,8 +39,10 @@ private slots:
     void compile_correlatedInputs_increaseCombinedUncertainty();
     void compile_negativeCorrelation_decreasesCombinedUncertainty();
     void compile_constantDistribution_doesNotContributeToUncertainty();
-    void effectiveDOF_negativeCorrelation_isAtLeastOne_data();
-    void effectiveDOF_negativeCorrelation_isAtLeastOne();
+    void effectiveDOF_negativeCorrelation_truncation_data();
+    void effectiveDOF_negativeCorrelation_truncation();
+    void effectiveDOF_negativeDenominator_isLimitedToOne_data();
+    void effectiveDOF_negativeDenominator_isLimitedToOne();
 
     void latentCorrelation_normalPair_isPearsonDespiteOtherInputs();
     void latentCorrelation_nonNormalPair_isConvertedFromSpearman();
@@ -140,6 +144,9 @@ void tst_outputparameter::initTestCase() {
 
 
 void tst_outputparameter::cleanup() {
+    Settings::setTruncateEffectiveDOF(
+        Settings::getDefaultTruncateEffectiveDOF()
+    );
     OutputParameter::clearModel();
     Correlation::clearModel();
     InputParameter::clearModel();
@@ -210,7 +217,7 @@ void tst_outputparameter::compile_simpleSum_combinedUncertaintyIsRootSumOfSquare
     QVERIFY( qAbs( x2.getSensitivity() - 1. ) < 1e-6 );
 
     // Both inputs have infinite DOF, so the output has infinite DOF too
-    QCOMPARE( output.getEffectiveDOF(), std::numeric_limits<int>::max() );
+    QVERIFY( std::isinf( output.getEffectiveDOF() ) );
 }
 
 
@@ -354,29 +361,44 @@ void tst_outputparameter::compile_constantDistribution_doesNotContributeToUncert
 }
 
 
-void tst_outputparameter::effectiveDOF_negativeCorrelation_isAtLeastOne_data(
+void tst_outputparameter::effectiveDOF_negativeCorrelation_truncation_data(
 ) {
     // Y = X1 + X2 with u = 1 and DOF = 1 for both inputs and correlation r.
     // The Welch-Satterthwaite relation for correlated errors (Castrup) gives
-    // nu_eff = 2 (1 + r)^2 / (1 + 2r + 1.25r^2), truncated to an integer
+    // nu_eff = 2 (1 + r)^2 / (1 + 2r + 1.25r^2). When truncated, it's
+    // truncated to an integer of at least 1. The coverage factor is the 95%
+    // t-quantile; for non-integer DOF it is checked via the CDF.
+    QTest::addColumn<bool>( "truncate" );
     QTest::addColumn<double>( "correlation" );
-    QTest::addColumn<int>( "effectiveDOF" );
-    QTest::addColumn<double>( "coverageFactor" );   // t-quantile, 95%
+    QTest::addColumn<double>( "effectiveDOF" );
+    QTest::addColumn<double>( "coverageFactor" );
 
-    QTest::newRow( "r = 0 (nu_eff = 2)" ) << 0. << 2 << 4.302652729911275;
-    QTest::newRow( "r = -0.5 (nu_eff = 1.6)" )
-        << -0.5 << 1 << 12.706204736174705;
-    QTest::newRow( "r = -0.7 (nu_eff = 0.85)" )
-        << -0.7 << 1 << 12.706204736174705;
-    QTest::newRow( "r = -0.99 (nu_eff = 0.0008)" )
-        << -0.99 << 1 << 12.706204736174705;
+    const double t1 { 12.706204736174707 };
+    QTest::newRow( "truncated, r = 0 (nu_eff = 2)" )
+        << true << 0. << 2. << 4.302652729749464;
+    QTest::newRow( "truncated, r = -0.5 (nu_eff = 1.6)" )
+        << true << -0.5 << 1. << t1;
+    QTest::newRow( "truncated, r = -0.7 (nu_eff = 0.85)" )
+        << true << -0.7 << 1. << t1;
+    QTest::newRow( "truncated, r = -0.99 (nu_eff = 0.0008)" )
+        << true << -0.99 << 1. << t1;
+
+    QTest::newRow( "not truncated, r = 0" )
+        << false << 0. << 2. << 4.302652729749464;
+    QTest::newRow( "not truncated, r = -0.5" )
+        << false << -0.5 << 1.6 << 0.;
+    QTest::newRow( "not truncated, r = -0.7" )
+        << false << -0.7 << 0.18 / 0.2125 << 0.;
 }
 
 
-void tst_outputparameter::effectiveDOF_negativeCorrelation_isAtLeastOne() {
+void tst_outputparameter::effectiveDOF_negativeCorrelation_truncation() {
+    QFETCH( bool, truncate );
     QFETCH( double, correlation );
-    QFETCH( int, effectiveDOF );
+    QFETCH( double, effectiveDOF );
     QFETCH( double, coverageFactor );
+
+    QVERIFY( Settings::setTruncateEffectiveDOF( truncate ) );
 
     InputParameter *x1 {
         addInput( "X1", 0., 1., Distribution::Type::normal, false, 1 )
@@ -397,17 +419,89 @@ void tst_outputparameter::effectiveDOF_negativeCorrelation_isAtLeastOne() {
     output.compile();
     QVERIFY( output.getValid() );
 
-    QCOMPARE( output.getEffectiveDOF(), effectiveDOF );
-    QVERIFY(
-        qAbs( output.getCoverageFactor() / coverageFactor - 1. ) < 1e-9
-    );
+    QVERIFY( qAbs( output.getEffectiveDOF() / effectiveDOF - 1. ) < 1e-12 );
+    const double k { output.getCoverageFactor() };
+    if ( coverageFactor > 0. ) {
+        QVERIFY( qAbs( k / coverageFactor - 1. ) < 1e-9 );
+    }
+    else {
+        // Non-integer DOF: [-k, k] contains 95% of the distribution, and k is
+        // larger than for the next higher integer DOF
+        const double central {
+            2. * Distribution::studentTCDF( k, effectiveDOF ) - 1.
+        };
+        QVERIFY( qAbs( central - 0.95 ) < 1e-12 );
+        QVERIFY(
+            k > Distribution::coverageFactor( 0.95, std::ceil( effectiveDOF ) )
+        );
+    }
     // u_c^2 = 2 + 2r
     const double combined { std::sqrt( 2. + 2. * correlation ) };
     QVERIFY( qAbs( output.getCombinedStdUncertainty() - combined ) < 1e-9 );
+    QVERIFY( qAbs( output.getExpandedUncertainty() - k * combined ) < 1e-9 );
+}
+
+
+void tst_outputparameter::effectiveDOF_negativeDenominator_isLimitedToOne_data(
+) {
+    QTest::addColumn<bool>( "truncate" );
+    QTest::newRow( "truncated" ) << true;
+    QTest::newRow( "not truncated" ) << false;
+}
+
+
+void tst_outputparameter::effectiveDOF_negativeDenominator_isLimitedToOne() {
+    // Y = X1 + X2 + X3 with u = 1, DOF = 1, 10, 10, r12 = r13 = -0.5 and
+    // r23 = 0.7 (valid correlation matrix, determinant 0.36). The denominator
+    // of the Welch-Satterthwaite relation for correlated errors (Castrup) is
+    // negative (-0.0446). The effective DOF are limited to 1 instead of being
+    // treated as infinite, with and without truncation.
+    QFETCH( bool, truncate );
+    QVERIFY( Settings::setTruncateEffectiveDOF( truncate ) );
+
+    InputParameter *x1 {
+        addInput( "X1", 0., 1., Distribution::Type::normal, false, 1 )
+    };
+    QVERIFY( x1 );
+    InputParameter *x2 {
+        addInput( "X2", 0., 1., Distribution::Type::normal, false, 10 )
+    };
+    QVERIFY( x2 );
+    InputParameter *x3 {
+        addInput( "X3", 0., 1., Distribution::Type::normal, false, 10 )
+    };
+    QVERIFY( x3 );
+    Correlation r12 { nullptr, x1->getId(), x2->getId(), -0.5 };
+    QVERIFY( r12.appendToModel() != nullptr );
+    Correlation r13 { nullptr, x1->getId(), x3->getId(), -0.5 };
+    QVERIFY( r13.appendToModel() != nullptr );
+    Correlation r23 { nullptr, x2->getId(), x3->getId(), 0.7 };
+    QVERIFY( r23.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2 + X3" );
+    output.setConfidence( 0.95 );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    // The denominator is negative
+    double denominator { 0. };
+    for ( const UncertaintyComponent &component : output.getComponents() ) {
+        denominator += component.getWelchSatterthwaiteTerms();
+    }
+    QVERIFY( qAbs( denominator + 0.04455 ) < 1e-4 );
+
+    // u_c^2 = 3 + 2 * ( -0.5 - 0.5 + 0.7 ) = 2.4
+    const double combined { std::sqrt( 2.4 ) };
+    QVERIFY( qAbs( output.getCombinedStdUncertainty() - combined ) < 1e-9 );
+
+    // Effective DOF 1: coverage factor tan( pi / 2 * 0.95 )
+    QCOMPARE( output.getEffectiveDOF(), 1. );
+    const double t1 { 12.706204736174707 };
+    QVERIFY( qAbs( output.getCoverageFactor() / t1 - 1. ) < 1e-12 );
     QVERIFY(
-        qAbs(
-            output.getExpandedUncertainty() - coverageFactor * combined
-        ) < 1e-6 * combined
+        qAbs( output.getExpandedUncertainty() / ( t1 * combined ) - 1. ) <
+        1e-12
     );
 }
 
@@ -447,9 +541,18 @@ void tst_outputparameter::compile_endGaugeCalibration_matchesGumReferenceValues(
     QVERIFY(
         qAbs( output.getCombinedStdUncertainty() - 31.71062853 ) < 1e-4
     );
-    QCOMPARE( output.getEffectiveDOF(), 16 );
+    QCOMPARE( output.getEffectiveDOF(), 16. );
     QVERIFY( qAbs( output.getCoverageFactor() - 2.920781622 ) < 1e-4 );
     QVERIFY( qAbs( output.getExpandedUncertainty() - 92.61982103 ) < 1e-3 );
+
+    // Without truncation, the effective DOF is between 16 and 17, so the
+    // coverage factor is between the t-quantiles for 17 and 16 DOF
+    QVERIFY( Settings::setTruncateEffectiveDOF( false ) );
+    const double dof { output.getEffectiveDOF() };
+    const double k { output.getCoverageFactor() };
+    QVERIFY( Settings::setTruncateEffectiveDOF( true ) );
+    QVERIFY( dof > 16. && dof < 17. );
+    QVERIFY( k < 2.920781622 && k > Distribution::coverageFactor( 0.99, 17. ) );
 
     // Per-component sensitivities from the CSV export
     UncertaintyComponent lS { findComponent( output, "l_S" ) };

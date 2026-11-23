@@ -1,6 +1,6 @@
 # Sigma - Measurement Uncertainty Toolkit 
-*Sigma – Measurement Uncertainty Toolkit* is a desktop and command-line application for interactive and automated measurement uncertainty analysis. It implements the classical GUM (Guide to the expression of Uncertainty in Measurement) method ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) for combined uncertainty and uncertainty budgets, 
-and also offers a Monte Carlo simulation approach ([JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008)) for more complex cases. 
+*Sigma – Measurement Uncertainty Toolkit* is a desktop and command-line application for interactive and automated measurement uncertainty analysis. It implements the classical GUM (Guide to the expression of Uncertainty in Measurement) [uncertainty framework](#gum-uncertainty-framework) ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) for combined uncertainty and uncertainty budgets, 
+and also offers a [Monte Carlo simulation](#monte-carlo-simulation) approach ([JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008)) for more complex cases. 
 Arbitrary measurement functions can be evaluated, and both independent and correlated input parameters are supported.
 
 <picture>
@@ -18,6 +18,7 @@ Arbitrary measurement functions can be evaluated, and both independent and corre
   - [Core layer (C++)](#core-layer-c)
 - [Installation](#installation)
 - [Quick start guide](#quick-start-guide)
+- [GUM uncertainty framework](#gum-uncertainty-framework)
 - [Monte Carlo simulation](#monte-carlo-simulation)
 - [Demo projects](#demo-projects)
 - [Command-line interface](#command-line-interface)
@@ -112,9 +113,23 @@ The executable is created in the `build` directory (`build/Sigma.exe` on Windows
 7. Changes can be undone and redone via the 'Edit' menu. 'Edit > Undo history...' (Ctrl+Shift+H) shows the history of all changes.
 8. To save a project, choose 'Project > Save' (Ctrl+S) or 'Project > Save As...' from the main menu, enter the filename and location, and click 'Save project'. The file extension of *Sigma* projects is 'sig'. When 'Project > Auto Save' is enabled, changes are saved automatically. When 'Project > Restore last project on startup' is enabled, the last project is opened when *Sigma* starts.
 9. The calculation results can be exported to CSV (Comma Separated Values) file by choosing 'Project > Export results to CSV file...' (Ctrl+E) from the main menu. Subsequently, enter the filename and location, and click 'Save CSV'. Individual table cell values can also be copied to the clipboard via the right-click context menu.
-10. Application settings (color scheme, project options, significant digits for the interface and CSV export, and the Monte Carlo convergence significant digits, batch size and maximum number of batches) can be accessed via 'Sigma > Settings...'. On macOS use 'Sigma > Preferences...' in the application menu.
+10. Application settings (color scheme, project options, significant digits for the interface and CSV export, the truncation of the effective degrees of freedom, and the Monte Carlo convergence significant digits, batch size and maximum number of batches) can be accessed via 'Sigma > Settings...'. On macOS use 'Sigma > Preferences...' in the application menu.
+
+## GUM uncertainty framework
+- The GUM uncertainty framework ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E)) uses the law of propagation of uncertainty, based on a first-order (linear) approximation of the measurement function `y = f(x1, ..., xN)` around the input estimates. The estimate of the output parameter is the measurement function evaluated at the input estimates. For strongly nonlinear measurement functions, this approximation may not be adequate; use the Monte Carlo simulation instead.
+- The sensitivity coefficient `ci` of each input parameter is the partial derivative of the measurement function at the input estimates. It is calculated numerically with the five-point central difference formula, with a step size of 1e-6 × the input estimate (or 1e-6 when the input estimate is 0).
+- The uncertainty component of an input parameter is `|ci| u(xi)`, with `u(xi)` the standard uncertainty of the input parameter. Constants (distribution `none`) don't contribute.
+- The combined standard uncertainty is calculated from the uncertainty components and the correlations `r(xi, xj)` between the input parameters (JCGM 100:2008 5.1.2 and 5.2.2): `uc(y)² = Σ ci² u(xi)² + 2 Σi<j ci cj u(xi) u(xj) r(xi, xj)`. The uncertainty budget shows the contribution of each component to `uc(y)²`, split into the part of its own variance and the part of its correlations (which can be negative).
+- The expanded uncertainty is `U = k uc(y)`. The coverage factor `k` is the quantile of the Student's t-distribution for the level of confidence of the output parameter and the effective degrees of freedom (JCGM 100:2008 G.3 and G.4), such that the interval `y ± U` contains the level of confidence. For infinite effective degrees of freedom, it's the quantile of the normal distribution (e.g. `k` = 1.96 for 95%).
+- The effective degrees of freedom of an output parameter, which follow from the degrees of freedom of the input parameters, are calculated using the Welch-Satterthwaite formula ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) G.4.1), which applies to uncorrelated input parameters. For correlated input parameters, the extension by H. Castrup (*A Welch-Satterthwaite Relation for Correlated Errors*, 2010) is used, which is not part of the GUM.
+- By default, the effective degrees of freedom are truncated to the next lower integer, as in the examples of the GUM. With negative correlations, the result of the extension can be below 1. The truncated effective degrees of freedom are then limited to 1.
+- The denominator of the extension can even become negative (for a valid set of correlations), which is outside the valid domain of the formula. The effective degrees of freedom are then set to 1, with and without truncation.
+- Such a low value indicates that the GUM uncertainty framework is not reliable for this output parameter; use the Monte Carlo simulation instead.
+- The truncation can be switched off in the settings ('Effective degrees of freedom') or with `--truncatedof false`. The coverage factor is then calculated from the Student's t-distribution with the non-integer effective degrees of freedom, which corresponds to interpolating in the table of the t-distribution. Both are allowed by JCGM 100:2008 G.4.1 note 1.
 
 ## Monte Carlo simulation
+- The Monte Carlo simulation implements the propagation of distributions of [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008) (supplement 1 to the GUM). Instead of a linear approximation of the measurement function, samples are drawn from the probability distributions of the input parameters (taking their correlations into account), and the measurement function is evaluated for each set of samples. This gives a numerical representation of the probability distribution of the output parameter.
+- The output estimate and standard uncertainty are the mean and standard deviation of the output values, and the coverage interval is the probabilistically symmetric interval that contains the level of confidence (JCGM 101:2008 7.7). No sensitivity coefficients or effective degrees of freedom are needed, so the simulation is also suitable for nonlinear measurement functions and asymmetric output distributions. It can also be used to validate the results of the GUM uncertainty framework (JCGM 101:2008 section 8).
 - The simulation runs in batches of function evaluations (see the batch size setting). Each batch is split into chunks of 10,000 samples, each with its own random seed based on the batch and chunk number. The chunks are evaluated in parallel on all available CPU cores and combined in a fixed order.
 - The batches are repeated until the results have stabilized, using the adaptive Monte Carlo procedure of [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008) section 7.9. After each batch, the estimate, the standard uncertainty and both endpoints of the coverage interval are determined for that batch, together with the standard deviations of the averages of these values over all batches so far. The simulation has converged when twice each of these standard deviations is within the numerical tolerance δ, which follows from the Monte Carlo significant digits setting (section 7.9.2). *Sigma* uses a tolerance of δ/5 for this criterion, as recommended in section 8.2 for Monte Carlo results that are used to validate the GUM uncertainty framework. This typically requires about 25 times as many function evaluations as a tolerance of δ. All batches are used for the results.
 - Convergence is checked from the 10th batch onwards, so a simulation runs at least 10 batches (10 × the batch size).
@@ -146,6 +161,7 @@ The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects)
 | `--to-json` | Prints the project data to stdout in JSON format |
 | `--from-json` | Loads the project data from stdin in JSON format |
 | `--csvdigits <digits>` | Sets the CSV export significant digits (1 to 20, default 10) |
+| `--truncatedof <bool>` | Sets the truncation of the effective degrees of freedom to the next lower integer (`true` or `false`, default `true`, see [GUM uncertainty framework](#gum-uncertainty-framework)) |
 | `--mcdigits <digits>` | Sets the Monte Carlo significant digits (1 to 3, default 2) |
 | `--mcbatchsize <size>` | Sets the Monte Carlo batch size (1e+02 to 1e+06, default 1e+05) |
 | `--mcmaxbatches <num>` | Sets the Monte Carlo maximum number of batches (1e+01 to 1e+05, default 1e+03) |
@@ -153,7 +169,7 @@ The [demo projects](https://github.com/ramonobdam/sigma/tree/main/demo_projects)
 ### Processing order
 The options are always processed in the following order, regardless of the order in which they are given on the command line:
 1. `--help` or `--version`: the help or version information is printed and no other options are processed
-2. Setting options (`--csvdigits`, `--mcdigits`, `--mcbatchsize`, `--mcmaxbatches`)
+2. Setting options (`--csvdigits`, `--truncatedof`, `--mcdigits`, `--mcbatchsize`, `--mcmaxbatches`)
 3. `--open`
 4. `--from-json`
 5. `--run`, with `--export-samples` when given
@@ -308,8 +324,6 @@ In the Monte Carlo simulation, the correlation coefficient of two normally distr
 
 Correlation coefficients of exactly -1 and 1 (fully correlated input parameters) are supported. Together, the correlations must be consistent: they must form a valid (positive semi-definite) correlation matrix. For example, when A and B, and A and C are strongly positively correlated, B and C can't be strongly negatively correlated. Correlations that are not specified are 0. In the GUI, a warning is shown when a correlation is inconsistent with the other correlations. It can still be saved, since correlations are entered one by one (e.g. with A–B = 0.9, adding A–C = 0.9 is only consistent once B–C is added as well). As long as the correlations are inconsistent, the Monte Carlo simulation of an output parameter that uses them is not possible and reports this in its status. For the Monte Carlo simulation, the correlation matrix is factorized using the Cholesky decomposition or, when that is not possible (e.g. for correlations of -1 or 1), using the eigendecomposition, which is allowed by [JCGM 101:2008](https://doi.org/10.59161/JCGM101-2008) section 6.4.8.4 note 1.
 
-The effective degrees of freedom of an output parameter are calculated using the Welch-Satterthwaite formula ([JCGM 100:2008](https://doi.org/10.59161/JCGM100-2008E) G.4.1), which applies to uncorrelated input parameters. For correlated input parameters, the extension by H. Castrup (*A Welch-Satterthwaite Relation for Correlated Errors*, 2010) is used, which is not part of the GUM. The effective degrees of freedom are truncated to the next lower integer (JCGM 100:2008 G.4.1 note 1). With negative correlations, the result of the extension can be below 1. The effective degrees of freedom are then limited to 1. Such a low value indicates that the GUM uncertainty framework is not reliable for this output parameter; use the Monte Carlo simulation instead.
-
 ### Output parameters
 Each output parameter defines a measurand expressed as a measurement function (formula) of input parameters.
 
@@ -411,11 +425,11 @@ When saving a project or using `--to-json`, *Sigma* adds a `monteCarlo` object w
 | `tst_correlation` | Correlation validity, uniqueness, consistency with the other correlations, JSON round-trip, diff application |
 | `tst_demoprojects` | Regression tests for all demo projects defined in `demo_projects.json`. Runs each project via the CLI and compares the saved `.sig` and exported `.csv` against reference results. |
 | `tst_diffutil` | Undo/redo snapshot/diff/transaction engine |
-| `tst_distribution` | Inverse-CDFs for all distributions, distribution/string mapping, normal CDF lower tail, inverse normal CDF accuracy (AS241) and round trip |
+| `tst_distribution` | Inverse-CDFs for all distributions, distribution/string mapping, normal CDF lower tail, inverse normal CDF accuracy (AS241) and round trip, Student's t quantile, CDF and coverage factor (also for non-integer degrees of freedom and degrees of freedom below 0.5), Student's t sampling |
 | `tst_inputparameter` | Input parameter validation, ExprTk symbol table, JSON round-trip, model CRUD |
 | `tst_mixedcopulasampler` | Portable uniform/normal generator (fixed values for a fixed seed on every platform), direct sampling of normal variables, latent correlation, inverse-CDF mapping, correlation matrix factorization (incl. correlations of -1 and 1), invalid correlation matrix |
 | `tst_montecarlo` | Monte Carlo full simulation convergence loop, request stop, reset results, JSON round-trip, sample export, results independent of the thread count, minimum number of batches, perfect and inconsistent correlations |
-| `tst_outputparameter` | Output parameter expression compilation, correlation/error-handling cases, GUM budget calculation validated against the JCGM 100 Annex H.1 demo project's reference numbers |
+| `tst_outputparameter` | Output parameter expression compilation, correlation/error-handling cases, GUM budget calculation validated against the JCGM 100 Annex H.1 demo project's reference numbers, effective degrees of freedom with and without truncation (also for a negative denominator with correlated input parameters) |
 | `tst_samplebatch` | Monte Carlo sample batch generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
 | `tst_samplewriter` | CSV export of Monte Carlo samples (header, round-trip precision, no file without commit), valid and unique sample file names |
 | `tst_statistics` | Mean/std-dev, coverage-interval bounds, histogram |

@@ -39,6 +39,9 @@
 // --to-json             Prints the project data to stdout in JSON format.
 // --from-json           Loads the project data from stdin in JSON format.
 // --csvdigits <digits>  Sets the CSV export significant digits (1 to 20).
+// --truncatedof <bool>  Sets the truncation of the effective degrees of freedom
+//                       to the next lower integer (true or false, default
+//                       true).
 // --mcdigits <digits>   Sets the Monte Carlo significant digits (1 to 3).
 // --mcbatchsize <size>  Sets the Monte Carlo batch size (1e+02 to 1e+06).
 // --mcmaxbatches <num>  Sets the Monte Carlo maximum number of batches (1e+01
@@ -100,6 +103,33 @@ private:
                 return Settings::setCSVPrecision(
                     static_cast<int>( std::round( d ) )
                 );
+            }
+        },
+        {
+            QCommandLineOption {
+                "truncatedof",
+                QString(
+                    "%1truncation of the effective degrees of freedom to the "
+                    "next lower integer (true or false, default %2)%3"
+                ).arg(
+                    sPreFix,
+                    QString(
+                        Settings::getDefaultTruncateEffectiveDOF() ?
+                            "true" : "false"
+                    ),
+                    sPostFix
+                ),
+                "bool"
+            },
+            []( const QString &value ) {
+                const QString v { value.trimmed().toLower() };
+                if ( v == "true" || v == "1" ) {
+                    return Settings::setTruncateEffectiveDOF( true );
+                }
+                if ( v == "false" || v == "0" ) {
+                    return Settings::setTruncateEffectiveDOF( false );
+                }
+                return false;
             }
         },
         {

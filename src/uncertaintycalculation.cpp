@@ -1283,6 +1283,14 @@ void UncertaintyCalculation::createConnections() {
         this,
         &UncertaintyCalculation::resetDisplay
     );
+    // The effective DOF, coverage factor and expanded uncertainty depend on
+    // the truncation of the effective DOF
+    connect(
+        mAppSettings,
+        &ApplicationSettings::truncateEffectiveDOFChanged,
+        this,
+        &UncertaintyCalculation::resetDisplay
+    );
 }
 
 

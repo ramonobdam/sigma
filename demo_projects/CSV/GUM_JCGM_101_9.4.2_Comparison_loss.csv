@@ -16,9 +16,9 @@ Output name,Measurement function,Unit,Level of confidence
 
 Combined uncertainty:
 Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees of freedom,Coverage factor,Expanded uncertainty,Level of confidence
-"δY0","",0,0,infinite,1.959962762,±0,95.0%
-"δY1","",0.0001,0.0001,infinite,1.959962762,±0.0001959962762,95.0%
-"δY2","",0.0025,0.0005,infinite,1.959962762,±0.0009799813811,95.0%
+"δY0","",0,0,infinite,1.959963985,±0,95.0%
+"δY1","",0.0001,0.0001,infinite,1.959963985,±0.0001959963985,95.0%
+"δY2","",0.0025,0.0005,infinite,1.959963985,±0.0009799819923,95.0%
 
 "Uncertainty components δY0:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %

@@ -193,7 +193,7 @@
                 "mean": 838.0087047735486,
                 "numericalTolerance": 0.5,
                 "status": "Converged after 12,600,000 function evaluations",
-                "stdDeviation": 35.480100515892744,
+                "stdDeviation": 35.480100515892765,
                 "valid": true
             },
             "name": "δL",

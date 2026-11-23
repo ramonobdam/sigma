@@ -22,6 +22,7 @@ Settings & Settings::operator= ( const Settings &settings ) {
     setMonteCarloDigits( settings.getMonteCarloDigits() );
     setMonteCarloMaxNumOfBatches( settings.getMonteCarloMaxNumOfBatches() );
     setRestoreLastProject( settings.getRestoreLastProject() );
+    setTruncateEffectiveDOF( settings.getTruncateEffectiveDOF() );
 
     return *this;
 }
@@ -57,8 +58,18 @@ bool Settings::getDefaultRestoreLastProject() {
 }
 
 
+bool Settings::getDefaultTruncateEffectiveDOF() {
+    return sTruncateEffectiveDOF.def;
+}
+
+
 bool Settings::getRestoreLastProject() {
     return sRestoreLastProject.value;
+}
+
+
+bool Settings::getTruncateEffectiveDOF() {
+    return sTruncateEffectiveDOF.value;
 }
 
 
@@ -99,6 +110,11 @@ bool Settings::setMonteCarloMaxNumOfBatches( int maxNumOfBatches ) {
 
 bool Settings::setRestoreLastProject( bool restoreLastProject ) {
     return sRestoreLastProject.set( restoreLastProject );
+}
+
+
+bool Settings::setTruncateEffectiveDOF( bool truncateEffectiveDOF ) {
+    return sTruncateEffectiveDOF.set( truncateEffectiveDOF );
 }
 
 
@@ -216,4 +232,5 @@ void Settings::setToDefaults() {
     setMonteCarloDigits( sMonteCarloDigits.def );
     setMonteCarloMaxNumOfBatches( sMonteCarloMaxNumOfBatches.def );
     setRestoreLastProject( sRestoreLastProject.def );
+    setTruncateEffectiveDOF( sTruncateEffectiveDOF.def );
 }

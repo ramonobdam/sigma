@@ -17,7 +17,7 @@ Output name,Measurement function,Unit,Level of confidence
 
 Combined uncertainty:
 Output name,Unit,Output estimate,Combined standard uncertainty,Effective degrees of freedom,Coverage factor,Expanded uncertainty,Level of confidence
-"δ_m","mg",1.234,0.05385166989,infinite,1.959962762,±0.1055472677,95.0%
+"δ_m","mg",1.234,0.05385166989,infinite,1.959963985,±0.1055473335,95.0%
 
 "Uncertainty components δ_m:"
 Input name,Unit,Input estimate,Standard uncertainty,Distribution,Degrees of freedom,Sensitivity,Component,Variance %,Correlation %,Total %
