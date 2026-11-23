@@ -24,6 +24,7 @@ namespace {
 ResultComparator::ResultComparator( const Tolerance &tolerance )
     :   mTolerance { tolerance },
         mDifferences {},
+        mIgnoredCSVPatterns {},
         mIgnoredCSVLinePrefixes {},
         mIgnoredJsonKeys {},
         mTruncated { false }
@@ -162,8 +163,8 @@ bool ResultComparator::compareCSVFiles(
         }
 
         compareTexts(
-            actualLine,
-            referenceLine,
+            maskIgnoredCSVParts( actualLine ),
+            maskIgnoredCSVParts( referenceLine ),
             sLineString.arg( QString::number( i + 1 ) )
         );
     }
@@ -176,6 +177,14 @@ void ResultComparator::setIgnoredCSVLinePrefixes(
     const QStringList &prefixes
 ) {
     mIgnoredCSVLinePrefixes = prefixes;
+}
+
+
+void ResultComparator::setIgnoredCSVPatterns( const QStringList &patterns ) {
+    mIgnoredCSVPatterns.clear();
+    for ( const QString &pattern : patterns ) {
+        mIgnoredCSVPatterns.append( QRegularExpression( pattern ) );
+    }
 }
 
 
@@ -369,6 +378,18 @@ bool ResultComparator::compareValues(
 bool ResultComparator::isComplete() const {
     // Stop comparing when the maximum number of differences is reached
     return mTruncated;
+}
+
+
+QString ResultComparator::maskIgnoredCSVParts( const QString &line ) const {
+    // Replace the parts that match an ignored pattern by the same placeholder
+    // in the actual and the reference line, so that only the rest of the line
+    // is compared
+    QString masked { line };
+    for ( const QRegularExpression &expression : mIgnoredCSVPatterns ) {
+        masked.replace( expression, sIgnoredPlaceholder );
+    }
+    return masked;
 }
 
 

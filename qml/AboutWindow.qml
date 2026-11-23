@@ -152,7 +152,7 @@ BaseWindow {
             </p>
 
             <p>
-            Third-party components include Qt, ExprTk, ALGLIB,
+            Third-party components include Qt, ExprTk,
             Font Awesome and the Inter typeface.
             </p>
 

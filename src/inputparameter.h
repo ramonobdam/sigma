@@ -166,6 +166,9 @@ private:
     static constexpr QLatin1StringView sStdUncertaintyString {
         "stdUncertainty"
     };
+    static constexpr QLatin1StringView sUpdateErrorString {
+        "Invalid input parameter '%1' could not be updated in the model"
+    };
     static constexpr double sMinStdUncertainty { 0. };
     static constexpr int sMaxDOF { 1000000 };
     static constexpr int sMinDOF { 1 };

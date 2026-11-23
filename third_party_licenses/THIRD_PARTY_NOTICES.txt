@@ -30,17 +30,6 @@ See the official project page for full license details:
 https://www.partow.net/programming/exprtk/
 
 ------------------------------------------------------------
-ALGLIB
-------------------------------------------------------------
-
-ALGLIB is used under the terms of its free edition license.
-
-Copyright © ALGLIB Project
-
-For full license details see:
-https://www.alglib.net
-
-------------------------------------------------------------
 Font Awesome
 ------------------------------------------------------------
 

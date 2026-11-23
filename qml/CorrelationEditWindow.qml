@@ -17,6 +17,9 @@ BaseWindow {
                                        coefField.acceptableInput &&
                                        valid
     property bool valid
+    // Consistency with the other correlations is a warning only: correlations
+    // are entered one by one, so a temporarily inconsistent set is allowed
+    property bool consistent: true
     property string unacceptableInputMessage
     property TableView tableView
     property alias paramA: paramACombo.editText
@@ -107,6 +110,8 @@ BaseWindow {
 
     function showValid() {
         // Check the validity of the proposed correlation
+        control.consistent = true
+
         // The parameters can't be constants
         paramACombo.valid = !calculation.inputParameterIsConstant(
                                              control.paramA
@@ -134,6 +139,18 @@ BaseWindow {
 
         control.valid = true
         control.unacceptableInputMessage = ""
+
+        // Warn when the correlation doesn't form a valid (positive
+        // semi-definite) correlation matrix together with the other
+        // correlations (unspecified correlations are 0). The correlation can
+        // still be saved, e.g. when the remaining correlations are entered
+        // next.
+        if ( coefField.acceptableInput &&
+             !correlation.isConsistent( control.edit ) ) {
+            control.consistent = false
+            control.unacceptableInputMessage =
+                    Properties.warningCorrelationInconsistent
+        }
     }
 
     function getCurrentIndexParamA( value ) {
@@ -287,6 +304,14 @@ BaseWindow {
                 top: coefField.topValue
             }
             onAccepted: { saveAndReturn( 2 ) }
+            onTextChanged: {
+                // Check the consistency with the other correlations for the
+                // new value
+                if ( acceptableInput ) {
+                    control.setCorrelation()
+                    control.showValid()
+                }
+            }
 
             KeyNavigation.backtab: paramBCombo
             KeyNavigation.tab: saveButton
@@ -303,7 +328,12 @@ BaseWindow {
                 left: parent.left
             }
             height: icon.height
-            visible: !control.valid
+            visible: !control.valid || warning
+
+            // A valid but inconsistent correlation is shown as a warning
+            property bool warning: control.valid && !control.consistent
+            property color messageColor: warning ? Properties.colorWarning500 :
+                                                   Properties.colorError500
 
             Rectangle {
                 id: icon
@@ -318,15 +348,17 @@ BaseWindow {
                 radius: height / 2
                 color: Properties.colorTransparent
                 border.width: Properties.borderWidth
-                border.color: Properties.colorError500
+                border.color: unAcceptableCorrelation.messageColor
 
                 Text {
                     anchors.fill: parent
 
-                    text: Properties.invalidIcon
+                    text: unAcceptableCorrelation.warning ?
+                              Properties.warningIcon :
+                              Properties.invalidIcon
                     font.family: Fonts.fontAwesome.font.family
                     font.pixelSize: Properties.fontSizeUnacceptableInputIcon
-                    color: icon.border.color
+                    color: unAcceptableCorrelation.messageColor
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -342,7 +374,7 @@ BaseWindow {
                 }
 
                 text: control.unacceptableInputMessage
-                color: icon.border.color
+                color: unAcceptableCorrelation.messageColor
             }
         }
 

@@ -3,8 +3,10 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "montecarlo.h"
+#include "mixedcopulasampler.hpp"
 #include "outputparameter.h"
 #include "samplebatch.h"
+#include "samplewriter.h"
 #include "settings.h"
 #include "stringutils.h"
 #include <QDebug>
@@ -14,7 +16,9 @@
 #include <QJsonValue>
 #include <QLocale>
 #include <QtConcurrentMap>
+#include <algorithm>
 #include <cmath>
+#include <memory>
 #include <random>
 #include <vector>
 
@@ -40,7 +44,10 @@ MonteCarlo::MonteCarlo( OutputParameter *outputParameter, QObject *parent )
         mHistogramYMax { 1. },
         mHistogramLowerIndex {},
         mHistogramHigherIndex {},
-        mRequestStop {}
+        mRequestStop {},
+        mSampleExportUrl {},
+        mSampleExportMessage {},
+        mSamplesExported { false }
 {}
 
 
@@ -69,7 +76,11 @@ MonteCarlo::MonteCarlo( const MonteCarlo &mc, QObject *parent )
         mHistogramYMax { mc.getHistogramYMax() },
         mHistogramLowerIndex { mc.getHistogramLowerIndex() },
         mHistogramHigherIndex { mc.getHistogramHigherIndex() },
-        mRequestStop { mc.getRequestStop() }
+        mRequestStop { mc.getRequestStop() },
+        // The sample export state is not copied (it belongs to a single run)
+        mSampleExportUrl {},
+        mSampleExportMessage {},
+        mSamplesExported { false }
 {}
 
 
@@ -217,6 +228,16 @@ bool MonteCarlo::getValid() const {
 }
 
 
+bool MonteCarlo::getSamplesExported() const {
+    return mSamplesExported;
+}
+
+
+const QString & MonteCarlo::getSampleExportMessage() const {
+    return mSampleExportMessage;
+}
+
+
 double MonteCarlo::getConvergenceFactor() const {
     return mConvergenceFactor;
 }
@@ -302,11 +323,17 @@ void MonteCarlo::run() {
         timer.start();
         startTimer.start();
 #endif
-        int nThreads { QThread::idealThreadCount() };
-
         // The object and the OutputParameter are locked first
         mMutex.lock();
         mOutputParameter->setLocked( true );
+
+        // The sample export url applies to this run only
+        const QUrl sampleExportUrl { mSampleExportUrl };
+        const bool exportSamples { !sampleExportUrl.isEmpty() };
+        SampleWriter sampleWriter {};
+        mSampleExportUrl.clear();
+        mSamplesExported = false;
+        mSampleExportMessage.clear();
 
         // Settings are stored localy to make sure they don't change during the
         // simulation
@@ -338,25 +365,45 @@ void MonteCarlo::run() {
 
         // Loop on the batches
         int h { 0 };
-        int nSamples { 0 };
+        qint64 nSamples { 0 };
         bool converged { false };
         double meanAllSamples { 0. };
         double stdDevAllSamples { 0. };
         mValid = true;
 
-        // Split the batches into nThreads sub-batches
-        QList<int> subBatchIndices {};
-        QList<int> subBatchSizes {};
+        // The latent correlation matrix of the output parameter must be valid
+        // (positive semi-definite). This is checked before the first batch, so
+        // that inconsistent correlations are reported immediately.
+        if (
+            !CorrelationMatrix::isValid(
+                mOutputParameter->getLatentCorrelation()
+            )
+        ) {
+            mValid = false;
+            setStatus(
+                sNotPossibleString.arg( CorrelationMatrix::sInconsistentString )
+            );
+        }
 
-        for ( int i { 0 }; i < nThreads; ++i ) {
-            subBatchIndices.append( i );
-            if ( i < nThreads - 1 ) {
-                subBatchSizes.append( M / nThreads );
-            }
-            else {
-                // Put the remainder in the last batch
-                subBatchSizes.append( M - ( M / nThreads ) * i );
-            }
+        // Open the sample export file before the first batch, so an invalid
+        // file is reported immediately instead of after the simulation
+        if ( exportSamples && mValid ) {
+            mValid = openSampleWriter( sampleWriter, sampleExportUrl );
+        }
+
+        // Split the batches into chunks of (at most) sChunkSize samples. The
+        // chunks and their random seeds only depend on M and the batch index,
+        // not on the number of threads, so the results are the same on every
+        // machine. The chunks are distributed over the available threads.
+        const int nChunks { ( M + sChunkSize - 1 ) / sChunkSize };
+        QList<int> chunkIndices {};
+        QList<int> chunkSizes {};
+        for ( int i { 0 }; i < nChunks; ++i ) {
+            chunkIndices.append( i );
+            // The last chunk contains the remainder
+            chunkSizes.append(
+                i < nChunks - 1 ? sChunkSize : M - sChunkSize * i
+            );
         }
 
         while ( !converged && !mRequestStop && mValid && h <= hMax ) {
@@ -367,33 +414,51 @@ void MonteCarlo::run() {
 #if PRINT_MONTECARLO_TIMING
             timer.restart();
 #endif
-            // Generate random seed sequence
-            std::vector<uint32_t> randomSeeds( nThreads );
-            std::seed_seq seq { static_cast<uint32_t>( h ) };
-            seq.generate( randomSeeds.begin(), randomSeeds.end() );
+            // The random seed of each chunk is derived from the batch index
+            // and the chunk index
+            std::vector<uint32_t> randomSeeds( nChunks );
+            for ( int i { 0 }; i < nChunks; ++i ) {
+                std::seed_seq seq {
+                    static_cast<uint32_t>( h ),
+                    static_cast<uint32_t>( i )
+                };
+                seq.generate(
+                    randomSeeds.begin() + i,
+                    randomSeeds.begin() + i + 1
+                );
+            }
 
-            // Create sub-batches in parallel
-            QFuture<std::vector<double>> future = QtConcurrent::mapped(
-                subBatchIndices,
-                [ & ]( int subBatchIndex ) {
-                    SampleBatch subBatch {
+            // Create the chunks in parallel
+            QFuture<std::shared_ptr<SampleBatch>> future = QtConcurrent::mapped(
+                chunkIndices,
+                [ & ]( int chunkIndex ) {
+                    auto chunk = std::make_shared<SampleBatch>(
                         mOutputParameter,
-                        subBatchSizes[ subBatchIndex ],
-                        randomSeeds[ subBatchIndex ]
-                    };
-                    if ( !subBatch.generateSamples() ) {
-                        mValid = false;
-                        setStatus( subBatch.getError() );
-                    }
-                    return subBatch.getSamples();
+                        chunkSizes[ chunkIndex ],
+                        randomSeeds[ chunkIndex ]
+                    );
+                    // A failure is reported via the chunk's error, which is
+                    // handled below (not here, to avoid a data race)
+                    chunk->generateSamples( exportSamples );
+                    return chunk;
                 }
             );
             future.waitForFinished();
 
-            // Combine sub-batch results
+            // Report the error of the first failed chunk (in chunk order, so
+            // the reported error doesn't depend on the thread timing)
+            for ( int i { 0 }; i < future.resultCount() && mValid; ++i ) {
+                const QString &error { future.resultAt( i )->getError() };
+                if ( !error.isEmpty() ) {
+                    mValid = false;
+                    setStatus( error );
+                }
+            }
+
+            // Combine the chunk results (in chunk order)
             if ( mValid ) {
                 for ( int i { 0 }; i < future.resultCount(); ++i ) {
-                    statBatch.addSamples( future.resultAt( i ) );
+                    statBatch.addSamples( future.resultAt( i )->getSamples() );
                 }
             }
 #if PRINT_MONTECARLO_TIMING
@@ -409,39 +474,57 @@ void MonteCarlo::run() {
                 statMean.addSample( statBatch.getMean() );
                 statStdDev.addSample( statBatch.getStdDev() );
 
+                // Statistics across all the batches
+                mOutputStat.addSamples( statBatch.getSamples() );
+
+                // Export exactly the samples that are used for the results
+                if ( exportSamples ) {
+                    for ( int i { 0 }; i < future.resultCount(); ++i ) {
+                        if ( !sampleWriter.write( *future.resultAt( i ) ) ) {
+                            mValid = false;
+                            setStatus(
+                                sSamplesNotExportedString.arg(
+                                    sampleWriter.getError()
+                                )
+                            );
+                            break;
+                        }
+                    }
+                }
+
+                // Calculate the Combined (Pooled) Variance and stdDev based
+                // on the statistics of the previous total set of samples
+                // and the new batch. This is faster than repeatedly
+                // calculating the stdDev for all samples.
+                const double n1 { static_cast<double>( nSamples ) };
+                const double n2 { static_cast<double>( M ) };
+                const double nTotal { n1 + n2 };
+                const double batchMean { statBatch.getMean() };
+                const double batchStdDev { statBatch.getStdDev() };
+                const double meanDiff { meanAllSamples - batchMean };
+
+                const double varianceAllSamples {
+                    (
+                        ( n1 - 1. ) * stdDevAllSamples * stdDevAllSamples +
+                        ( n2 - 1. ) * batchStdDev * batchStdDev +
+                        n1 * n2 / nTotal * meanDiff * meanDiff
+                    )
+                    /
+                    ( nTotal - 1. )
+                };
+                stdDevAllSamples = std::sqrt( varianceAllSamples );
+
+                // Update the mean of all samples
+                meanAllSamples = ( n1 * meanAllSamples + n2 * batchMean )
+                                 /
+                                 nTotal;
+
+                // Update the total number of samples
+                nSamples += M;
+
                 if ( h > 0 && !mRequestStop ) {
-                    // Statistics across all the batches
-                    mOutputStat.addSamples( statBatch.getSamples() );
-
-                    // Calculate the Combined (Pooled) Variance and stdDev based
-                    // on the statistics of the previous total set of samples
-                    // and the new batch. This is faster than repeatedly
-                    // calculating the stdDev for all samples.
-                    double varianceAllSamples {
-                        (
-                            ( nSamples - 1 ) * std::pow( stdDevAllSamples, 2 ) +
-                            ( M - 1 ) * std::pow( statBatch.getStdDev(), 2 ) +
-                            ( nSamples * M ) / ( nSamples + M ) *
-                            std::pow( meanAllSamples - statBatch.getMean(), 2 )
-                        )
-                        /
-                        ( nSamples + M - 1 )
-                    };
-                    stdDevAllSamples = std::sqrt( varianceAllSamples );
-
-                    // Calculate the new mean based on the previous mean and the
-                    // number of samples
-                    meanAllSamples =
-                        (
-                            nSamples * meanAllSamples +
-                            M * statBatch.getMean()
-                        )
-                        /
-                        ( nSamples + M );
-                    // Calculate the new total number of samples
-                    nSamples += M;
-
-                    // Determine the new convergence factor
+                    // Determine the new convergence factor, which requires at
+                    // least 2 batches
                     std::vector<double> factors {};
                     factors.push_back( statMean.getStdDevOfTheMean() );
                     factors.push_back( statStdDev.getStdDevOfTheMean() );
@@ -465,6 +548,16 @@ void MonteCarlo::run() {
                         sNumericalToleranceFactor /
                         ( 2. * max )
                     };
+
+                    // Convergence also requires sMinNumOfBatches batches (h
+                    // starts at 0). Until then, the factor (i.e. the shown
+                    // progress) is limited to the fraction of the minimum
+                    // number of batches that has been completed.
+                    new_factor = std::min(
+                        new_factor,
+                        static_cast<double>( h + 1 ) / sMinNumOfBatches
+                    );
+
                     if ( new_factor >= 1. ) {
                         converged = true;
                         setConvergenceFactor( 1. );
@@ -530,6 +623,25 @@ void MonteCarlo::run() {
                         QLocale().toString( nSamples )
                     )
                 );
+            }
+        }
+
+        // Finish the sample export: the file is only created when the
+        // simulation converged (mValid is only true in that case). The result
+        // is reported via getSampleExportMessage() and not in the status, so
+        // the (saved) results are the same as for a run without export.
+        if ( exportSamples ) {
+            if ( mValid && sampleWriter.commit() ) {
+                mSamplesExported = true;
+                mSampleExportMessage = sSamplesExportedString.arg(
+                    sampleWriter.getFileName()
+                );
+            }
+            else {
+                sampleWriter.cancel();
+                mSampleExportMessage = sampleWriter.getError().isEmpty() ?
+                    sSamplesNotExportedString.arg( mStatus ) :
+                    sSamplesNotExportedString.arg( sampleWriter.getError() );
             }
         }
 
@@ -624,6 +736,15 @@ void MonteCarlo::setOutputStatistics( const Statistics &outputStat ) {
 
 void MonteCarlo::setRequestStop( bool requestStop ) {
     mRequestStop = requestStop;
+}
+
+
+bool MonteCarlo::setSampleExportUrl( const QUrl &url ) {
+    if ( isRunning() ) {
+        return false;
+    }
+    mSampleExportUrl = url;
+    return true;
 }
 
 
@@ -749,4 +870,23 @@ void MonteCarlo::calculateNumericalTolerance( double value, int digits ) {
         exponent = exponent < 0 ? exponent + 2 : exponent + 1;
         mNumericalTolerance =  0.5 * std::pow( 10, exponent - digits );
     }
+}
+
+
+bool MonteCarlo::openSampleWriter( SampleWriter &writer, const QUrl &url ) {
+    // The columns are the components (in the order of the symbol values of
+    // SampleBatch) followed by the output parameter
+    QStringList inputNames {};
+    const QList<UncertaintyComponent> components {
+        mOutputParameter->getComponents()
+    };
+    for ( const UncertaintyComponent &component : components ) {
+        inputNames.append( component.getName() );
+    }
+
+    if ( !writer.open( url, inputNames, mOutputParameter->getName() ) ) {
+        setStatus( sSamplesNotExportedString.arg( writer.getError() ) );
+        return false;
+    }
+    return true;
 }

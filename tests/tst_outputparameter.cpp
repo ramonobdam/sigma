@@ -3,8 +3,10 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "correlation.h"
+#include "distribution.h"
 #include "inputparameter.h"
 #include "outputparameter.h"
+#include "settings.h"
 #include <QRegularExpression>
 #include <QSignalSpy>
 #include <QTest>
@@ -37,6 +39,14 @@ private slots:
     void compile_correlatedInputs_increaseCombinedUncertainty();
     void compile_negativeCorrelation_decreasesCombinedUncertainty();
     void compile_constantDistribution_doesNotContributeToUncertainty();
+    void effectiveDOF_negativeCorrelation_truncation_data();
+    void effectiveDOF_negativeCorrelation_truncation();
+    void effectiveDOF_negativeDenominator_isLimitedToOne_data();
+    void effectiveDOF_negativeDenominator_isLimitedToOne();
+
+    void latentCorrelation_normalPair_isPearsonDespiteOtherInputs();
+    void latentCorrelation_nonNormalPair_isConvertedFromSpearman();
+    void latentCorrelation_studentsT_isNormalOnlyForInfiniteDOF();
 
     void compile_endGaugeCalibration_matchesGumReferenceValues();
 
@@ -57,6 +67,16 @@ private:
         const OutputParameter &output,
         const QString &name
     );
+    static double latentCorrelation(
+        const OutputParameter &output,
+        const QString &nameA,
+        const QString &nameB
+    );
+
+    // Latent (Pearson) correlation for an entered Spearman rank correlation
+    static double spearmanToPearson( double spearman ) {
+        return 2. * std::sin( 3.14159265358979323846 * spearman / 6. );
+    }
 };
 
 
@@ -95,6 +115,27 @@ UncertaintyComponent tst_outputparameter::findComponent(
 }
 
 
+double tst_outputparameter::latentCorrelation(
+    const OutputParameter &output,
+    const QString &nameA,
+    const QString &nameB
+) {
+    // The rows and columns of the latent correlation matrix are in the order
+    // of the components
+    const QList<UncertaintyComponent> components { output.getComponents() };
+    int a { -1 };
+    int b { -1 };
+    for ( int i { 0 }; i < components.size(); ++i ) {
+        if ( components[ i ].getName() == nameA ) { a = i; }
+        if ( components[ i ].getName() == nameB ) { b = i; }
+    }
+    if ( a < 0 || b < 0 ) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return output.getLatentCorrelation()( a, b );
+}
+
+
 void tst_outputparameter::initTestCase() {
     // ExprTk must be told to collect the referenced variables so that
     // OutputParameter::compile() can build the uncertainty components
@@ -103,6 +144,9 @@ void tst_outputparameter::initTestCase() {
 
 
 void tst_outputparameter::cleanup() {
+    Settings::setTruncateEffectiveDOF(
+        Settings::getDefaultTruncateEffectiveDOF()
+    );
     OutputParameter::clearModel();
     Correlation::clearModel();
     InputParameter::clearModel();
@@ -173,7 +217,7 @@ void tst_outputparameter::compile_simpleSum_combinedUncertaintyIsRootSumOfSquare
     QVERIFY( qAbs( x2.getSensitivity() - 1. ) < 1e-6 );
 
     // Both inputs have infinite DOF, so the output has infinite DOF too
-    QCOMPARE( output.getEffectiveDOF(), std::numeric_limits<int>::max() );
+    QVERIFY( std::isinf( output.getEffectiveDOF() ) );
 }
 
 
@@ -198,6 +242,84 @@ void tst_outputparameter::compile_correlatedInputs_increaseCombinedUncertainty(
 
     // Without correlation the combined uncertainty would only be sqrt(2)
     QVERIFY( output.getCombinedStdUncertainty() > std::sqrt( 2. ) );
+}
+
+
+void tst_outputparameter::latentCorrelation_normalPair_isPearsonDespiteOtherInputs(
+) {
+    // A correlation between 2 normal inputs is used as Pearson correlation,
+    // also when the formula contains a constant and an (uncorrelated)
+    // uniform input
+    InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    InputParameter *x2 { addInput( "X2", 0., 1. ) };
+    QVERIFY( addInput( "K", 5., 0., Distribution::Type::none ) );
+    QVERIFY( addInput( "U", 0., 1., Distribution::Type::uniform ) );
+    QVERIFY( x1 && x2 );
+
+    Correlation correlation { nullptr, x1->getId(), x2->getId(), 0.5 };
+    QVERIFY( correlation.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2 + K + U" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    QCOMPARE( latentCorrelation( output, "X1", "X2" ), 0.5 );
+    QCOMPARE( latentCorrelation( output, "X2", "X1" ), 0.5 );
+    QCOMPARE( latentCorrelation( output, "X1", "U" ), 0. );
+    QCOMPARE( latentCorrelation( output, "X1", "K" ), 0. );
+}
+
+
+void tst_outputparameter::latentCorrelation_nonNormalPair_isConvertedFromSpearman(
+) {
+    // A correlation involving a non-normal input is interpreted as Spearman
+    // rank correlation, while a normal pair in the same formula is not
+    InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    InputParameter *x2 { addInput( "X2", 0., 1. ) };
+    InputParameter *u { addInput( "U", 0., 1., Distribution::Type::uniform ) };
+    QVERIFY( x1 && x2 && u );
+
+    Correlation normalPair { nullptr, x1->getId(), x2->getId(), 0.5 };
+    QVERIFY( normalPair.appendToModel() != nullptr );
+    Correlation mixedPair { nullptr, x1->getId(), u->getId(), 0.3 };
+    QVERIFY( mixedPair.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2 + U" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    QCOMPARE( latentCorrelation( output, "X1", "X2" ), 0.5 );
+    QCOMPARE( latentCorrelation( output, "X1", "U" ), spearmanToPearson( 0.3 ) );
+    QCOMPARE( latentCorrelation( output, "U", "X1" ), spearmanToPearson( 0.3 ) );
+}
+
+
+void tst_outputparameter::latentCorrelation_studentsT_isNormalOnlyForInfiniteDOF(
+) {
+    InputParameter *x1 { addInput( "X1", 0., 1. ) };
+    InputParameter *tInfinite {
+        addInput( "T1", 0., 1., Distribution::Type::studentst, true )
+    };
+    InputParameter *tFinite {
+        addInput( "T2", 0., 1., Distribution::Type::studentst, false, 5 )
+    };
+    QVERIFY( x1 && tInfinite && tFinite );
+
+    Correlation infinitePair { nullptr, x1->getId(), tInfinite->getId(), 0.4 };
+    QVERIFY( infinitePair.appendToModel() != nullptr );
+    Correlation finitePair { nullptr, x1->getId(), tFinite->getId(), 0.4 };
+    QVERIFY( finitePair.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + T1 + T2" );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    // Student's t with infinite DOF is the normal distribution
+    QCOMPARE( latentCorrelation( output, "X1", "T1" ), 0.4 );
+    QCOMPARE( latentCorrelation( output, "X1", "T2" ), spearmanToPearson( 0.4 ) );
 }
 
 
@@ -239,6 +361,151 @@ void tst_outputparameter::compile_constantDistribution_doesNotContributeToUncert
 }
 
 
+void tst_outputparameter::effectiveDOF_negativeCorrelation_truncation_data(
+) {
+    // Y = X1 + X2 with u = 1 and DOF = 1 for both inputs and correlation r.
+    // The Welch-Satterthwaite relation for correlated errors (Castrup) gives
+    // nu_eff = 2 (1 + r)^2 / (1 + 2r + 1.25r^2). When truncated, it's
+    // truncated to an integer of at least 1. The coverage factor is the 95%
+    // t-quantile; for non-integer DOF it is checked via the CDF.
+    QTest::addColumn<bool>( "truncate" );
+    QTest::addColumn<double>( "correlation" );
+    QTest::addColumn<double>( "effectiveDOF" );
+    QTest::addColumn<double>( "coverageFactor" );
+
+    const double t1 { 12.706204736174707 };
+    QTest::newRow( "truncated, r = 0 (nu_eff = 2)" )
+        << true << 0. << 2. << 4.302652729749464;
+    QTest::newRow( "truncated, r = -0.5 (nu_eff = 1.6)" )
+        << true << -0.5 << 1. << t1;
+    QTest::newRow( "truncated, r = -0.7 (nu_eff = 0.85)" )
+        << true << -0.7 << 1. << t1;
+    QTest::newRow( "truncated, r = -0.99 (nu_eff = 0.0008)" )
+        << true << -0.99 << 1. << t1;
+
+    QTest::newRow( "not truncated, r = 0" )
+        << false << 0. << 2. << 4.302652729749464;
+    QTest::newRow( "not truncated, r = -0.5" )
+        << false << -0.5 << 1.6 << 0.;
+    QTest::newRow( "not truncated, r = -0.7" )
+        << false << -0.7 << 0.18 / 0.2125 << 0.;
+}
+
+
+void tst_outputparameter::effectiveDOF_negativeCorrelation_truncation() {
+    QFETCH( bool, truncate );
+    QFETCH( double, correlation );
+    QFETCH( double, effectiveDOF );
+    QFETCH( double, coverageFactor );
+
+    QVERIFY( Settings::setTruncateEffectiveDOF( truncate ) );
+
+    InputParameter *x1 {
+        addInput( "X1", 0., 1., Distribution::Type::normal, false, 1 )
+    };
+    QVERIFY( x1 );
+    InputParameter *x2 {
+        addInput( "X2", 0., 1., Distribution::Type::normal, false, 1 )
+    };
+    QVERIFY( x2 );
+    if ( correlation != 0. ) {
+        Correlation corr { nullptr, x1->getId(), x2->getId(), correlation };
+        QVERIFY( corr.appendToModel() != nullptr );
+    }
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2" );
+    output.setConfidence( 0.95 );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    QVERIFY( qAbs( output.getEffectiveDOF() / effectiveDOF - 1. ) < 1e-12 );
+    const double k { output.getCoverageFactor() };
+    if ( coverageFactor > 0. ) {
+        QVERIFY( qAbs( k / coverageFactor - 1. ) < 1e-9 );
+    }
+    else {
+        // Non-integer DOF: [-k, k] contains 95% of the distribution, and k is
+        // larger than for the next higher integer DOF
+        const double central {
+            2. * Distribution::studentTCDF( k, effectiveDOF ) - 1.
+        };
+        QVERIFY( qAbs( central - 0.95 ) < 1e-12 );
+        QVERIFY(
+            k > Distribution::coverageFactor( 0.95, std::ceil( effectiveDOF ) )
+        );
+    }
+    // u_c^2 = 2 + 2r
+    const double combined { std::sqrt( 2. + 2. * correlation ) };
+    QVERIFY( qAbs( output.getCombinedStdUncertainty() - combined ) < 1e-9 );
+    QVERIFY( qAbs( output.getExpandedUncertainty() - k * combined ) < 1e-9 );
+}
+
+
+void tst_outputparameter::effectiveDOF_negativeDenominator_isLimitedToOne_data(
+) {
+    QTest::addColumn<bool>( "truncate" );
+    QTest::newRow( "truncated" ) << true;
+    QTest::newRow( "not truncated" ) << false;
+}
+
+
+void tst_outputparameter::effectiveDOF_negativeDenominator_isLimitedToOne() {
+    // Y = X1 + X2 + X3 with u = 1, DOF = 1, 10, 10, r12 = r13 = -0.5 and
+    // r23 = 0.7 (valid correlation matrix, determinant 0.36). The denominator
+    // of the Welch-Satterthwaite relation for correlated errors (Castrup) is
+    // negative (-0.0446). The effective DOF are limited to 1 instead of being
+    // treated as infinite, with and without truncation.
+    QFETCH( bool, truncate );
+    QVERIFY( Settings::setTruncateEffectiveDOF( truncate ) );
+
+    InputParameter *x1 {
+        addInput( "X1", 0., 1., Distribution::Type::normal, false, 1 )
+    };
+    QVERIFY( x1 );
+    InputParameter *x2 {
+        addInput( "X2", 0., 1., Distribution::Type::normal, false, 10 )
+    };
+    QVERIFY( x2 );
+    InputParameter *x3 {
+        addInput( "X3", 0., 1., Distribution::Type::normal, false, 10 )
+    };
+    QVERIFY( x3 );
+    Correlation r12 { nullptr, x1->getId(), x2->getId(), -0.5 };
+    QVERIFY( r12.appendToModel() != nullptr );
+    Correlation r13 { nullptr, x1->getId(), x3->getId(), -0.5 };
+    QVERIFY( r13.appendToModel() != nullptr );
+    Correlation r23 { nullptr, x2->getId(), x3->getId(), 0.7 };
+    QVERIFY( r23.appendToModel() != nullptr );
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2 + X3" );
+    output.setConfidence( 0.95 );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    // The denominator is negative
+    double denominator { 0. };
+    for ( const UncertaintyComponent &component : output.getComponents() ) {
+        denominator += component.getWelchSatterthwaiteTerms();
+    }
+    QVERIFY( qAbs( denominator + 0.04455 ) < 1e-4 );
+
+    // u_c^2 = 3 + 2 * ( -0.5 - 0.5 + 0.7 ) = 2.4
+    const double combined { std::sqrt( 2.4 ) };
+    QVERIFY( qAbs( output.getCombinedStdUncertainty() - combined ) < 1e-9 );
+
+    // Effective DOF 1: coverage factor tan( pi / 2 * 0.95 )
+    QCOMPARE( output.getEffectiveDOF(), 1. );
+    const double t1 { 12.706204736174707 };
+    QVERIFY( qAbs( output.getCoverageFactor() / t1 - 1. ) < 1e-12 );
+    QVERIFY(
+        qAbs( output.getExpandedUncertainty() / ( t1 * combined ) - 1. ) <
+        1e-12
+    );
+}
+
+
 void tst_outputparameter::compile_endGaugeCalibration_matchesGumReferenceValues(
 ) {
     // JCGM 100:2008, Annex H.1 — End-gauge calibration
@@ -274,9 +541,18 @@ void tst_outputparameter::compile_endGaugeCalibration_matchesGumReferenceValues(
     QVERIFY(
         qAbs( output.getCombinedStdUncertainty() - 31.71062853 ) < 1e-4
     );
-    QCOMPARE( output.getEffectiveDOF(), 16 );
+    QCOMPARE( output.getEffectiveDOF(), 16. );
     QVERIFY( qAbs( output.getCoverageFactor() - 2.920781622 ) < 1e-4 );
     QVERIFY( qAbs( output.getExpandedUncertainty() - 92.61982103 ) < 1e-3 );
+
+    // Without truncation, the effective DOF is between 16 and 17, so the
+    // coverage factor is between the t-quantiles for 17 and 16 DOF
+    QVERIFY( Settings::setTruncateEffectiveDOF( false ) );
+    const double dof { output.getEffectiveDOF() };
+    const double k { output.getCoverageFactor() };
+    QVERIFY( Settings::setTruncateEffectiveDOF( true ) );
+    QVERIFY( dof > 16. && dof < 17. );
+    QVERIFY( k < 2.920781622 && k > Distribution::coverageFactor( 0.99, 17. ) );
 
     // Per-component sensitivities from the CSV export
     UncertaintyComponent lS { findComponent( output, "l_S" ) };

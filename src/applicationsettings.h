@@ -32,6 +32,7 @@ public:
     Q_INVOKABLE void setMonteCarloMaxNumOfBatches( int maxNumOfBatches );
     Q_INVOKABLE void setRestoreLastProject( bool restoreLastProject );
     Q_INVOKABLE void setToDefaults();
+    Q_INVOKABLE void setTruncateEffectiveDOF( bool truncateEffectiveDOF );
 
     Q_PROPERTY(
         bool autoSaveProject
@@ -128,6 +129,11 @@ public:
         READ getMonteCarloMaxNumOfBatches
         NOTIFY monteCarloMaxNumOfBatchesChanged
     )
+    Q_PROPERTY(
+        bool truncateEffectiveDOF
+        READ getTruncateEffectiveDOF
+        NOTIFY truncateEffectiveDOFChanged
+    )
 
 signals:
     void autoSaveProjectChanged();
@@ -139,6 +145,7 @@ signals:
     void monteCarloDigitsChanged();
     void monteCarloMaxNumOfBatchesChanged();
     void restoreLastProjectChanged();
+    void truncateEffectiveDOFChanged();
 
 private:
     static constexpr QLatin1StringView sAutoSaveProjectString {
@@ -163,6 +170,9 @@ private:
     };
     static constexpr QLatin1StringView sRestoreLastProjectString {
         "restoreLastProject"
+    };
+    static constexpr QLatin1StringView sTruncateEffectiveDOFString {
+        "truncateEffectiveDOF"
     };
 
     QSettings mPersistentSettings;

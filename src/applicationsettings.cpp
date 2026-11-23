@@ -21,6 +21,7 @@ void ApplicationSettings::notifyAllChanged() {
     emit monteCarloDigitsChanged();
     emit monteCarloMaxNumOfBatchesChanged();
     emit restoreLastProjectChanged();
+    emit truncateEffectiveDOFChanged();
 }
 
 
@@ -81,6 +82,12 @@ void ApplicationSettings::load() {
             getRestoreLastProject()
         ).toBool()
     );
+    Settings::setTruncateEffectiveDOF(
+        mPersistentSettings.value(
+            sTruncateEffectiveDOFString,
+            getDefaultTruncateEffectiveDOF()
+        ).toBool()
+    );
 }
 
 
@@ -120,6 +127,10 @@ void ApplicationSettings::save() {
     mPersistentSettings.setValue(
         sRestoreLastProjectString,
         getRestoreLastProject()
+    );
+    mPersistentSettings.setValue(
+        sTruncateEffectiveDOFString,
+        getTruncateEffectiveDOF()
     );
     mPersistentSettings.sync();
 }
@@ -193,4 +204,11 @@ void ApplicationSettings::setRestoreLastProject( bool restoreLastProject ) {
 void ApplicationSettings::setToDefaults() {
     Settings::setToDefaults();
     notifyAllChanged();
+}
+
+
+void ApplicationSettings::setTruncateEffectiveDOF( bool truncateEffectiveDOF ) {
+    if ( getTruncateEffectiveDOF() == truncateEffectiveDOF ) return;
+    Settings::setTruncateEffectiveDOF( truncateEffectiveDOF );
+    emit truncateEffectiveDOFChanged();
 }

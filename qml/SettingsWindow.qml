@@ -49,6 +49,7 @@ BaseWindow {
         radioButtonDark.storeInitial()
         displayPrecisionField.storeInitial()
         csvPrecisionField.storeInitial()
+        truncateDOFCheckBox.storeInitial()
         monteCarloDigitsField.storeInitial()
         monteCarloBatchSizeField.storeInitial()
         monteCarloMaxBatchesField.storeInitial()
@@ -62,6 +63,7 @@ BaseWindow {
         radioButtonDark.restoreInitial()
         displayPrecisionField.restoreInitial()
         csvPrecisionField.restoreInitial()
+        truncateDOFCheckBox.restoreInitial()
         monteCarloDigitsField.restoreInitial()
         monteCarloBatchSizeField.restoreInitial()
         monteCarloMaxBatchesField.restoreInitial()
@@ -366,6 +368,43 @@ BaseWindow {
             }
 
             KeyNavigation.backtab: displayPrecisionField
+            KeyNavigation.tab: truncateDOFCheckBox
+        }
+
+        FormSubHeading {
+            id: effectiveDOFLabel
+
+            anchors {
+                top: csvPrecisionField.bottom
+            }
+
+            text: "Effective degrees of freedom (combined uncertainty)"
+        }
+
+        SigmaCheckBox {
+            id: truncateDOFCheckBox
+
+            property bool initial
+
+            function storeInitial() {
+                initial = checked
+            }
+
+            function restoreInitial() {
+                appSettings.setTruncateEffectiveDOF( initial )
+            }
+
+            anchors {
+                top: effectiveDOFLabel.bottom
+                topMargin: control.interLabelSpacing
+                left: parent.left
+            }
+
+            checked: appSettings.truncateEffectiveDOF
+            text: "Truncate to the next lower integer"
+            onToggled: { appSettings.setTruncateEffectiveDOF( checked ) }
+
+            KeyNavigation.backtab: csvPrecisionField
             KeyNavigation.tab: monteCarloDigitsField
         }
 
@@ -373,7 +412,7 @@ BaseWindow {
             id: monteCarloLabel
 
             anchors {
-                top: csvPrecisionField .bottom
+                top: truncateDOFCheckBox.bottom
             }
 
             text: "Monte Carlo simulation"
@@ -412,7 +451,7 @@ BaseWindow {
                 }
             }
 
-            KeyNavigation.backtab: csvPrecisionField
+            KeyNavigation.backtab: truncateDOFCheckBox
             KeyNavigation.tab: monteCarloBatchSizeField
         }
 

@@ -24,9 +24,15 @@ BaseContextMenu {
     }
 
     ContextMenuItem {
-        text: "Run Monte Carlo simulation"
+        text: "Start Monte Carlo simulation"
         enabled: calculation.outputValid && !Properties.outputLocked
         onTriggered: { calculation.runMonteCarlo() }
+    }
+
+    ContextMenuItem {
+        text: "Start and export samples..."
+        enabled: calculation.outputValid && !Properties.outputLocked
+        onTriggered: { samplesDialog.open() }
     }
 
     ContextMenuItem {

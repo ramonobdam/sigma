@@ -18,6 +18,7 @@ SampleBatch::SampleBatch(
         mSymbolValues {},
         mError {},
         mParser {},
+        mInputValues {},
         mSamples {},
         mSymbolTable {},
         mMixedCopulaSampler { randomSeed }
@@ -32,12 +33,13 @@ OutputParameter * SampleBatch::getOutputParameter() const {
 }
 
 
-bool SampleBatch::generateSamples() {
+bool SampleBatch::generateSamples( bool storeInputValues ) {
     if ( !mOutputParameter || mBatchSize == 0 ) {
         mError = sNoSamplesGeneratedString;
         return false;
     }
 
+    mInputValues.clear();
     mSamples.clear();
     mError.clear();
 
@@ -47,18 +49,37 @@ bool SampleBatch::generateSamples() {
         mOutputParameter->getLatentCorrelation()
     );
     addVariablesToMixedCopulaSampler();
+    fillSymbolTable();
+
+    // Check once that samples can be generated (the latent correlation matrix
+    // is valid and matches the components), so that the expression is never
+    // evaluated without new random values
+    if ( !mMixedCopulaSampler.canSample( mSymbolValues.size() ) ) {
+        mError = CorrelationMatrix::sInconsistentString;
+        return false;
+    }
 
     // Compile the expression
-    fillSymbolTable();
     expression_t expr {};
     expr.register_symbol_table( mSymbolTable );
     if ( mParser.compile( mOutputParameter->getFormulaStdWString(), expr ) ) {
+        if ( storeInputValues ) {
+            mInputValues.reserve( mBatchSize * mSymbolValues.size() );
+        }
+
         // Generate samples
         for ( int i { 0 }; i < mBatchSize; ++i ) {
             mMixedCopulaSampler.getRandomSymbolValues( mSymbolValues );
             double value { expr.value() };
             if ( std::isfinite( value ) ) {
                 mSamples.push_back( value );
+                if ( storeInputValues ) {
+                    mInputValues.insert(
+                        mInputValues.end(),
+                        mSymbolValues.begin(),
+                        mSymbolValues.end()
+                    );
+                }
             }
             else {
                 // An invalid output value was detected
@@ -93,6 +114,11 @@ const QString & SampleBatch::getError() const {
 }
 
 
+const std::vector<double> & SampleBatch::getInputValues() const {
+    return mInputValues;
+}
+
+
 const std::vector<double> & SampleBatch::getSamples() const {
     return mSamples;
 }
@@ -103,10 +129,15 @@ int SampleBatch::getBatchSize() const {
 }
 
 
+int SampleBatch::getNumberOfInputs() const {
+    return static_cast<int>( mSymbolValues.size() );
+}
+
+
 void SampleBatch::setBatchSize( int batchSize ) {
     if ( batchSize < sMinBatchSize ) {
         mBatchSize = sMinBatchSize;
-        qCritical() << sInvalidBatchSizeString.arg(
+        qCritical().noquote() << sInvalidBatchSizeString.arg(
             QString::number( batchSize, 'f', 0 ),
             QString::number( mBatchSize, 'f', 0 )
         );
@@ -133,9 +164,22 @@ void SampleBatch::addVariablesToMixedCopulaSampler() {
         mOutputParameter->getComponents()
     };
     for ( const UncertaintyComponent &component : components ) {
-        mMixedCopulaSampler.addVariable( component.getInvCDF() );
+        if (
+            Distribution::isNormal(
+                component.getDistribution(),
+                component.getDOFInfinite()
+            )
+        ) {
+            // Normal variables are sampled directly (without the inverse CDF)
+            mMixedCopulaSampler.addNormalVariable(
+                component.getNominalValue(),
+                component.getStdUncertainty()
+            );
+        }
+        else {
+            mMixedCopulaSampler.addVariable( component.getInvCDF() );
+        }
     }
-
 }
 
 

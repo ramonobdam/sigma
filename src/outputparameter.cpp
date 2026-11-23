@@ -2,7 +2,7 @@
 // Copyright (c) 2025–2026 Ramon Obdam
 // Licensed under the MIT License. See LICENSE file for details.
 
-#include "third_party/alglib/specialfunctions.h"
+#include "distribution.h"
 #include "mathconstants.h"
 #include "outputparameter.h"
 #include "settings.h"
@@ -153,7 +153,7 @@ QString OutputParameter::componentsToCSVString() const {
             // combined standard uncertainty of the OutputParameter
             for ( int column { columns - 3 }; column < columns; ++column ) {
                 result += getContributionAsString( row, column );
-                if ( column < columns ) {
+                if ( column < columns - 1 ) {
                     result += StringUtils::csvSeparator;
                 }
             }
@@ -236,7 +236,7 @@ QStringList OutputParameter::getResults( bool csvMode ) const {
         results[ 1 ] = getUnit( csvMode );
         results[ 2 ] = getNominalValueAsString( csvMode );
         results[ 3 ] = getCombinedStdUncertaintyAsString( csvMode );
-        results[ 4 ] = getEffectiveDOFAsString();
+        results[ 4 ] = getEffectiveDOFAsString( csvMode );
         results[ 5 ] = getCoverageFactorAsString( csvMode );
         results[ 6 ] = getExpandedUncertaintyAsString( csvMode );
         results[ 7 ] = getConfidenceAsString();
@@ -276,7 +276,7 @@ QVariant OutputParameter::getResult( int column, bool csvMode ) const {
         case 3:
             return getCombinedStdUncertaintyAsString( csvMode );
         case 4:
-            return getEffectiveDOFAsString();
+            return getEffectiveDOFAsString( csvMode );
         case 5:
             return getCoverageFactorAsString( csvMode );
         case 6:
@@ -302,6 +302,21 @@ UncertaintyComponent * OutputParameter::getComponent( int row ) const {
         return const_cast<UncertaintyComponent *> ( &mComponents[ row ] );
     }
     return nullptr;
+}
+
+
+bool OutputParameter::getMonteCarloSamplesExported() const {
+    return mMonteCarlo.getSamplesExported();
+}
+
+
+QString OutputParameter::getMonteCarloSampleExportMessage() const {
+    return mMonteCarlo.getSampleExportMessage();
+}
+
+
+QString OutputParameter::getMonteCarloStatus( bool csvMode ) const {
+    return mMonteCarlo.getStatus( csvMode );
 }
 
 
@@ -385,16 +400,13 @@ double OutputParameter::getCorrelationContribution( int row ) const {
 
 
 double OutputParameter::getCoverageFactor() const {
-    // Use the inverse cumulative distribution of student's t to determine the
-    // coverage factor based on the effective DOF and the level of confidence
-    // [-]. Note that invstudenttdistribution gives the leftsided inverse of the
-    // student't t-distribution, hence p = 0.5 * ( 1. - confidence ).
-    int DOF { getEffectiveDOF() };
-    double confidence { getConfidence() };
-    if ( DOF > 0 && confidence >= 0. && confidence < 1. ) {
-        return std::abs(
-            alglib::invstudenttdistribution( DOF, 0.5 * ( 1. - confidence ) )
-        );
+    // The coverage factor is the Student's t quantile for the effective DOF
+    // (also non-integer) such that the interval [-k, k] contains the fraction
+    // 'confidence' of the distribution (JCGM 100:2008 G.4.1) [-]
+    const double DOF { getEffectiveDOF() };
+    const double confidence { getConfidence() };
+    if ( DOF > 0. && confidence >= 0. && confidence < 1. ) {
+        return Distribution::coverageFactor( confidence, DOF );
     }
     return 0.;
 }
@@ -435,9 +447,10 @@ int OutputParameter::columnCount() const {
 }
 
 
-int OutputParameter::getEffectiveDOF() const {
-    // Calculate the effective degrees of freedom using the 'Welch-Satterthwaite
-    // Relation for Correlated Errors' (H. Castrup)
+double OutputParameter::getEffectiveDOF() const {
+    // Calculate the effective degrees of freedom using the Welch-Satterthwaite
+    // formula (JCGM 100:2008 G.4.1), extended for correlated input parameters
+    // by the 'Welch-Satterthwaite Relation for Correlated Errors' (H. Castrup)
     double numerator { std::pow( getCombinedStdUncertainty(), 4 ) };
     double denominator { 0. };
 
@@ -448,12 +461,34 @@ int OutputParameter::getEffectiveDOF() const {
 
     // Calculate the effective DOF
     if ( denominator > 0. ) {
-        double effectiveDOF { std::floor( numerator / denominator ) };
-        return static_cast<int> ( effectiveDOF );
+        double effectiveDOF { numerator / denominator };
+        // Values that cannot be represented by an int are considered infinite
+        if ( effectiveDOF >= static_cast<double>( MathConstants::maxInt ) ) {
+            return MathConstants::maxInfinity;
+        }
+        if ( !Settings::getTruncateEffectiveDOF() ) {
+            return effectiveDOF;
+        }
+
+        // Truncate to the next lower integer (JCGM 100:2008 G.4.1 note 1).
+        // With negative correlations, the effective DOF can be below 1 (and
+        // would be truncated to 0, giving a coverage factor of 0). It's limited
+        // to 1 instead. Note that such a low value indicates that the GUM
+        // uncertainty framework is not reliable for this output parameter.
+        return std::max( std::floor( effectiveDOF ), sMinEffectiveDOF );
     }
 
-    // Infinite DOF
-    return MathConstants::maxInt;
+    if ( denominator < 0. ) {
+        // With negative correlations, the denominator of the extension for
+        // correlated input parameters can be negative (for a valid correlation
+        // matrix), which is outside the valid domain of the formula. The
+        // effective DOF are limited to 1 (with and without truncation) as a
+        // conservative value instead of being treated as infinite.
+        return sMinEffectiveDOF;
+    }
+
+    // Infinite DOF (all input parameters have infinite DOF)
+    return MathConstants::maxInfinity;
 }
 
 
@@ -550,7 +585,8 @@ void OutputParameter::setMonteCarlo( const MonteCarlo &monteCarlo ) {
 }
 
 
-void OutputParameter::startMonteCarlo() {
+void OutputParameter::startMonteCarlo( const QUrl &sampleExportUrl ) {
+    mMonteCarlo.setSampleExportUrl( sampleExportUrl );
     mMonteCarlo.start();
 }
 
@@ -712,8 +748,6 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
             // Valid and at least one input parameter detected
             setError( sValidExpressionString + getVariables() );
 
-            bool allNormal { allComponentsNormal() };
-
             // Set latent correlation matrix
             mLatentCorrelation = Eigen::MatrixXd::Identity( n, n );
 
@@ -739,14 +773,29 @@ void OutputParameter::compile( bool resetMonteCarlo ) {
                             );
 
                             double c { correlation->getCorrelation() };
-                            // Pearson correlation = latent correlation.
-                            // When not all components are normally distributed,
-                            // the entered correlation is interpreted as
-                            // Spearman rank correlation and converted to
-                            // Pearson correlation using
-                            // Pearson = 2 * sin( pi * Spearman / 6 )
-
-                            if ( !allNormal ) {
+                            // The interpretation of the entered correlation
+                            // depends only on the pair of input parameters:
+                            // - Both normal: the Pearson correlation of the
+                            //   inputs equals the latent correlation, so the
+                            //   entered correlation is used as Pearson
+                            //   correlation (as in the GUM framework).
+                            // - Otherwise: the entered correlation is
+                            //   interpreted as Spearman rank correlation,
+                            //   which is invariant under the inverse CDF
+                            //   mapping, and converted to the latent
+                            //   (Pearson) correlation using
+                            //   Pearson = 2 * sin( pi * Spearman / 6 )
+                            const bool bothNormal {
+                                Distribution::isNormal(
+                                    paramI->getDistribution(),
+                                    paramI->getDOFInfinite()
+                                ) &&
+                                Distribution::isNormal(
+                                    paramJ->getDistribution(),
+                                    paramJ->getDOFInfinite()
+                                )
+                            };
+                            if ( !bothNormal ) {
                                 c = 2. * std::sin( MathConstants::pi * c / 6. );
                             }
 
@@ -779,7 +828,7 @@ void OutputParameter::setConfidence( double confidence ) {
     }
     if ( !valid ) {
         int precison { Settings::getDefaultDisplayPrecision() };
-        qCritical() << sInvalidConfidenceString.arg(
+        qCritical().noquote() << sInvalidConfidenceString.arg(
             StringUtils::doubleToString( confidence, precison ),
             StringUtils::doubleToString( mConfidence, precison )
         );
@@ -976,6 +1025,9 @@ bool OutputParameter::update( const QUuid &id, OutputParameter *parameter ) {
         );
         return parameterUpdated;
     }
+    qCritical().noquote() << sUpdateErrorString.arg(
+        parameter ? parameter->getName() : QString()
+    );
     return false;
 }
 
@@ -1080,7 +1132,7 @@ OutputParameter * OutputParameter::insertIntoModel( int row ) {
         const int boundedRow { qBound( 0, row, mOutputModel.rowCount() ) };
         return mOutputModel.insertRow( boundedRow, *this );
     }
-    qCritical() << sInsertErrorString.arg( mName );
+    qCritical().noquote() << sInsertErrorString.arg( mName );
     return nullptr;
 }
 
@@ -1108,12 +1160,18 @@ QString OutputParameter::getCoverageFactorAsString( bool csvMode ) const {
 }
 
 
-QString OutputParameter::getEffectiveDOFAsString() const {
-    int DOF { getEffectiveDOF() };
-    if ( DOF < MathConstants::maxInt ) {
+QString OutputParameter::getEffectiveDOFAsString( bool csvMode ) const {
+    const double DOF { getEffectiveDOF() };
+    if ( std::isinf( DOF ) ) {
+        return StringUtils::infinite;
+    }
+    if ( Settings::getTruncateEffectiveDOF() ) {
         return QString::number( DOF, 'f', 0 );
     }
-    return StringUtils::infinite;
+    const int precision = {
+        csvMode ? Settings::getCSVPrecision() : Settings::getDisplayPrecision()
+    };
+    return StringUtils::doubleToString( DOF, precision );
 }
 
 
@@ -1133,22 +1191,6 @@ QString OutputParameter::getVariables() const {
         variableList.append( component.getName() );
     }
     return variableList.join( ", " );
-}
-
-
-bool OutputParameter::allComponentsNormal() const {
-    // Are all components referencing InputParameters with a Normal
-    // distribution?
-    for ( const UncertaintyComponent &component : mComponents ) {
-        InputParameter *inputParameter { component.getInputParameter() };
-        if (
-            !inputParameter ||
-            inputParameter->getDistribution() != Distribution::Type::normal
-        ) {
-            return false;
-        }
-    }
-    return true;
 }
 
 

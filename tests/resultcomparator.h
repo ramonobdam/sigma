@@ -9,6 +9,7 @@
 #include <QJsonValue>
 #include <QLatin1StringView>
 #include <QList>
+#include <QRegularExpression>
 #include <QString>
 #include <QStringList>
 
@@ -36,6 +37,9 @@ public:
         const QString &referenceFileName
     );
     void setIgnoredCSVLinePrefixes( const QStringList &prefixes );
+    // The parts of CSV lines that match one of these regular expressions are
+    // not compared (the rest of the line is)
+    void setIgnoredCSVPatterns( const QStringList &patterns );
     void setIgnoredJsonKeys( const QStringList &keys );
 
 private:
@@ -63,6 +67,7 @@ private:
         const QString &location
     );
     bool isComplete() const;
+    QString maskIgnoredCSVParts( const QString &line ) const;
     bool isIgnoredCSVLine( const QString &line ) const;
     bool readFile( const QString &fileName, QByteArray &content );
     bool valuesEqual( double actual, double reference ) const;
@@ -78,6 +83,9 @@ private:
     static constexpr QLatin1StringView sNoDifferencesString {
         "No differences"
     };
+    // Replaces the parts of CSV lines that match an ignored pattern (contains
+    // no digits, so it doesn't affect the numerical comparison)
+    static constexpr QLatin1StringView sIgnoredPlaceholder { "<ignored>" };
     static constexpr QLatin1StringView sDifferencesFoundString {
        "%1 difference(s) found (absolute tolerance %2, relative tolerance %3):"
         "\n"
@@ -129,6 +137,7 @@ private:
 
     Tolerance mTolerance;
     QStringList mDifferences;
+    QList<QRegularExpression> mIgnoredCSVPatterns;
     QStringList mIgnoredCSVLinePrefixes;
     QStringList mIgnoredJsonKeys;
     bool mTruncated;

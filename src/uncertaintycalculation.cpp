@@ -13,8 +13,11 @@
 #include <QtLogging>
 #include <QFile>
 #include <QIODeviceBase>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonParseError>
 #include <QJsonValue>
+#include <QLatin1StringView>
 #include <QList>
 #include <QRegularExpression>
 #include <QSaveFile>
@@ -90,10 +93,97 @@ bool UncertaintyCalculation::getHistogramValid() const {
 }
 
 
+QString UncertaintyCalculation::getMonteCarloStatus() const {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter ) {
+        return parameter->getMonteCarloStatus();
+    }
+    return {};
+}
+
+
+QString UncertaintyCalculation::getSampleExportMessage() const {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter && !parameter->getLocked() ) {
+        return parameter->getMonteCarloSampleExportMessage();
+    }
+    return {};
+}
+
+
+bool UncertaintyCalculation::getSamplesExported() const {
+    const OutputParameter *parameter { OutputParameter::getSelected() };
+    if ( parameter && !parameter->getLocked() ) {
+        return parameter->getMonteCarloSamplesExported();
+    }
+    return false;
+}
+
+
 bool UncertaintyCalculation::selectOutputParameterByName(
     const QString &name
 ) {
     return OutputParameter::selectRowByName( name );
+}
+
+
+bool UncertaintyCalculation::parseProjectJson(
+    const QByteArray &data,
+    QJsonObject &project,
+    QString &error
+) {
+    // Parse the project data and check its structure (see the JSON format in
+    // the README): all fields are optional, but the data must be a JSON object
+    // and the documented fields must have the right type. A non-empty object
+    // must contain at least one of the documented fields.
+    QJsonParseError parseError {};
+    const QJsonDocument doc { QJsonDocument::fromJson( data, &parseError ) };
+    if ( parseError.error != QJsonParseError::NoError ) {
+        error = QString( sInvalidJsonString ).arg(
+            QString::number( parseError.offset ),
+            parseError.errorString()
+        );
+        return false;
+    }
+    if ( !doc.isObject() ) {
+        error = sNotAnObjectString;
+        return false;
+    }
+
+    const QJsonObject json { doc.object() };
+    bool containsProjectField { json.contains( sVersionString ) };
+    for (
+        const QLatin1StringView field : {
+            sInputParametersString,
+            sCorrelationsString,
+            sOutputParametersString
+        }
+    ) {
+        if ( !json.contains( field ) ) continue;
+
+        containsProjectField = true;
+        const QJsonValue value { json[ field ] };
+        if ( !value.isArray() ) {
+            error = QString( sFieldNotAnArrayString ).arg( field );
+            return false;
+        }
+        // Use copy constructor '()' instead of initializer_list constructor
+        // '{}' (which would create an array with the array as only element)
+        const QJsonArray elements( value.toArray() );
+        for ( const QJsonValue &element : elements ) {
+            if ( !element.isObject() ) {
+                error = QString( sElementNotAnObjectString ).arg( field );
+                return false;
+            }
+        }
+    }
+    if ( !json.isEmpty() && !containsProjectField ) {
+        error = sNoProjectFieldsString;
+        return false;
+    }
+
+    project = json;
+    return true;
 }
 
 
@@ -235,15 +325,21 @@ bool UncertaintyCalculation::inputParameterIsConstant(
 bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     QString path { url.toLocalFile() };
     QFile loadFile( path );
+    // When loading fails, the currently open project (incl. its project file
+    // path) is left untouched
     if ( !url.isLocalFile() || !loadFile.open( QIODevice::ReadOnly ) ) {
-        qCritical() << QString( sLoadFailedString ).arg( path );
-        resetProjectFilePath();
+        qCritical().noquote() << QString( sLoadFailedString ).arg( path );
         return false;
     }
-    QByteArray projectData = loadFile.readAll();
-    QJsonDocument projectDoc( QJsonDocument::fromJson( projectData ) );
+    QJsonObject project {};
+    QString error {};
+    if ( !parseProjectJson( loadFile.readAll(), project, error ) ) {
+        qCritical().noquote() <<
+            QString( sLoadFailedString ).arg( path ) + " " + error;
+        return false;
+    }
     clearProject( false );  // Currently open project should not be saved
-    projectFromJson( projectDoc.object() );
+    projectFromJson( project );
     setProjectFilePath( url );
     setUnsavedChanges( false );
 
@@ -261,12 +357,17 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
         !url.isLocalFile() ||
         !csvFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qCritical() << QString( sCSVFailedString ).arg( path );
+        qCritical().noquote() << QString( sCSVFailedString ).arg( path );
         return false;
     }
     QTextStream out( &csvFile );
     out << projectToCSVString();
-    csvFile.commit();
+    out.flush();
+    if ( !csvFile.commit() ) {
+        // Writing failed (e.g. disk full), the existing file is left untouched
+        qCritical().noquote() << QString( sCSVFailedString ).arg( path );
+        return false;
+    }
     return true;
 }
 
@@ -287,13 +388,17 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
         !url.isLocalFile() ||
         !saveFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qCritical() << QString( sSaveFailedString ).arg( path );
+        qCritical().noquote() << QString( sSaveFailedString ).arg( path );
         resetProjectFilePath();
         return false;
     }
     QJsonObject project { projectToJson() };
     saveFile.write( QJsonDocument( project ).toJson() );
-    saveFile.commit();
+    if ( !saveFile.commit() ) {
+        // Writing failed (e.g. disk full), the existing file is left untouched
+        qCritical().noquote() << QString( sSaveFailedString ).arg( path );
+        return false;
+    }
     setProjectFilePath( url );
     setUnsavedChanges( false );
     return true;
@@ -462,8 +567,10 @@ void UncertaintyCalculation::addUnit( const QString &name ) {
 }
 
 void UncertaintyCalculation::newProject() {
-    clearProject();
+    // Reset the project file path first: with Auto Save enabled, clearing the
+    // project would otherwise save the empty project to the open project file
     resetProjectFilePath();
+    clearProject();
 
     // Remove transactions from the previous project
     UndoStack::instance().clear();
@@ -560,15 +667,17 @@ void UncertaintyCalculation::removeOutputParameter() {
 
 
 void UncertaintyCalculation::restoreState( int index ) {
-    UndoStack::instance().restoreState( index );
+    if ( !getOutputLocked() ) {
+        UndoStack::instance().restoreState( index );
+    }
 }
 
 
-void UncertaintyCalculation::runMonteCarlo() {
+void UncertaintyCalculation::runMonteCarlo( const QUrl &sampleExportUrl ) {
     OutputParameter *parameter { OutputParameter::getSelected() };
     if ( parameter && !parameter->getLocked() ) {
         mDiffUtil.takeSnapshot( parameter );
-        parameter->startMonteCarlo();
+        parameter->startMonteCarlo( sampleExportUrl );
         // Note that commitChanges() is called in onMonteCarloFinished()
     }
 }
@@ -583,7 +692,7 @@ void UncertaintyCalculation::stopMonteCarlo() {
 }
 
 
-void UncertaintyCalculation::updateCorrelation(
+bool UncertaintyCalculation::updateCorrelation(
     const Correlation *correlation
 ) {
     QUuid id { Correlation::getSelectedId() };
@@ -606,7 +715,11 @@ void UncertaintyCalculation::updateCorrelation(
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalCorrelation );
 
-        Correlation::update( id, &newCorrelation );
+        if ( !Correlation::update( id, &newCorrelation ) ) {
+            // The model is unchanged: no recompilation, transaction or unsaved
+            // changes
+            return false;
+        }
 
         if ( recompile ) {
             // Recompile to check the original InputParameters
@@ -633,11 +746,13 @@ void UncertaintyCalculation::updateCorrelation(
         );
 
         setUnsavedChanges( true );
+        return true;
     }
+    return false;
 }
 
 
-void UncertaintyCalculation::updateInputParameter(
+bool UncertaintyCalculation::updateInputParameter(
     const InputParameter *parameter
 ) {
     QUuid id { InputParameter::getSelectedId() };
@@ -659,7 +774,14 @@ void UncertaintyCalculation::updateInputParameter(
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalParameter );
 
-        InputParameter::update( id, &newParameter);
+        if ( !InputParameter::update( id, &newParameter ) ) {
+            // The model is unchanged: no recompilation, transaction or unsaved
+            // changes
+            return false;
+        }
+        // The selected InputParameter changed (e.g. its name, as shown in the
+        // menus)
+        emit inputParameterChanged();
 
         if ( recompile ) {
             // All invalid expressions are recompiled plus any that reference
@@ -670,11 +792,13 @@ void UncertaintyCalculation::updateInputParameter(
         diffUtil.commitChanges( "Update input parameter " + originalName );
 
         setUnsavedChanges( true );
+        return true;
     }
+    return false;
 }
 
 
-void UncertaintyCalculation::updateOutputParameter(
+bool UncertaintyCalculation::updateOutputParameter(
     const OutputParameter *parameter
 ) {
     QUuid id { OutputParameter::getSelectedId() };
@@ -702,13 +826,18 @@ void UncertaintyCalculation::updateOutputParameter(
         DiffUtil diffUtil {};
         diffUtil.takeSnapshot( originalParameter );
 
-        OutputParameter::update( id, &newParameter);
+        if ( !OutputParameter::update( id, &newParameter ) ) {
+            // The model is unchanged: no transaction or unsaved changes
+            return false;
+        }
         emitAllResultsChanged();
 
         diffUtil.commitChanges( "Update output parameter " + originalName );
 
         setUnsavedChanges( true );
+        return true;
     }
+    return false;
 }
 
 
@@ -772,6 +901,12 @@ void UncertaintyCalculation::onMonteCarloFinished() {
     QString name { parameter ? " " + parameter->getName() : "" };
     mDiffUtil.commitChanges( "Run Monte Carlo simulation" + name );
     emit monteCarloFinished();
+
+    // Report the result of the sample export (if requested for this run)
+    const QString exportMessage { getSampleExportMessage() };
+    if ( !exportMessage.isEmpty() ) {
+        emit sampleExportFinished( getSamplesExported(), exportMessage );
+    }
 }
 
 
@@ -1150,6 +1285,14 @@ void UncertaintyCalculation::createConnections() {
         this,
         &UncertaintyCalculation::resetDisplay
     );
+    // The effective DOF, coverage factor and expanded uncertainty depend on
+    // the truncation of the effective DOF
+    connect(
+        mAppSettings,
+        &ApplicationSettings::truncateEffectiveDOFChanged,
+        this,
+        &UncertaintyCalculation::resetDisplay
+    );
 }
 
 
@@ -1270,9 +1413,14 @@ void UncertaintyCalculation::setProjectFilePath( const QUrl &projectFilePath ) {
 
 
 void UncertaintyCalculation::setUnsavedChanges( bool unsavedChanges ) {
-    if ( unsavedChanges && Settings::getAutoSaveProject() ) {
-        // Auto Save the changes.
-        saveProject();
+    if (
+        unsavedChanges &&
+        Settings::getAutoSaveProject() &&
+        saveProject()
+    ) {
+        // The changes are Auto Saved (saveProject() resets the unsaved
+        // changes). When saving isn't possible, e.g. for a project without a
+        // project file, the changes remain unsaved.
         return;
     }
     mUnsavedChanges = unsavedChanges;

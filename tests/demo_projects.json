@@ -13,7 +13,11 @@
         "of true adds the option as a flag (without value).",
         "The optional 'tolerance' of a project overrules 'defaultTolerance'.",
         "Numerical values are considered equal when the difference is within",
-        "the absolute or within the relative tolerance."
+        "the absolute or within the relative tolerance.",
+        "CSV lines that start with one of the 'ignoredCSVLinePrefixes' are not",
+        "compared. The parts of CSV lines that match one of the regular",
+        "expressions in 'ignoredCSVPatterns' are not compared, the rest of these",
+        "lines is."
     ],
     "demoProjectsDirectory": "../demo_projects",
     "referenceDirectory": "../demo_projects",
@@ -23,8 +27,9 @@
         "relative": 1e-5
     },
     "ignoredCSVLinePrefixes": [
-        "Sigma version:"  
+        "Sigma version:"
     ],
+    "ignoredCSVPatterns": [],
     "ignoredJSONKeys": [
         "Sigma version"
     ],

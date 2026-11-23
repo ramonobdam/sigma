@@ -349,6 +349,7 @@ ResultComparator tst_demoProjects::createComparator(
     comparator.setIgnoredCSVLinePrefixes(
         mConfig.getIgnoredCSVLinePrefixes()
     );
+    comparator.setIgnoredCSVPatterns( mConfig.getIgnoredCSVPatterns() );
     comparator.setIgnoredJsonKeys( mConfig.getIgnoredJsonKeys() );
     return comparator;
 }

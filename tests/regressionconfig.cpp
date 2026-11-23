@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QRegularExpression>
 
 
 RegressionConfig::RegressionConfig()
@@ -17,6 +18,7 @@ RegressionConfig::RegressionConfig()
         mTimeoutSeconds { sDefaultTimeoutSeconds },
         mDefaultTolerance {},
         mIgnoredCSVLinePrefixes {},
+        mIgnoredCSVPatterns {},
         mIgnoredJsonKeys {},
         mProjects {}
 {}
@@ -44,6 +46,11 @@ QString RegressionConfig::getReferenceDirectory() const {
 
 QStringList RegressionConfig::getIgnoredCSVLinePrefixes() const {
     return mIgnoredCSVLinePrefixes;
+}
+
+
+QStringList RegressionConfig::getIgnoredCSVPatterns() const {
+    return mIgnoredCSVPatterns;
 }
 
 
@@ -135,6 +142,25 @@ bool RegressionConfig::load( const QString &fileName ) {
         root.value( sIgnoredCSVLinePrefixesKey ).toArray();
     for ( const QJsonValue &prefix : prefixes ) {
         mIgnoredCSVLinePrefixes.append( prefix.toString() );
+    }
+
+    // The parts of CSV lines that match these regular expressions are not
+    // compared. Invalid expressions are reported, so that a typo doesn't
+    // silently weaken the comparison.
+    mIgnoredCSVPatterns.clear();
+    const QJsonArray patterns = root.value( sIgnoredCSVPatternsKey ).toArray();
+    for ( const QJsonValue &value : patterns ) {
+        const QString pattern { value.toString() };
+        const QRegularExpression expression { pattern };
+        if ( pattern.isEmpty() || !expression.isValid() ) {
+            mError = sInvalidPatternString.arg(
+                sIgnoredCSVPatternsKey,
+                pattern,
+                expression.errorString()
+            );
+            return false;
+        }
+        mIgnoredCSVPatterns.append( pattern );
     }
 
     mIgnoredJsonKeys.clear();

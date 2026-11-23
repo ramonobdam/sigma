@@ -85,7 +85,14 @@ int main( int argc, char *argv[] ) {
                     !CLI.getProjectLoaded()
                 ) {
                     QUrl lastUrl { appSettings.getLastProjectFilePath() };
-                    calculation.loadProject( lastUrl );
+                    if (
+                        !lastUrl.isEmpty() &&
+                        !calculation.loadProject( lastUrl )
+                    ) {
+                        // Don't try to restore the project again on the next
+                        // startup
+                        appSettings.setLastProjectFilePath( QUrl() );
+                    }
                 }
             },
             Qt::QueuedConnection
@@ -122,6 +129,12 @@ int main( int argc, char *argv[] ) {
     }
     else {
         // Headless mode
+        // Always write the log messages (e.g. errors) to stderr. Otherwise, on
+        // Windows they are sent to the debugger output when no console window
+        // is attached (e.g. when started as a subprocess without a console).
+        if ( !qEnvironmentVariableIsSet( "QT_FORCE_STDERR_LOGGING" ) ) {
+            qputenv( "QT_FORCE_STDERR_LOGGING", "1" );
+        }
         QCoreApplication app { argc, argv };
         setApplicationData( &app );
 

@@ -41,16 +41,27 @@ private slots:
     void removeInputParameter_cascadesToCorrelationsAndOutputsAndIsUndoable();
     void updateCorrelation_cascadesToOutputsAndIsUndoable();
     void updateInputParameter_cascadesToOutputsAndIsUndoable();
+    void updateCorrelation_failure_changesNothing();
+    void updateInputParameter_failure_changesNothing();
+    void updateOutputParameter_failure_changesNothing();
 
     void projectJson_roundTripInMemory();
     void saveAndLoadProject_roundTripThroughFile();
     void loadProject_invalidUrl_fails();
+    void parseProjectJson_checksTheStructure_data();
+    void parseProjectJson_checksTheStructure();
+    void loadProject_invalidProject_keepsOpenProject();
+    void loadProject_missingFile_keepsProjectFilePath();
+    void loadProject_emptyObject_loadsEmptyProject();
 
     void saveCSV_writesExpectedSections();
 
     void runMonteCarlo_updatesSelectedOutputAndIsUndoable();
+    void undoRedoRestoreState_whileMonteCarloRuns_areIgnored();
 
     void newProject_clearsEverything();
+    void newProject_autoSave_keepsOpenProjectFile();
+    void autoSave_savesChangesOrKeepsThemUnsaved();
 
     void userClearProject_clearsEverythingAndIsUndoable();
 
@@ -474,7 +485,16 @@ void tst_uncertaintycalculation::updateInputParameter_cascadesToOutputsAndIsUndo
     );
     InputParameter updatedX1 { x1 };
     updatedX1.setName( "X2" );
-    calc.updateInputParameter( &updatedX1 );
+    QSignalSpy inputSpy {
+        &calc,
+        &UncertaintyCalculation::inputParameterChanged
+    };
+    QVERIFY( calc.updateInputParameter( &updatedX1 ) );
+
+    // The name of the selected InputParameter changed ('inputName' is a
+    // Q_PROPERTY with a private getter)
+    QVERIFY( inputSpy.count() > 0 );
+    QCOMPARE( calc.property( "inputName" ).toString(), QString( "X2" ) );
 
     // The OutputParameter Y1 must now be invalid because X1 is missing
     QVERIFY( !addedOutputParam->getValid() );
@@ -488,6 +508,152 @@ void tst_uncertaintycalculation::updateInputParameter_cascadesToOutputsAndIsUndo
     // Redo must make Y1 invalid again
     calc.redo();
     QVERIFY( !addedOutputParam->getValid() );
+}
+
+
+namespace {
+    // Adds the input parameters X1, X2 and X3, the correlations X1-X2 and
+    // X1-X3, and the output parameters Y1 = X1 + X2 + X3 and Y2 = X1, and runs
+    // the Monte Carlo simulation of Y1. Returns false when the Monte Carlo
+    // simulation didn't give valid results.
+    bool addProjectWithMonteCarloResults( UncertaintyCalculation &calc ) {
+        for ( const QString &name : { "X1", "X2", "X3" } ) {
+            InputParameter parameter {};
+            parameter.setName( name );
+            parameter.setStdUncertainty( 1. );
+            calc.addInputParameter( &parameter );
+        }
+        const InputParameter *x1 { InputParameter::getByName( "X1" ) };
+        const InputParameter *x2 { InputParameter::getByName( "X2" ) };
+        const InputParameter *x3 { InputParameter::getByName( "X3" ) };
+        if ( !x1 || !x2 || !x3 ) return false;
+
+        Correlation correlation12 { nullptr, x1->getId(), x2->getId(), 0.5 };
+        calc.addCorrelation( &correlation12 );
+        Correlation correlation13 { nullptr, x1->getId(), x3->getId(), 0.3 };
+        calc.addCorrelation( &correlation13 );
+
+        OutputParameter y1 {};
+        y1.setName( "Y1" );
+        y1.setFormula( "X1 + X2 + X3" );
+        calc.addOutputParameter( &y1 );
+        OutputParameter y2 {};
+        y2.setName( "Y2" );
+        y2.setFormula( "X1" );
+        calc.addOutputParameter( &y2 );
+
+        OutputParameter *addedY1 { OutputParameter::getByName( "Y1" ) };
+        if ( !addedY1 ) return false;
+        OutputParameter::getOutputModel()->selectRow(
+            OutputParameter::getRowIndex( addedY1->getId() )
+        );
+        QSignalSpy finishedSpy {
+            &calc,
+            &UncertaintyCalculation::monteCarloFinished
+        };
+        calc.runMonteCarlo();
+        return finishedSpy.wait( 30000 ) && addedY1->getMonteCarloValid();
+    }
+}
+
+
+void tst_uncertaintycalculation::updateCorrelation_failure_changesNothing() {
+    UncertaintyCalculation calc {};
+    QVERIFY( addProjectWithMonteCarloResults( calc ) );
+    const OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
+    const InputParameter *x1 { InputParameter::getByName( "X1" ) };
+    const InputParameter *x2 { InputParameter::getByName( "X2" ) };
+    const InputParameter *x3 { InputParameter::getByName( "X3" ) };
+    const Correlation *correlation12 {
+        Correlation::getCorrelation( x1->getId(), x2->getId() )
+    };
+    QVERIFY( correlation12 );
+    const int stackSize { UndoStack::instance().getStackSize() };
+    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+
+    // Changing X1-X2 into X1-X3, which already exists, must fail
+    Correlation::getCorrelationModel()->selectRow(
+        Correlation::getRowIndex( correlation12->getId() )
+    );
+    Correlation conflict { nullptr, x1->getId(), x3->getId(), 0.9 };
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Non-unique correlation could not be updated in the model"
+        )
+    );
+    QVERIFY( !calc.updateCorrelation( &conflict ) );
+
+    QCOMPARE( Correlation::getAll().size(), 2 );
+    QCOMPARE(
+        Correlation::getCorrelation( x1->getId(), x2->getId() )
+            ->getCorrelation(),
+        0.5
+    );
+    QVERIFY( y1->getMonteCarloValid() );
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
+    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
+}
+
+
+void tst_uncertaintycalculation::updateInputParameter_failure_changesNothing() {
+    UncertaintyCalculation calc {};
+    QVERIFY( addProjectWithMonteCarloResults( calc ) );
+    const OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
+    InputParameter *x1 { InputParameter::getByName( "X1" ) };
+    const int stackSize { UndoStack::instance().getStackSize() };
+    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+
+    // Renaming X1 to X2, which already exists, must fail
+    InputParameter::getInputModel()->selectRow(
+        InputParameter::getRowIndex( x1->getId() )
+    );
+    InputParameter renamed { *x1 };
+    renamed.setName( "X2" );
+    renamed.setStdUncertainty( 2. );
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid input parameter 'X2' could not be updated in the model"
+        )
+    );
+    QVERIFY( !calc.updateInputParameter( &renamed ) );
+
+    QCOMPARE( InputParameter::getAll().size(), 3 );
+    QCOMPARE( InputParameter::getByName( "X1" ), x1 );
+    QCOMPARE( x1->getStdUncertainty(), 1. );
+    QVERIFY( y1->getMonteCarloValid() );
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
+    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
+}
+
+
+void tst_uncertaintycalculation::updateOutputParameter_failure_changesNothing(
+) {
+    UncertaintyCalculation calc {};
+    QVERIFY( addProjectWithMonteCarloResults( calc ) );
+    OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
+    const int stackSize { UndoStack::instance().getStackSize() };
+    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+
+    // Renaming Y1 to Y2, which already exists, must fail
+    OutputParameter renamed { *y1 };
+    renamed.setName( "Y2" );
+    renamed.setFormula( "X1 - X2" );
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Invalid output parameter 'Y2' could not be updated in the model"
+        )
+    );
+    QVERIFY( !calc.updateOutputParameter( &renamed ) );
+
+    QCOMPARE( OutputParameter::getAll().size(), 2 );
+    QCOMPARE( OutputParameter::getByName( "Y1" ), y1 );
+    QCOMPARE( y1->getFormula(), QString( "X1 + X2 + X3" ) );
+    QVERIFY( y1->getMonteCarloValid() );
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
+    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
 }
 
 
@@ -619,6 +785,140 @@ void tst_uncertaintycalculation::loadProject_invalidUrl_fails() {
 }
 
 
+void tst_uncertaintycalculation::parseProjectJson_checksTheStructure_data() {
+    QTest::addColumn<QByteArray>( "data" );
+    QTest::addColumn<bool>( "valid" );
+
+    // All fields are optional
+    QTest::newRow( "empty object" ) << QByteArray( "{}" ) << true;
+    QTest::newRow( "version only" )
+        << QByteArray( R"({ "Sigma version": "1.6.0" })" ) << true;
+    QTest::newRow( "all fields" )
+        << QByteArray(
+               R"({ "Sigma version": "1.6.0", "inputParameters": [ {} ], )"
+               R"("correlations": [], "outputParameters": [ {} ] })"
+           )
+        << true;
+    QTest::newRow( "unknown field next to a project field" )
+        << QByteArray( R"({ "inputParameters": [], "comment": "test" })" )
+        << true;
+
+    QTest::newRow( "invalid JSON" )
+        << QByteArray( R"({ "inputParameters": [ )" ) << false;
+    QTest::newRow( "no JSON" ) << QByteArray( "Sigma project" ) << false;
+    QTest::newRow( "empty data" ) << QByteArray() << false;
+    QTest::newRow( "array" ) << QByteArray( "[ {} ]" ) << false;
+    QTest::newRow( "field not an array" )
+        << QByteArray( R"({ "inputParameters": { "name": "X1" } })" )
+        << false;
+    QTest::newRow( "element not an object" )
+        << QByteArray( R"({ "outputParameters": [ {}, 1 ] })" ) << false;
+    QTest::newRow( "no project fields" )
+        << QByteArray( R"({ "name": "package", "version": "1.0.0" })" )
+        << false;
+}
+
+
+void tst_uncertaintycalculation::parseProjectJson_checksTheStructure() {
+    QFETCH( QByteArray, data );
+    QFETCH( bool, valid );
+
+    QJsonObject project {};
+    QString error {};
+    QCOMPARE(
+        UncertaintyCalculation::parseProjectJson( data, project, error ),
+        valid
+    );
+    QCOMPARE( error.isEmpty(), valid );
+}
+
+
+void tst_uncertaintycalculation::loadProject_invalidProject_keepsOpenProject() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl projectUrl {
+        QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) )
+    };
+    const QString invalidPath { tempDir.filePath( "invalid.sig" ) };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( projectUrl ) );
+    QVERIFY( UndoStack::instance().canUndo() );
+
+    QFile invalidFile { invalidPath };
+    QVERIFY( invalidFile.open( QIODevice::WriteOnly ) );
+    invalidFile.write( R"({ "inputParameters": [ )" );
+    invalidFile.close();
+
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression( "Project file '.*invalid\\.sig' could not be loaded" )
+    );
+    QVERIFY( !calc.loadProject( QUrl::fromLocalFile( invalidPath ) ) );
+
+    // The open project is left untouched ('projectFilePath' and
+    // 'unsavedChanges' are Q_PROPERTYs with a private getter)
+    QCOMPARE( InputParameter::getAll().size(), 1 );
+    QVERIFY( InputParameter::getByName( "X1" ) );
+    QCOMPARE( calc.property( "projectFilePath" ).toUrl(), projectUrl );
+    QVERIFY( !calc.property( "unsavedChanges" ).toBool() );
+    QVERIFY( UndoStack::instance().canUndo() );
+}
+
+
+void tst_uncertaintycalculation::loadProject_missingFile_keepsProjectFilePath(
+) {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl projectUrl {
+        QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) )
+    };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( projectUrl ) );
+
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression( "Project file '.*missing\\.sig' could not be loaded" )
+    );
+    QVERIFY(
+        !calc.loadProject(
+            QUrl::fromLocalFile( tempDir.filePath( "missing.sig" ) )
+        )
+    );
+
+    QCOMPARE( InputParameter::getAll().size(), 1 );
+    QCOMPARE( calc.property( "projectFilePath" ).toUrl(), projectUrl );
+}
+
+
+void tst_uncertaintycalculation::loadProject_emptyObject_loadsEmptyProject() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "empty.sig" ) };
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::WriteOnly ) );
+    file.write( "{}" );
+    file.close();
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+
+    const QUrl url { QUrl::fromLocalFile( path ) };
+    QVERIFY( calc.loadProject( url ) );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( calc.property( "projectFilePath" ).toUrl(), url );
+}
+
+
 void tst_uncertaintycalculation::saveCSV_writesExpectedSections() {
     UncertaintyCalculation calc {};
 
@@ -687,6 +987,80 @@ void tst_uncertaintycalculation::runMonteCarlo_updatesSelectedOutputAndIsUndoabl
 }
 
 
+void tst_uncertaintycalculation::undoRedoRestoreState_whileMonteCarloRuns_areIgnored(
+) {
+    UncertaintyCalculation calc {};
+
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    x1.setStdUncertainty( 1. );
+    calc.addInputParameter( &x1 );
+    OutputParameter y1 {};
+    y1.setName( "Y1" );
+    y1.setFormula( "X1" );
+    calc.addOutputParameter( &y1 );
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+
+    // Undo adding X2, so that both undo and redo are possible
+    calc.undo();
+    QVERIFY( UndoStack::instance().canUndo() );
+    QVERIFY( UndoStack::instance().canRedo() );
+    const int lockedCursor { UndoStack::instance().getCursor() };
+
+    // Run a simulation of Y1 that takes long enough to call the functions
+    // while it runs (the simulation thread locks the OutputParameter)
+    OutputParameter *addedY1 { OutputParameter::getByName( "Y1" ) };
+    QVERIFY( addedY1 );
+    OutputParameter::getOutputModel()->selectRow(
+        OutputParameter::getRowIndex( addedY1->getId() )
+    );
+    QVERIFY( Settings::setMonteCarloDigits( 3 ) );
+    QVERIFY( Settings::setMonteCarloBatchSize( 100000 ) );
+    QVERIFY( Settings::setMonteCarloMaxNumOfBatches( 1000 ) );
+    QSignalSpy finishedSpy {
+        &calc,
+        &UncertaintyCalculation::monteCarloFinished
+    };
+    calc.runMonteCarlo();
+    QTRY_VERIFY_WITH_TIMEOUT(
+        calc.property( "outputLocked" ).toBool(),
+        10000
+    );
+
+    calc.undo();
+    const int cursorAfterUndo { UndoStack::instance().getCursor() };
+    calc.redo();
+    const int cursorAfterRedo { UndoStack::instance().getCursor() };
+    calc.restoreState( 0 );
+    const int cursorAfterRestore { UndoStack::instance().getCursor() };
+    const qsizetype numberOfInputs { InputParameter::getAll().size() };
+    const qsizetype numberOfOutputs { OutputParameter::getAll().size() };
+
+    calc.stopMonteCarlo();
+    const bool finished { finishedSpy.wait( 30000 ) };
+    QVERIFY( Settings::setMonteCarloDigits( 1 ) );
+    QVERIFY( Settings::setMonteCarloBatchSize( 3000 ) );
+    QVERIFY( Settings::setMonteCarloMaxNumOfBatches( 300 ) );
+
+    QCOMPARE( cursorAfterUndo, lockedCursor );
+    QCOMPARE( cursorAfterRedo, lockedCursor );
+    QCOMPARE( cursorAfterRestore, lockedCursor );
+    QCOMPARE( numberOfInputs, 1 );
+    QCOMPARE( numberOfOutputs, 1 );
+    QVERIFY( finished );
+
+    // Once the simulation has finished, restoreState() works again (state 0
+    // is the empty project)
+    QVERIFY( !calc.property( "outputLocked" ).toBool() );
+    calc.restoreState( 0 );
+    QCOMPARE( UndoStack::instance().getCursor(), 0 );
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    QCOMPARE( OutputParameter::getAll().size(), 0 );
+}
+
+
 void tst_uncertaintycalculation::newProject_clearsEverything() {
     UncertaintyCalculation calc {};
 
@@ -702,6 +1076,70 @@ void tst_uncertaintycalculation::newProject_clearsEverything() {
     QVERIFY( !UndoStack::instance().canUndo() );
     QVERIFY( !UndoStack::instance().canRedo() );
 }
+
+
+void tst_uncertaintycalculation::newProject_autoSave_keepsOpenProjectFile() {
+    // With Auto Save enabled, a new project must not overwrite the file of the
+    // project that was open
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "project.sig" ) };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( QUrl::fromLocalFile( path ) ) );
+
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    const QByteArray savedProject { file.readAll() };
+    file.close();
+
+    QVERIFY( Settings::setAutoSaveProject( true ) );
+    calc.newProject();
+    QVERIFY( Settings::setAutoSaveProject( false ) );
+
+    QCOMPARE( InputParameter::getAll().size(), 0 );
+    // 'projectFilePath' is exposed as a Q_PROPERTY with a private getter
+    QVERIFY( calc.property( "projectFilePath" ).toUrl().isEmpty() );
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    QCOMPARE( file.readAll(), savedProject );
+}
+
+
+void tst_uncertaintycalculation::autoSave_savesChangesOrKeepsThemUnsaved() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "project.sig" ) };
+
+    UncertaintyCalculation calc {};
+    QVERIFY( Settings::setAutoSaveProject( true ) );
+
+    // Without a project file the changes can't be Auto Saved and must remain
+    // unsaved ('unsavedChanges' is a Q_PROPERTY with a private getter)
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    const bool unsavedWithoutFile { calc.property( "unsavedChanges" ).toBool() };
+
+    // With a project file the changes are Auto Saved
+    const bool saved { calc.saveProject( QUrl::fromLocalFile( path ) ) };
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    const bool unsavedWithFile { calc.property( "unsavedChanges" ).toBool() };
+
+    QVERIFY( Settings::setAutoSaveProject( false ) );
+
+    QVERIFY( unsavedWithoutFile );
+    QVERIFY( saved );
+    QVERIFY( !unsavedWithFile );
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    QVERIFY( file.readAll().contains( "\"X2\"" ) );
+}
+
 
 void tst_uncertaintycalculation::userClearProject_clearsEverythingAndIsUndoable(
 ) {

@@ -59,6 +59,10 @@ public:
     Q_INVOKABLE QString getInputParameterNameA( bool csvMode = false ) const;
     Q_INVOKABLE QString getInputParameterNameB( bool csvMode = false ) const;
     Q_INVOKABLE bool isUnique( bool checkCurrentSelection = false ) const;
+    // Returns true when this correlation is consistent with the other
+    // correlations: together they must form a valid (positive semi-definite)
+    // correlation matrix of all input parameters
+    Q_INVOKABLE bool isConsistent( bool checkCurrentSelection = false ) const;
     Q_INVOKABLE bool setInputParameterAByName( const QString &name );
     Q_INVOKABLE bool setInputParameterBByName( const QString &name );
     Q_INVOKABLE double getCorrelation() const;
@@ -141,8 +145,14 @@ private:
     static constexpr QLatin1StringView sInvalidCorrelationString {
         "Invalid correlation could not be inserted into the model"
     };
+    static constexpr QLatin1StringView sInvalidCorrelationUpdateString {
+        "Invalid correlation could not be updated in the model"
+    };
     static constexpr QLatin1StringView sNonUniqueCorrelationString {
         "Non-unique correlation could not be inserted into the model"
+    };
+    static constexpr QLatin1StringView sNonUniqueCorrelationUpdateString {
+        "Non-unique correlation could not be updated in the model"
     };
     static constexpr double sMaxCorrelation { 1. };
     static constexpr double sMinCorrelation { -1. };

@@ -298,7 +298,10 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
                     text: "Settings..."
-                    shortcut: StandardKey.Preferences
+                    // StandardKey.Preferences gives Cmd+, on macOS, but on
+                    // Windows it's the (rare) dedicated Settings key
+                    shortcut: Qt.platform.os === "osx" ? StandardKey.Preferences
+                                                       : "Ctrl+,"
                     onTriggered: { openSettings() }
                 }
 
@@ -527,13 +530,19 @@ ApplicationWindow {
 
             SigmaMenu {
                 title: "Monte Carlo simulation"
-                implicitWidth: 170
+                implicitWidth: 300
 
                 SigmaMenuBarMenuItem {
                     text: "Start"
                     shortcut: "Ctrl+R"
                     enabled: calculation.outputValid && !Properties.outputLocked
                     onTriggered: calculation.runMonteCarlo()
+                }
+
+                SigmaMenuBarMenuItem {
+                    text: "Start and export samples..."
+                    enabled: calculation.outputValid && !Properties.outputLocked
+                    onTriggered: samplesDialog.open()
                 }
 
                 SigmaMenuBarMenuItem {
@@ -1248,5 +1257,9 @@ ApplicationWindow {
 
     CSVDialog {
         id: csvDialog
+    }
+
+    SamplesDialog {
+        id: samplesDialog
     }
 }

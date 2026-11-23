@@ -47,7 +47,7 @@ QtObject {
     property string colorWarning1000_Light: "#4F3A0C"
     property string colorSuccess1000_Light: "#002F1D"
     property string colorError500_Light: "#E54242"
-    property string colorWarning500_Light: "#E1A928"
+    property string colorWarning500_Light: "#E07D00"
     property string colorSuccess500_Light: "#26A575"
     property string colorHover_Light: "#255772"
     property string colorDown_Light: "#23485C"
@@ -215,6 +215,7 @@ QtObject {
     // FontAwesome icons (unicode)
     property string validIcon: "\uf00c"
     property string invalidIcon: "\uf00d"
+    property string warningIcon: "\u0021"
     property string triangleExclamationIcon: "\uf071"
     property string circleXmarkIcon: "\uf057"
     property string settingsIcon: "\uf1de"
@@ -225,6 +226,7 @@ QtObject {
     property string calculatorIcon: "\uf1ec"
     property string symbolIcon: "α"
     property string titleBarCloseIcon: "🞨"
+    property string circleCheckIcon: "\uf058"
 
     // Default SplitView dimensions
     property int minWidthInputParam: 450
@@ -280,6 +282,8 @@ QtObject {
         "The input parameters must be different"
     property string errorCorrelationNotUnique:
         "The combination of input parameters already exists"
+    property string warningCorrelationInconsistent:
+        "Inconsistent with other correlations (invalid correlation matrix)"
     property string errorConstantParamCor: "No probability distribution defined"
 
     // App icon url

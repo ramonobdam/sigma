@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.16 )
 
-project( Sigma VERSION 1.5.1 LANGUAGES CXX )
+project( Sigma VERSION 1.6.0 LANGUAGES CXX )
 
 set( CMAKE_CXX_STANDARD 17 )
 
@@ -101,6 +101,7 @@ qt_add_qml_module( Sigma
         qml/ProjectFailed.qml
         qml/Properties.qml
         qml/RoundedRectangle.qml
+        qml/SamplesDialog.qml
         qml/SecondaryButton.qml
         qml/SettingsWindow.qml
         qml/SigmaBusyIndicator.qml
@@ -169,6 +170,8 @@ qt_add_qml_module( Sigma
         src/resultsmodel.h
         src/samplebatch.cpp
         src/samplebatch.h
+        src/samplewriter.cpp
+        src/samplewriter.h
         src/settings.cpp
         src/settings.h
         src/statistics.cpp
@@ -195,25 +198,15 @@ qt_add_qml_module( Sigma
 
 target_include_directories( Sigma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
-file( GLOB ALGLIB_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/alglib/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/alglib/*.h
-)
+# The third-party libraries are header-only
+add_library( ThirdParty INTERFACE )
 
-add_library( ThirdParty STATIC
-    ${ALGLIB_SOURCES}
+target_sources( ThirdParty INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/exprtk/exprtk.hpp
 )
 
-target_include_directories( ThirdParty PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/alglib
+target_include_directories( ThirdParty INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/Eigen
-)
-
-set_target_properties( ThirdParty PROPERTIES
-    AUTOMOC OFF
-    AUTOUIC OFF
-    AUTORCC OFF
 )
 
 target_link_libraries( Sigma PRIVATE

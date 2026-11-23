@@ -30,7 +30,9 @@ public:
     static bool getAutoSaveProject();
     static bool getDefaultAutoSaveProject();
     static bool getDefaultRestoreLastProject();
+    static bool getDefaultTruncateEffectiveDOF();
     static bool getRestoreLastProject();
+    static bool getTruncateEffectiveDOF();
     static bool setAutoSaveProject( bool autoSaveProject );
     static bool setCSVPrecision( int csvPrecision );
     static bool setDisplayPrecision( int numberOfDigits );
@@ -39,6 +41,7 @@ public:
     static bool setMonteCarloDigits( int numberOfDigits );
     static bool setMonteCarloMaxNumOfBatches ( int maxNumOfBatches );
     static bool setRestoreLastProject( bool restoreLastProject );
+    static bool setTruncateEffectiveDOF( bool truncateEffectiveDOF );
     static int getCSVPrecision();
     static int getDefaultCSVPrecision();
     static int getDefaultDisplayPrecision();
@@ -91,6 +94,9 @@ private:
     inline static Setting<DisplayTheme> sDisplayTheme { System, System, Dark };
     inline static Setting<bool> sAutoSaveProject { false, false, true };
     inline static Setting<bool> sRestoreLastProject { false, false, true };
+    // Truncate the effective DOF to the next lower integer (JCGM 100:2008
+    // G.4.1 note 1)
+    inline static Setting<bool> sTruncateEffectiveDOF { false, true, true };
     inline static Setting<int> sCSVPrecision { 1, 10, 20 };
     inline static Setting<int> sDisplayPrecision { 1, 6, 10 };
     inline static Setting<int> sMonteCarloBatchSize { 100, 100000, 1000000 };

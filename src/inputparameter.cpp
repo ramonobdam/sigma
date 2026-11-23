@@ -282,7 +282,7 @@ void InputParameter::setDOF( int DOF ) {
         mDOF = sMaxDOF;
     }
     if ( !valid ) {
-        qCritical() << sInvalidDOFString.arg(
+        qCritical().noquote() << sInvalidDOFString.arg(
             QString::number( DOF, 'f', 0 ),
             QString::number( mDOF, 'f', 0 )
         );
@@ -301,7 +301,7 @@ void InputParameter::setDistribution( const QString &distributionString ) {
     if (
         !Distribution::stringToDistribution( distributionString, mDistribution )
     ) {
-        qCritical() << sInvalidDistributionString.arg(
+        qCritical().noquote() << sInvalidDistributionString.arg(
             distributionString.trimmed(),
             Distribution::distributionToString( mDistribution )
         );
@@ -312,7 +312,7 @@ void InputParameter::setDistribution( const QString &distributionString ) {
 void InputParameter::setStdUncertainty( double stdUncertainty ) {
     if ( stdUncertainty < sMinStdUncertainty ) {
         mStdUncertainty = std::abs( stdUncertainty );
-        qCritical() << sNegativeStdUncertaintyString.arg(
+        qCritical().noquote() << sNegativeStdUncertaintyString.arg(
             StringUtils::doubleToString(
                 stdUncertainty,
                 Settings::getDefaultDisplayPrecision()
@@ -494,6 +494,9 @@ bool InputParameter::update( const QUuid &id, InputParameter *parameter ) {
             }
         }
     }
+    qCritical().noquote() << sUpdateErrorString.arg(
+        parameter ? parameter->getName() : QString()
+    );
     return false;
 }
 
@@ -603,7 +606,7 @@ InputParameter * InputParameter::insertIntoModel( int row ) {
             return newParam;
         }
     }
-    qCritical() << sInsertErrorString.arg( mName );
+    qCritical().noquote() << sInsertErrorString.arg( mName );
     return nullptr;
 }
 

@@ -14,6 +14,7 @@
 #include "resultsmodel.h"
 #include "undohistorymodel.h"
 #include <QAbstractTableModel>
+#include <QByteArray>
 #include <QItemSelectionModel>
 #include <QJsonObject>
 #include <QLatin1StringView>
@@ -38,12 +39,20 @@ public:
     );
 
     QJsonObject projectToJson() const;
+    QString getMonteCarloStatus() const;
+    QString getSampleExportMessage() const;
     QString getProjectFileName() const;
     QStringList getOutputParameterNames() const;
     QStringList getUnits() const;
     bool getHistogramValid() const;
+    bool getSamplesExported() const;
     bool selectOutputParameterByName( const QString &name );
     void projectFromJson( const QJsonObject &json );
+    static bool parseProjectJson(
+        const QByteArray &data,
+        QJsonObject &project,
+        QString &error
+    );
 
     Q_INVOKABLE QList<int> getBudgetColumnWidths() const;
     Q_INVOKABLE QList<int> getCorrelationColumnWidths() const;
@@ -88,11 +97,14 @@ public:
     Q_INVOKABLE void removeInputParameter();
     Q_INVOKABLE void removeOutputParameter();
     Q_INVOKABLE void restoreState( int index );
-    Q_INVOKABLE void runMonteCarlo();
+    // Runs the Monte Carlo simulation for the selected output parameter. When
+    // sampleExportUrl is not empty, the samples are exported to that CSV file
+    // (only when the simulation converges).
+    Q_INVOKABLE void runMonteCarlo( const QUrl &sampleExportUrl = {} );
     Q_INVOKABLE void stopMonteCarlo();
-    Q_INVOKABLE void updateCorrelation( const Correlation *correlation );
-    Q_INVOKABLE void updateInputParameter( const InputParameter *parameter );
-    Q_INVOKABLE void updateOutputParameter( const OutputParameter *parameter );
+    Q_INVOKABLE bool updateCorrelation( const Correlation *correlation );
+    Q_INVOKABLE bool updateInputParameter( const InputParameter *parameter );
+    Q_INVOKABLE bool updateOutputParameter( const OutputParameter *parameter );
     Q_INVOKABLE void userClearProject();
     Q_INVOKABLE void undo();
     Q_INVOKABLE void redo();
@@ -213,6 +225,8 @@ signals:
     void monteCarloResultsChanged();
     void monteCarloResultsListChanged();
     void histogramValuesChanged();
+    // Emitted after a Monte Carlo run with sample export has finished
+    void sampleExportFinished( bool exported, const QString &message );
     void outputLockedChanged();
     void projectFilePathChanged();
     void resultsChanged();
@@ -267,11 +281,26 @@ private:
     static constexpr QLatin1StringView sCSVFailedString {
         "CSV file '%1' could not be saved."
     };
+    static constexpr QLatin1StringView sElementNotAnObjectString {
+        "Field '%1' contains an element that is not an object."
+    };
+    static constexpr QLatin1StringView sFieldNotAnArrayString {
+        "Field '%1' is not an array."
+    };
     static constexpr QLatin1StringView sInputParametersString {
         "inputParameters"
     };
+    static constexpr QLatin1StringView sInvalidJsonString {
+        "Invalid JSON at offset %1: %2."
+    };
     static constexpr QLatin1StringView sLoadFailedString {
         "Project file '%1' could not be loaded."
+    };
+    static constexpr QLatin1StringView sNoProjectFieldsString {
+        "The JSON object doesn't contain any of the project fields."
+    };
+    static constexpr QLatin1StringView sNotAnObjectString {
+        "The JSON data is not an object."
     };
     static constexpr QLatin1StringView sOutputParametersString {
         "outputParameters"

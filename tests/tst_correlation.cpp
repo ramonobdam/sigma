@@ -32,6 +32,9 @@ private slots:
 
     void applyDiff_addUpdateAndRemove();
 
+    void isConsistent_detectsInconsistentCorrelations();
+    void isConsistent_editModeReplacesSelectedCorrelation();
+
 private:
     InputParameter *mParamA;
     InputParameter *mParamB;
@@ -203,7 +206,33 @@ void tst_correlation::update_requiresUniqueOrSameParameters() {
     // Changing to a pair that already exists elsewhere in the model ->
     // rejected
     Correlation conflict { nullptr, mParamA->getId(), mParamC->getId(), 0.2 };
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Non-unique correlation could not be updated in the model"
+        )
+    );
     QVERIFY( !Correlation::update( addedAB->getId(), &conflict ) );
+
+    // Changing to an invalid correlation (identical input parameters, or an
+    // input parameter that doesn't exist) -> rejected
+    Correlation identical { nullptr, mParamA->getId(), mParamA->getId(), 0.2 };
+    Correlation unknown { nullptr, mParamA->getId(), QUuid::createUuid(), 0.2 };
+    for ( Correlation *invalid : { &identical, &unknown } ) {
+        QTest::ignoreMessage(
+            QtCriticalMsg,
+            QRegularExpression(
+                "Invalid correlation could not be updated in the model"
+            )
+        );
+        QVERIFY( !Correlation::update( addedAB->getId(), invalid ) );
+    }
+
+    // The correlation is unchanged
+    const Correlation *unchanged { Correlation::getById( addedAB->getId() ) };
+    QCOMPARE( unchanged->getInputParameterAId(), mParamA->getId() );
+    QCOMPARE( unchanged->getInputParameterBId(), mParamB->getId() );
+    QCOMPARE( unchanged->getCorrelation(), 0.9 );
 }
 
 
@@ -234,6 +263,53 @@ void tst_correlation::applyDiff_addUpdateAndRemove() {
         JsonDiff { id, DataType::Correlation, 0, afterAdd, patch }
     );
     QCOMPARE( Correlation::getById( id )->getCorrelation(), 0.8 );
+}
+
+
+void tst_correlation::isConsistent_detectsInconsistentCorrelations() {
+    // A perfect correlation on its own is consistent
+    Correlation perfect { nullptr, mParamA->getId(), mParamB->getId(), 1. };
+    QVERIFY( perfect.isConsistent() );
+
+    Correlation ab { nullptr, mParamA->getId(), mParamB->getId(), 0.9 };
+    QVERIFY( ab.appendToModel() );
+    Correlation ac { nullptr, mParamA->getId(), mParamC->getId(), 0.9 };
+    QVERIFY( ac.appendToModel() );
+
+    // With r(A,B) = r(A,C) = 0.9, r(B,C) must be at least
+    // 0.81 - 0.19 = 0.62
+    Correlation inconsistent {
+        nullptr, mParamB->getId(), mParamC->getId(), -0.9
+    };
+    QVERIFY( !inconsistent.isConsistent() );
+
+    Correlation consistent { nullptr, mParamB->getId(), mParamC->getId(), 0.9 };
+    QVERIFY( consistent.isConsistent() );
+
+    // Exactly at the boundary the correlation matrix is positive
+    // semi-definite (singular), which is consistent
+    Correlation boundary { nullptr, mParamB->getId(), mParamC->getId(), 0.62 };
+    QVERIFY( boundary.isConsistent() );
+}
+
+
+void tst_correlation::isConsistent_editModeReplacesSelectedCorrelation() {
+    Correlation ab { nullptr, mParamA->getId(), mParamB->getId(), 0.9 };
+    QVERIFY( ab.appendToModel() );
+    Correlation ac { nullptr, mParamA->getId(), mParamC->getId(), 0.9 };
+    QVERIFY( ac.appendToModel() );
+    Correlation bc { nullptr, mParamB->getId(), mParamC->getId(), 0.9 };
+    QVERIFY( bc.appendToModel() );   // The new correlation is selected
+    QCOMPARE(
+        Correlation::getSelected()->getInputParameterBId(),
+        mParamC->getId()
+    );
+
+    // Editing the selected correlation B-C: the proposed value replaces 0.9
+    Correlation edit { nullptr, mParamB->getId(), mParamC->getId(), -0.9 };
+    QVERIFY( !edit.isConsistent( true ) );
+    edit.setCorrelation( 0.8 );
+    QVERIFY( edit.isConsistent( true ) );
 }
 
 
