@@ -167,7 +167,9 @@ bool UncertaintyCalculation::parseProjectJson(
             error = QString( sFieldNotAnArrayString ).arg( field );
             return false;
         }
-        const QJsonArray elements { value.toArray() };
+        // Use copy constructor '()' instead of initializer_list constructor
+        // '{}' (which would create an array with the array as only element)
+        const QJsonArray elements( value.toArray() );
         for ( const QJsonValue &element : elements ) {
             if ( !element.isObject() ) {
                 error = QString( sElementNotAnObjectString ).arg( field );
