@@ -13,6 +13,7 @@
 #include <QtAssert>
 #include <QtLogging>
 #include <QtMinMax>
+#include <algorithm>
 #include <cmath>
 #include <deque>
 
@@ -467,7 +468,15 @@ int OutputParameter::getEffectiveDOF() const {
         if ( effectiveDOF >= static_cast<double>( MathConstants::maxInt ) ) {
             return MathConstants::maxInt;
         }
-        return static_cast<int> ( effectiveDOF );
+        // With negative correlations, the effective DOF can be below 1 (and
+        // would be truncated to 0, giving a coverage factor of 0). It's limited
+        // to the minimum DOF of the input parameters instead. Note that such a
+        // low value indicates that the GUM uncertainty framework is not
+        // reliable for this output parameter.
+        return std::max(
+            static_cast<int> ( effectiveDOF ),
+            sMinEffectiveDOF
+        );
     }
 
     // Infinite DOF

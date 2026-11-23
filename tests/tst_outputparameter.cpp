@@ -37,6 +37,8 @@ private slots:
     void compile_correlatedInputs_increaseCombinedUncertainty();
     void compile_negativeCorrelation_decreasesCombinedUncertainty();
     void compile_constantDistribution_doesNotContributeToUncertainty();
+    void effectiveDOF_negativeCorrelation_isAtLeastOne_data();
+    void effectiveDOF_negativeCorrelation_isAtLeastOne();
 
     void latentCorrelation_normalPair_isPearsonDespiteOtherInputs();
     void latentCorrelation_nonNormalPair_isConvertedFromSpearman();
@@ -349,6 +351,64 @@ void tst_outputparameter::compile_constantDistribution_doesNotContributeToUncert
     // K is a constant ('none' distribution): its component value is zero, so
     // it must not contribute to the combined uncertainty
     QVERIFY( qAbs( output.getCombinedStdUncertainty() - 2. ) < 1e-6 );
+}
+
+
+void tst_outputparameter::effectiveDOF_negativeCorrelation_isAtLeastOne_data(
+) {
+    // Y = X1 + X2 with u = 1 and DOF = 1 for both inputs and correlation r.
+    // The Welch-Satterthwaite relation for correlated errors (Castrup) gives
+    // nu_eff = 2 (1 + r)^2 / (1 + 2r + 1.25r^2), truncated to an integer
+    QTest::addColumn<double>( "correlation" );
+    QTest::addColumn<int>( "effectiveDOF" );
+    QTest::addColumn<double>( "coverageFactor" );   // t-quantile, 95%
+
+    QTest::newRow( "r = 0 (nu_eff = 2)" ) << 0. << 2 << 4.302652729911275;
+    QTest::newRow( "r = -0.5 (nu_eff = 1.6)" )
+        << -0.5 << 1 << 12.706204736174705;
+    QTest::newRow( "r = -0.7 (nu_eff = 0.85)" )
+        << -0.7 << 1 << 12.706204736174705;
+    QTest::newRow( "r = -0.99 (nu_eff = 0.0008)" )
+        << -0.99 << 1 << 12.706204736174705;
+}
+
+
+void tst_outputparameter::effectiveDOF_negativeCorrelation_isAtLeastOne() {
+    QFETCH( double, correlation );
+    QFETCH( int, effectiveDOF );
+    QFETCH( double, coverageFactor );
+
+    InputParameter *x1 {
+        addInput( "X1", 0., 1., Distribution::Type::normal, false, 1 )
+    };
+    QVERIFY( x1 );
+    InputParameter *x2 {
+        addInput( "X2", 0., 1., Distribution::Type::normal, false, 1 )
+    };
+    QVERIFY( x2 );
+    if ( correlation != 0. ) {
+        Correlation corr { nullptr, x1->getId(), x2->getId(), correlation };
+        QVERIFY( corr.appendToModel() != nullptr );
+    }
+
+    OutputParameter output {};
+    output.setFormula( "X1 + X2" );
+    output.setConfidence( 0.95 );
+    output.compile();
+    QVERIFY( output.getValid() );
+
+    QCOMPARE( output.getEffectiveDOF(), effectiveDOF );
+    QVERIFY(
+        qAbs( output.getCoverageFactor() / coverageFactor - 1. ) < 1e-9
+    );
+    // u_c^2 = 2 + 2r
+    const double combined { std::sqrt( 2. + 2. * correlation ) };
+    QVERIFY( qAbs( output.getCombinedStdUncertainty() - combined ) < 1e-9 );
+    QVERIFY(
+        qAbs(
+            output.getExpandedUncertainty() - coverageFactor * combined
+        ) < 1e-6 * combined
+    );
 }
 
 

@@ -259,6 +259,7 @@ private:
     static constexpr double sMaxConfidence { 0.999 };
     static constexpr double sMinConfidence { 0. };
     static constexpr int sErrorCodeLength { 9 };
+    static constexpr int sMinEffectiveDOF { 1 };
 };
 
 #endif // OUTPUTPARAMETER_H
