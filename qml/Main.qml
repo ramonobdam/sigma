@@ -298,7 +298,10 @@ ApplicationWindow {
                 SigmaMenuBarMenuItem {
                     // Moved to Application Menu on Mac by the OS
                     text: "Settings..."
-                    shortcut: StandardKey.Preferences
+                    // StandardKey.Preferences gives Cmd+, on macOS, but on
+                    // Windows it's the (rare) dedicated Settings key
+                    shortcut: Qt.platform.os === "osx" ? StandardKey.Preferences
+                                                       : "Ctrl+,"
                     onTriggered: { openSettings() }
                 }
 
