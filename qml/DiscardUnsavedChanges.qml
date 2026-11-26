@@ -17,24 +17,34 @@ BaseDialog {
 
     property int mode: DiscardUnsavedChanges.Close
 
-    // Close main window after saving the project?
-    property bool closeWindow: false
+    // Set when the user chose to discard the changes before closing the main
+    // window, so the window closes without showing this dialog again
+    property bool discardChanges: false
 
     function save() {
-        // Save project and hide the dialog
+        // Save project and hide the dialog. The next step (closing the window,
+        // opening a project or creating a new project) is only taken when the
+        // project has been saved successfully: when saving is cancelled or
+        // fails, the unsaved changes are kept and the user is asked again.
         control.hide()
-        control.closeWindow = ( control.mode === DiscardUnsavedChanges.Close )
+        const mainWindow = control.transientParent
+        let afterSave = null
+        switch( control.mode ) {
+            case DiscardUnsavedChanges.Close:
+                afterSave = () => { mainWindow.closeWindow() }
+                break
+            case DiscardUnsavedChanges.OpenProject:
+                afterSave = () => { mainWindow.openProject( false ) }
+                break
+            case DiscardUnsavedChanges.NewProject:
+                afterSave = () => { mainWindow.newProject( false ) }
+                break
+        }
         if ( Properties.filePathNotEmpty ) {
-            control.transientParent.saveProject( control.closeWindow )
+            mainWindow.saveProject( afterSave )
         }
         else {
-            control.transientParent.saveProjectAs( control.closeWindow )
-        }
-        if ( control.mode === DiscardUnsavedChanges.OpenProject ) {
-            control.transientParent.openProject( false )
-        }
-        else if ( control.mode === DiscardUnsavedChanges.NewProject) {
-            control.transientParent.newProject( false )
+            mainWindow.saveProjectAs( afterSave )
         }
     }
 
@@ -43,7 +53,7 @@ BaseDialog {
         control.hide()
         switch( control.mode) {
             case DiscardUnsavedChanges.Close:
-                control.closeWindow = true
+                control.discardChanges = true
                 control.transientParent.close()
                 break
             case DiscardUnsavedChanges.OpenProject:
@@ -56,7 +66,6 @@ BaseDialog {
     }
 
     function cancel() {
-        control.closeWindow = false
         control.hide()
     }
 

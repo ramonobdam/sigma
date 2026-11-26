@@ -433,7 +433,7 @@ When saving a project or using `--to-json`, *Sigma* adds a `monteCarlo` object w
 | `tst_samplebatch` | Monte Carlo sample batch generation, reproducibility, correlated sampling, invalid-output handling, minimum batch size |
 | `tst_samplewriter` | CSV export of Monte Carlo samples (header, round-trip precision, no file without commit), valid and unique sample file names |
 | `tst_statistics` | Mean/std-dev, coverage-interval bounds, histogram |
-| `tst_stringutils` | Number/CSV formatting helpers and Unicode locale behaviour |
+| `tst_stringutils` | Number/CSV formatting helpers, Unicode locale behaviour, URL to local path and file name conversion |
 | `tst_uncertaintycalculation` | Add/remove/update input parameter/output parameter/correlation, delete cascades, JSON round-trip, project load/save (incl. invalid project files and Auto Save), unsaved changes state following the undo/redo system (no-op edits, undo/redo to the saved state, new/loaded projects, external edits of the project file), project export, undo/redo system, units model, output parameter references |
 | `tst_uncertaintycomponent` | Input parameter properties, sensitivity (partial derivative), component/correlation contributions, Welch-Satterthwaite, correlated component uniqueness |
 

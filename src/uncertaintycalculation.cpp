@@ -315,6 +315,12 @@ QString UncertaintyCalculation::getSelectedInputParameterReferences(
 }
 
 
+QString UncertaintyCalculation::urlToFileName( const QUrl &url ) const {
+    // For the dialogs in the GUI
+    return StringUtils::urlToFileName( url );
+}
+
+
 bool UncertaintyCalculation::inputParameterIsConstant(
     const QString &name
 ) const {
@@ -324,18 +330,21 @@ bool UncertaintyCalculation::inputParameterIsConstant(
 
 bool UncertaintyCalculation::loadProject( const QUrl &url ) {
     QString path { url.toLocalFile() };
+    // Path with native separators for the messages
+    const QString displayPath { StringUtils::urlToLocalPath( url ) };
     QFile loadFile( path );
     // When loading fails, the currently open project (incl. its project file
     // path) is left untouched
     if ( !url.isLocalFile() || !loadFile.open( QIODevice::ReadOnly ) ) {
-        qCritical().noquote() << QString( sLoadFailedString ).arg( path );
+        qCritical().noquote() <<
+            QString( sLoadFailedString ).arg( displayPath );
         return false;
     }
     QJsonObject project {};
     QString error {};
     if ( !parseProjectJson( loadFile.readAll(), project, error ) ) {
         qCritical().noquote() <<
-            QString( sLoadFailedString ).arg( path ) + " " + error;
+            QString( sLoadFailedString ).arg( displayPath ) + " " + error;
         return false;
     }
     // Clearing and loading don't create transactions, so the currently open
@@ -355,12 +364,14 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
 
 bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
     QString path { url.toLocalFile() };
+    // Path with native separators for the messages
+    const QString displayPath { StringUtils::urlToLocalPath( url ) };
     QSaveFile csvFile( path );
     if (
         !url.isLocalFile() ||
         !csvFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qCritical().noquote() << QString( sCSVFailedString ).arg( path );
+        qCritical().noquote() << QString( sCSVFailedString ).arg( displayPath );
         return false;
     }
     QTextStream out( &csvFile );
@@ -368,7 +379,7 @@ bool UncertaintyCalculation::saveCSV( const QUrl &url ) {
     out.flush();
     if ( !csvFile.commit() ) {
         // Writing failed (e.g. disk full), the existing file is left untouched
-        qCritical().noquote() << QString( sCSVFailedString ).arg( path );
+        qCritical().noquote() << QString( sCSVFailedString ).arg( displayPath );
         return false;
     }
     return true;
@@ -386,20 +397,25 @@ bool UncertaintyCalculation::saveProject() {
 
 bool UncertaintyCalculation::saveProject( const QUrl &url ) {
     QString path { url.toLocalFile() };
+    // Path with native separators for the messages
+    const QString displayPath { StringUtils::urlToLocalPath( url ) };
     QSaveFile saveFile( path );
     if (
         !url.isLocalFile() ||
         !saveFile.open( QIODeviceBase::WriteOnly | QIODeviceBase::Text )
     ) {
-        qCritical().noquote() << QString( sSaveFailedString ).arg( path );
-        resetProjectFilePath();
+        // The project file path is left untouched (e.g. a locked project file
+        // remains the project file, the project can be saved to another file)
+        qCritical().noquote() <<
+            QString( sSaveFailedString ).arg( displayPath );
         return false;
     }
     QJsonObject project { projectToJson() };
     saveFile.write( QJsonDocument( project ).toJson() );
     if ( !saveFile.commit() ) {
         // Writing failed (e.g. disk full), the existing file is left untouched
-        qCritical().noquote() << QString( sSaveFailedString ).arg( path );
+        qCritical().noquote() <<
+            QString( sSaveFailedString ).arg( displayPath );
         return false;
     }
     setProjectFilePath( url );

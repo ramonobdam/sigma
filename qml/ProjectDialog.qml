@@ -12,7 +12,11 @@ import Sigma
 FileDialog {
     property bool save: fileMode === FileDialog.SaveFile
     property bool success: false
-    property bool closeWindowOnSuccess: false
+    // Optional function called after the project has been saved successfully
+    // (e.g. closing the window or opening a project). It's dropped when saving
+    // is cancelled, and passed on to the save-failed dialog when saving fails
+    // (to be taken after saving to another file).
+    property var afterSave: null
 
     title: acceptLabel
     acceptLabel: ( save ? "Save" : "Open" ) + " project"
@@ -22,12 +26,17 @@ FileDialog {
     onAccepted: {
         if ( save ) {
             success = calculation.saveProject( selectedFile )
-            if ( success && closeWindowOnSuccess ) {
-                window.close()
+            const pendingAction = afterSave
+            afterSave = null
+            if ( success && pendingAction ) {
+                // Called later, since the action may open this dialog again
+                Qt.callLater( pendingAction )
             }
             else if ( !success ) {
+                // The next step is kept for saving to another file
                 projectFailed.save = true
                 projectFailed.fileURL = selectedFile
+                projectFailed.afterSave = pendingAction
                 projectFailed.show()
             }
         }
@@ -35,8 +44,10 @@ FileDialog {
             if ( !calculation.loadProject( selectedFile ) ) {
                 projectFailed.save = false
                 projectFailed.fileURL = selectedFile
+                projectFailed.afterSave = null
                 projectFailed.show()
             }
         }
     }
+    onRejected: { afterSave = null }
 }

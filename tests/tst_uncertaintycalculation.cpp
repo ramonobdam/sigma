@@ -53,6 +53,7 @@ private slots:
     void loadProject_invalidProject_keepsOpenProject();
     void loadProject_missingFile_keepsProjectFilePath();
     void loadProject_emptyObject_loadsEmptyProject();
+    void saveProject_failure_keepsProjectFilePath();
 
     void saveCSV_writesExpectedSections();
 
@@ -217,7 +218,7 @@ void tst_uncertaintycalculation::addInputAndOutputParameter_compilesAndIsSelecte
     // appendToModel() (used internally) automatically selects the new row
     QCOMPARE( OutputParameter::getSelected(), added );
     // 'unsavedChanges' is exposed as a Q_PROPERTY with a private getter
-    QVERIFY( unsaved( &calc ) );
+    QVERIFY( unsaved( calc ) );
 }
 
 
@@ -609,7 +610,7 @@ void tst_uncertaintycalculation::updateCorrelation_failure_changesNothing() {
     };
     QVERIFY( correlation12 );
     const int stackSize { UndoStack::instance().getStackSize() };
-    const bool wasUnsaved { unsaved( &calc ) };
+    const bool wasUnsaved { unsaved( calc ) };
 
     // Changing X1-X2 into X1-X3, which already exists, must fail
     Correlation::getCorrelationModel()->selectRow(
@@ -632,7 +633,7 @@ void tst_uncertaintycalculation::updateCorrelation_failure_changesNothing() {
     );
     QVERIFY( y1->getMonteCarloValid() );
     QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
-    QCOMPARE( unsaved( &calc ), wasUnsaved );
+    QCOMPARE( unsaved( calc ), wasUnsaved );
 }
 
 
@@ -642,7 +643,7 @@ void tst_uncertaintycalculation::updateInputParameter_failure_changesNothing() {
     const OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
     InputParameter *x1 { InputParameter::getByName( "X1" ) };
     const int stackSize { UndoStack::instance().getStackSize() };
-    const bool wasUnsaved { unsaved( &calc ) };
+    const bool wasUnsaved { unsaved( calc ) };
 
     // Renaming X1 to X2, which already exists, must fail
     InputParameter::getInputModel()->selectRow(
@@ -664,7 +665,7 @@ void tst_uncertaintycalculation::updateInputParameter_failure_changesNothing() {
     QCOMPARE( x1->getStdUncertainty(), 1. );
     QVERIFY( y1->getMonteCarloValid() );
     QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
-    QCOMPARE( unsaved( &calc ), wasUnsaved );
+    QCOMPARE( unsaved( calc ), wasUnsaved );
 }
 
 
@@ -674,7 +675,7 @@ void tst_uncertaintycalculation::updateOutputParameter_failure_changesNothing(
     QVERIFY( addProjectWithMonteCarloResults( calc ) );
     OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
     const int stackSize { UndoStack::instance().getStackSize() };
-    const bool wasUnsaved { unsaved( &calc ) };
+    const bool wasUnsaved { unsaved( calc ) };
 
     // Renaming Y1 to Y2, which already exists, must fail
     OutputParameter renamed { *y1 };
@@ -693,7 +694,7 @@ void tst_uncertaintycalculation::updateOutputParameter_failure_changesNothing(
     QCOMPARE( y1->getFormula(), QString( "X1 + X2 + X3" ) );
     QVERIFY( y1->getMonteCarloValid() );
     QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
-    QCOMPARE( unsaved( &calc ), wasUnsaved );
+    QCOMPARE( unsaved( calc ), wasUnsaved );
 }
 
 
@@ -819,7 +820,10 @@ void tst_uncertaintycalculation::loadProject_invalidUrl_fails() {
     UncertaintyCalculation calc {};
     QTest::ignoreMessage(
         QtCriticalMsg,
-        QRegularExpression( "Project file '' could not be loaded." )
+        // A URL that isn't a local file is shown as it is
+        QRegularExpression(
+            "Project file 'not-a-local-file' could not be loaded."
+        )
     );
     QVERIFY( !calc.loadProject( QUrl( "not-a-local-file" ) ) );
 }
@@ -904,7 +908,7 @@ void tst_uncertaintycalculation::loadProject_invalidProject_keepsOpenProject() {
     QCOMPARE( InputParameter::getAll().size(), 1 );
     QVERIFY( InputParameter::getByName( "X1" ) );
     QCOMPARE( calc.property( "projectFilePath" ).toUrl(), projectUrl );
-    QVERIFY( !unsaved( &calc ) );
+    QVERIFY( !unsaved( calc ) );
     QVERIFY( UndoStack::instance().canUndo() );
 }
 
@@ -956,6 +960,46 @@ void tst_uncertaintycalculation::loadProject_emptyObject_loadsEmptyProject() {
     QVERIFY( calc.loadProject( url ) );
     QCOMPARE( InputParameter::getAll().size(), 0 );
     QCOMPARE( calc.property( "projectFilePath" ).toUrl(), url );
+}
+
+
+void tst_uncertaintycalculation::saveProject_failure_keepsProjectFilePath() {
+    // When saving fails (e.g. a locked project file or a file that can't be
+    // created), the project file path is left untouched, so the project can
+    // still be saved to another file
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl projectUrl {
+        QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) )
+    };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( projectUrl ) );
+
+    // A file in a folder that doesn't exist can't be created on any platform
+    // (unlike a read-only file, which can be written by root)
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    QTest::ignoreMessage(
+        QtCriticalMsg,
+        QRegularExpression(
+            "Project file '.*project2\\.sig' could not be saved"
+        )
+    );
+    QVERIFY(
+        !calc.saveProject(
+            QUrl::fromLocalFile( tempDir.filePath( "missing/project2.sig" ) )
+        )
+    );
+
+    QCOMPARE( calc.property( "projectFilePath" ).toUrl(), projectUrl );
+    QCOMPARE( Settings::getLastProjectFilePath(), projectUrl );
+    // The changes are still unsaved
+    QVERIFY( unsaved( calc ) );
 }
 
 
@@ -1161,14 +1205,14 @@ void tst_uncertaintycalculation::autoSave_savesChangesOrKeepsThemUnsaved() {
     InputParameter x1 {};
     x1.setName( "X1" );
     calc.addInputParameter( &x1 );
-    const bool unsavedWithoutFile { unsaved( &calc ) };
+    const bool unsavedWithoutFile { unsaved( calc ) };
 
     // With a project file the changes are Auto Saved
     const bool saved { calc.saveProject( QUrl::fromLocalFile( path ) ) };
     InputParameter x2 {};
     x2.setName( "X2" );
     calc.addInputParameter( &x2 );
-    const bool unsavedWithFile { unsaved( &calc ) };
+    const bool unsavedWithFile { unsaved( calc ) };
 
     QVERIFY( Settings::setAutoSaveProject( false ) );
 
@@ -1199,26 +1243,26 @@ void tst_uncertaintycalculation::autoSave_undoRedo_savesRestoredState() {
     InputParameter x2 {};
     x2.setName( "X2" );
     calc.addInputParameter( &x2 );
-    const bool unsavedAfterAdd { unsaved( &calc ) };
+    const bool unsavedAfterAdd { unsaved( calc ) };
     QVERIFY( file.open( QIODevice::ReadOnly ) );
     const QByteArray afterAdd { file.readAll() };
     file.close();
 
     calc.undo();
-    const bool unsavedAfterUndo { unsaved( &calc ) };
+    const bool unsavedAfterUndo { unsaved( calc ) };
     QVERIFY( file.open( QIODevice::ReadOnly ) );
     const QByteArray afterUndo { file.readAll() };
     file.close();
 
     calc.redo();
-    const bool unsavedAfterRedo { unsaved( &calc ) };
+    const bool unsavedAfterRedo { unsaved( calc ) };
     QVERIFY( file.open( QIODevice::ReadOnly ) );
     const QByteArray afterRedo { file.readAll() };
     file.close();
 
     calc.restoreState( 0 );
     const bool unsavedAfterRestore {
-        unsaved( &calc )
+        unsaved( calc )
     };
     QVERIFY( file.open( QIODevice::ReadOnly ) );
     const QByteArray afterRestore { file.readAll() };

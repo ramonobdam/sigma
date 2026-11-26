@@ -16,13 +16,12 @@ BaseDialog {
     }
 
     onVisibleChanged: {
+        // In addition to the handler of BaseDialog (centering and focus)
         if ( visible ) {
-            Qt.callLater( centerOnParent )
             correlation.setToSelected()
             paramA = correlation.getInputParameterNameA()
             paramB = correlation.getInputParameterNameB()
             references = calculation.getSelectedCorrelationReferences()
-            primaryButton.forceActiveFocus()
         }
     }
 

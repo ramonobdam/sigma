@@ -18,10 +18,9 @@ BaseDialog {
     }
 
     onVisibleChanged: {
+        // In addition to the handler of BaseDialog (centering and focus)
         if ( visible ) {
-            Qt.callLater( centerOnParent )
             references = calculation.getSelectedInputParameterReferences()
-            primaryButton.forceActiveFocus()
         }
     }
 

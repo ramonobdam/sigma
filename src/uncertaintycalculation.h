@@ -33,7 +33,7 @@ class UncertaintyCalculation : public QObject {
     Q_OBJECT
 
 public:
-    UncertaintyCalculation(
+    explicit UncertaintyCalculation(
         QObject *parent = nullptr,
         ApplicationSettings *appSettings = new ApplicationSettings()
     );
@@ -64,6 +64,7 @@ public:
     Q_INVOKABLE QString getNewOutputParameterName() const;
     Q_INVOKABLE QString getSelectedCorrelationReferences() const;
     Q_INVOKABLE QString getSelectedInputParameterReferences() const;
+    Q_INVOKABLE QString urlToFileName( const QUrl &url ) const;
     Q_INVOKABLE bool inputParameterIsConstant( const QString &name ) const;
     Q_INVOKABLE bool loadProject( const QUrl &url );
     Q_INVOKABLE bool saveCSV( const QUrl &url );
