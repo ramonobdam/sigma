@@ -5,6 +5,7 @@
 #include "diffutil.h"
 #include "inputparameter.h"
 #include "undostack.h"
+#include <QSignalSpy>
 #include <QTest>
 
 // Unit tests for the undo/redo engine: DiffUtil records before/after JSON
@@ -32,6 +33,12 @@ private slots:
 
     void pushTransaction_truncatesRedoHistory();
     void restoreState_jumpsAcrossMultipleTransactions();
+
+    void cleanState_followsUndoRedo();
+    void cleanState_noOpChange_staysClean();
+    void cleanState_unreachableAfterTruncatedRedoHistory();
+    void cleanState_restoreState_emitsCleanChangedOnce();
+    void cleanState_clear_isClean();
 };
 
 
@@ -257,6 +264,143 @@ void tst_diffutil::restoreState_jumpsAcrossMultipleTransactions() {
 
     UndoStack::instance().restoreState( 0 );
     QCOMPARE( InputParameter::getAll().size(), 0 );
+}
+
+
+// Helper: add an InputParameter with the given name in its own transaction
+static void addParameterTransaction( const QString &name ) {
+    DiffUtil diffUtil {};
+    InputParameter parameter {};
+    parameter.setName( name );
+    InputParameter *added { parameter.appendToModel() };
+    diffUtil.takeSnapshotOfNewObject( added );
+    diffUtil.commitChanges( "Add " + name );
+}
+
+
+void tst_diffutil::cleanState_followsUndoRedo() {
+    UndoStack &stack { UndoStack::instance() };
+    QSignalSpy cleanSpy { &stack, &UndoStack::cleanChanged };
+
+    // An empty stack is clean
+    QVERIFY( stack.isClean() );
+    QCOMPARE( stack.getCleanIndex(), 0 );
+
+    addParameterTransaction( "X1" );
+    QVERIFY( !stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 1 );
+
+    // Mark the current state as clean (as saving the project does)
+    stack.setClean();
+    QVERIFY( stack.isClean() );
+    QCOMPARE( stack.getCleanIndex(), 1 );
+    QCOMPARE( cleanSpy.count(), 2 );
+
+    // Calling setClean() again doesn't change the clean state
+    stack.setClean();
+    QCOMPARE( cleanSpy.count(), 2 );
+
+    addParameterTransaction( "X2" );
+    QVERIFY( !stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 3 );
+
+    // Undoing back to the clean state makes the stack clean again
+    stack.undo();
+    QVERIFY( stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 4 );
+
+    // Undoing past the clean state
+    stack.undo();
+    QVERIFY( !stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 5 );
+
+    // Redoing up to the clean state
+    stack.redo();
+    QVERIFY( stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 6 );
+
+    stack.redo();
+    QVERIFY( !stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 7 );
+}
+
+
+void tst_diffutil::cleanState_noOpChange_staysClean() {
+    UndoStack &stack { UndoStack::instance() };
+    addParameterTransaction( "X1" );
+    stack.setClean();
+    QSignalSpy cleanSpy { &stack, &UndoStack::cleanChanged };
+
+    // A no-op change doesn't create a transaction, so the stack stays clean
+    DiffUtil diffUtil {};
+    diffUtil.takeSnapshot( InputParameter::getByName( "X1" ) );
+    diffUtil.commitChanges( "No-op" );
+
+    QCOMPARE( stack.getStackSize(), 1 );
+    QVERIFY( stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 0 );
+}
+
+
+void tst_diffutil::cleanState_unreachableAfterTruncatedRedoHistory() {
+    UndoStack &stack { UndoStack::instance() };
+    addParameterTransaction( "X1" );
+    addParameterTransaction( "X2" );
+    stack.setClean();       // Clean at cursor 2
+
+    stack.undo();
+    QVERIFY( !stack.isClean() );
+
+    // The clean state is part of the redo history that is truncated
+    addParameterTransaction( "X3" );
+    QCOMPARE( stack.getCleanIndex(), -1 );
+    QVERIFY( !stack.isClean() );
+
+    // The clean state can't be reached anymore by undo or redo
+    for ( int index { 0 }; index <= stack.getStackSize(); ++index ) {
+        stack.restoreState( index );
+        QVERIFY( !stack.isClean() );
+    }
+
+    // Until the current state is marked clean again
+    stack.setClean();
+    QVERIFY( stack.isClean() );
+}
+
+
+void tst_diffutil::cleanState_restoreState_emitsCleanChangedOnce() {
+    UndoStack &stack { UndoStack::instance() };
+    addParameterTransaction( "X1" );
+    addParameterTransaction( "X2" );
+    addParameterTransaction( "X3" );
+    stack.setClean();
+    QSignalSpy cleanSpy { &stack, &UndoStack::cleanChanged };
+
+    // Jumping across several transactions changes the clean state once
+    stack.restoreState( 0 );
+    QVERIFY( !stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 1 );
+
+    // Jumping between unclean states doesn't change the clean state
+    stack.restoreState( 1 );
+    QCOMPARE( cleanSpy.count(), 1 );
+
+    stack.restoreState( 3 );
+    QVERIFY( stack.isClean() );
+    QCOMPARE( cleanSpy.count(), 2 );
+}
+
+
+void tst_diffutil::cleanState_clear_isClean() {
+    UndoStack &stack { UndoStack::instance() };
+    addParameterTransaction( "X1" );
+    QVERIFY( !stack.isClean() );
+    QSignalSpy cleanSpy { &stack, &UndoStack::cleanChanged };
+
+    stack.clear();
+    QVERIFY( stack.isClean() );
+    QCOMPARE( stack.getCleanIndex(), 0 );
+    QCOMPARE( cleanSpy.count(), 1 );
 }
 
 

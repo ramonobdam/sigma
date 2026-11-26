@@ -24,6 +24,16 @@ bool UndoStack::canUndo() const {
 }
 
 
+bool UndoStack::isClean() const {
+    return mCursor == mCleanIndex;
+}
+
+
+int UndoStack::getCleanIndex() const {
+    return mCleanIndex;
+}
+
+
 int UndoStack::getCursor() const {
     return mCursor;
 }
@@ -35,17 +45,26 @@ int UndoStack::getStackSize() const {
 
 
 void UndoStack::clear() {
+    const bool wasClean { isClean() };
     mStack.clear();
     mCursor = 0;
+    mCleanIndex = 0;    // An empty stack represents a clean (new) state
     emit canUndoChanged();
     emit canRedoChanged();
     emit cursorChanged();
     emit stackSizeChanged();
+    emitCleanChangedIfNeeded( wasClean );
 }
 
 
 void UndoStack::pushTransaction( const Transaction &transaction ) {
-    // Truncate redo history
+    const bool wasClean { isClean() };
+
+    // Truncate redo history. When the clean state is part of the truncated
+    // history, it can't be reached anymore.
+    if ( mCleanIndex > mCursor ) {
+        mCleanIndex = -1;
+    }
     mStack.resize( mCursor );
 
     mStack.append( transaction );
@@ -54,6 +73,7 @@ void UndoStack::pushTransaction( const Transaction &transaction ) {
     emit canRedoChanged();
     emit cursorChanged();
     emit stackSizeChanged();
+    emitCleanChangedIfNeeded( wasClean );
 }
 
 
@@ -62,11 +82,13 @@ void UndoStack::redo() {
         return;
     }
 
+    const bool wasClean { isClean() };
     applyTransaction( mStack[ mCursor ], Direction::Redo );
     ++mCursor;
     emit canUndoChanged();
     emit canRedoChanged();
     emit cursorChanged();
+    emitCleanChangedIfNeeded( wasClean );
 }
 
 
@@ -74,6 +96,8 @@ void UndoStack::restoreState( int index ) {
     // Apply transactions to restore the state at index
     if ( index < 0 || index > mStack.size() ) return;
     if ( index == mCursor ) return;
+
+    const bool wasClean { isClean() };
 
     // Apply transactions silently — block signals
     blockSignals( true );
@@ -90,12 +114,23 @@ void UndoStack::restoreState( int index ) {
         }
     }
 
-    // Emit all signals once after all transactions are applied
+    // Emit all signals once after all transactions are applied. As for undo()
+    // and redo(), transactionApplied() is emitted before cursorChanged(), so
+    // the data is fully restored when the cursor change is signalled.
     blockSignals( false );
+    emit transactionApplied();
     emit canUndoChanged();
     emit canRedoChanged();
     emit cursorChanged();
-    emit transactionApplied();
+    emitCleanChangedIfNeeded( wasClean );
+}
+
+
+void UndoStack::setClean() {
+    // Mark the current state as clean (e.g. after saving the project)
+    const bool wasClean { isClean() };
+    mCleanIndex = mCursor;
+    emitCleanChangedIfNeeded( wasClean );
 }
 
 
@@ -104,11 +139,13 @@ void UndoStack::undo() {
         return;
     }
 
+    const bool wasClean { isClean() };
     --mCursor;
     applyTransaction( mStack[ mCursor ], Direction::Undo );
     emit canUndoChanged();
     emit canRedoChanged();
     emit cursorChanged();
+    emitCleanChangedIfNeeded( wasClean );
 }
 
 
@@ -120,8 +157,16 @@ UndoStack & UndoStack::instance() {
 
 UndoStack::UndoStack()
     :   mStack {},
-        mCursor { 0 }
+        mCursor { 0 },
+        mCleanIndex { 0 }
 {}
+
+
+void UndoStack::emitCleanChangedIfNeeded( bool wasClean ) {
+    if ( isClean() != wasClean ) {
+        emit cleanChanged();
+    }
+}
 
 
 void UndoStack::applyTransaction(

@@ -214,7 +214,8 @@ public slots:
     void lockItemSelectionModels();
     void onMonteCarloFinished();
     void onTransactionApplied();
-    void unsavedChanges();
+    void onUndoCleanChanged();
+    void onUndoCursorChanged();
 
 signals:
     void canUndoChanged();
@@ -258,7 +259,7 @@ private:
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
     int getUndoCursor() const;
-    void clearProject( bool unsavedChanges = true );
+    void clearProject();
     void connectToOutputParameter( const OutputParameter *parameter);
     void createConnections();
     void emitAllResultsChanged();
@@ -272,7 +273,7 @@ private:
     void resetDisplay();
     void resetProjectFilePath();
     void setProjectFilePath( const QUrl &projectFilePath );
-    void setUnsavedChanges(  bool unsavedChanges );
+    void updateUnsavedChanges( bool autoSave = false );
     void updateUnits();
 
     static constexpr QLatin1StringView sCorrelationsString {

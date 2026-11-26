@@ -62,6 +62,16 @@ private slots:
     void newProject_clearsEverything();
     void newProject_autoSave_keepsOpenProjectFile();
     void autoSave_savesChangesOrKeepsThemUnsaved();
+    void autoSave_undoRedo_savesRestoredState();
+
+    void unsavedChanges_initiallyFalse();
+    void unsavedChanges_noOpEdits_keepProjectSaved();
+    void unsavedChanges_undoRedoBackToSavedState_isSaved();
+    void unsavedChanges_savedStateInTruncatedRedoHistory_isUnreachable();
+    void unsavedChanges_newProject_isSaved();
+    void unsavedChanges_loadProject_isSaved();
+    void unsavedChanges_projectFileEditedOutsideApp_isIgnored();
+    void unsavedChanges_monteCarlo_followsUndoSystem();
 
     void userClearProject_clearsEverythingAndIsUndoable();
 
@@ -70,6 +80,82 @@ private slots:
     void getSelectedInputParameterReferences_returnsCorrectOutputs();
     void getSelectedCorrelationReferences_returnsCorrectOutputs();
 };
+
+namespace {
+    // Adds the input parameters X1, X2 and X3, the correlations X1-X2 and
+    // X1-X3, and the output parameters Y1 = X1 + X2 + X3 and Y2 = X1, and runs
+    // the Monte Carlo simulation of Y1. Returns false when the Monte Carlo
+    // simulation didn't give valid results.
+    bool addProjectWithMonteCarloResults( UncertaintyCalculation &calc ) {
+        for ( const QString &name : { "X1", "X2", "X3" } ) {
+            InputParameter parameter {};
+            parameter.setName( name );
+            parameter.setStdUncertainty( 1. );
+            calc.addInputParameter( &parameter );
+        }
+        const InputParameter *x1 { InputParameter::getByName( "X1" ) };
+        const InputParameter *x2 { InputParameter::getByName( "X2" ) };
+        const InputParameter *x3 { InputParameter::getByName( "X3" ) };
+        if ( !x1 || !x2 || !x3 ) return false;
+
+        Correlation correlation12 { nullptr, x1->getId(), x2->getId(), 0.5 };
+        calc.addCorrelation( &correlation12 );
+        Correlation correlation13 { nullptr, x1->getId(), x3->getId(), 0.3 };
+        calc.addCorrelation( &correlation13 );
+
+        OutputParameter y1 {};
+        y1.setName( "Y1" );
+        y1.setFormula( "X1 + X2 + X3" );
+        calc.addOutputParameter( &y1 );
+        OutputParameter y2 {};
+        y2.setName( "Y2" );
+        y2.setFormula( "X1" );
+        calc.addOutputParameter( &y2 );
+
+        OutputParameter *addedY1 { OutputParameter::getByName( "Y1" ) };
+        if ( !addedY1 ) return false;
+        OutputParameter::getOutputModel()->selectRow(
+            OutputParameter::getRowIndex( addedY1->getId() )
+            );
+        QSignalSpy finishedSpy {
+            &calc,
+            &UncertaintyCalculation::monteCarloFinished
+        };
+        calc.runMonteCarlo();
+        return finishedSpy.wait( 30000 ) && addedY1->getMonteCarloValid();
+    }
+
+
+    // Adds the input parameters X1 and X2, the correlation X1-X2 and the
+    // output parameter Y1 = X1 + X2
+    void addSimpleProject( UncertaintyCalculation &calc ) {
+        for ( const QString &name : { "X1", "X2" } ) {
+            InputParameter parameter {};
+            parameter.setName( name );
+            parameter.setNominalValue( 1. );
+            parameter.setStdUncertainty( 1. );
+            calc.addInputParameter( &parameter );
+        }
+        Correlation correlation {
+            nullptr,
+            InputParameter::getByName( "X1" )->getId(),
+            InputParameter::getByName( "X2" )->getId(),
+            0.5
+        };
+        calc.addCorrelation( &correlation );
+
+        OutputParameter y1 {};
+        y1.setName( "Y1" );
+        y1.setFormula( "X1 + X2" );
+        calc.addOutputParameter( &y1 );
+    }
+
+
+    bool unsaved( const UncertaintyCalculation &calc ) {
+        // 'unsavedChanges' is a Q_PROPERTY with a private getter
+        return calc.property( "unsavedChanges" ).toBool();
+    }
+}
 
 
 void tst_uncertaintycalculation::initTestCase() {
@@ -131,7 +217,7 @@ void tst_uncertaintycalculation::addInputAndOutputParameter_compilesAndIsSelecte
     // appendToModel() (used internally) automatically selects the new row
     QCOMPARE( OutputParameter::getSelected(), added );
     // 'unsavedChanges' is exposed as a Q_PROPERTY with a private getter
-    QVERIFY( calc.property( "unsavedChanges" ).toBool() );
+    QVERIFY( unsaved( &calc ) );
 }
 
 
@@ -339,6 +425,7 @@ void tst_uncertaintycalculation::removeCorrelation_cascadesToOutputsAndIsUndoabl
     );
 }
 
+
 void tst_uncertaintycalculation::removeInputParameter_cascadesToCorrelationsAndOutputsAndIsUndoable(
 ) {
     UncertaintyCalculation calc {};
@@ -510,53 +597,6 @@ void tst_uncertaintycalculation::updateInputParameter_cascadesToOutputsAndIsUndo
     QVERIFY( !addedOutputParam->getValid() );
 }
 
-
-namespace {
-    // Adds the input parameters X1, X2 and X3, the correlations X1-X2 and
-    // X1-X3, and the output parameters Y1 = X1 + X2 + X3 and Y2 = X1, and runs
-    // the Monte Carlo simulation of Y1. Returns false when the Monte Carlo
-    // simulation didn't give valid results.
-    bool addProjectWithMonteCarloResults( UncertaintyCalculation &calc ) {
-        for ( const QString &name : { "X1", "X2", "X3" } ) {
-            InputParameter parameter {};
-            parameter.setName( name );
-            parameter.setStdUncertainty( 1. );
-            calc.addInputParameter( &parameter );
-        }
-        const InputParameter *x1 { InputParameter::getByName( "X1" ) };
-        const InputParameter *x2 { InputParameter::getByName( "X2" ) };
-        const InputParameter *x3 { InputParameter::getByName( "X3" ) };
-        if ( !x1 || !x2 || !x3 ) return false;
-
-        Correlation correlation12 { nullptr, x1->getId(), x2->getId(), 0.5 };
-        calc.addCorrelation( &correlation12 );
-        Correlation correlation13 { nullptr, x1->getId(), x3->getId(), 0.3 };
-        calc.addCorrelation( &correlation13 );
-
-        OutputParameter y1 {};
-        y1.setName( "Y1" );
-        y1.setFormula( "X1 + X2 + X3" );
-        calc.addOutputParameter( &y1 );
-        OutputParameter y2 {};
-        y2.setName( "Y2" );
-        y2.setFormula( "X1" );
-        calc.addOutputParameter( &y2 );
-
-        OutputParameter *addedY1 { OutputParameter::getByName( "Y1" ) };
-        if ( !addedY1 ) return false;
-        OutputParameter::getOutputModel()->selectRow(
-            OutputParameter::getRowIndex( addedY1->getId() )
-        );
-        QSignalSpy finishedSpy {
-            &calc,
-            &UncertaintyCalculation::monteCarloFinished
-        };
-        calc.runMonteCarlo();
-        return finishedSpy.wait( 30000 ) && addedY1->getMonteCarloValid();
-    }
-}
-
-
 void tst_uncertaintycalculation::updateCorrelation_failure_changesNothing() {
     UncertaintyCalculation calc {};
     QVERIFY( addProjectWithMonteCarloResults( calc ) );
@@ -569,7 +609,7 @@ void tst_uncertaintycalculation::updateCorrelation_failure_changesNothing() {
     };
     QVERIFY( correlation12 );
     const int stackSize { UndoStack::instance().getStackSize() };
-    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+    const bool wasUnsaved { unsaved( &calc ) };
 
     // Changing X1-X2 into X1-X3, which already exists, must fail
     Correlation::getCorrelationModel()->selectRow(
@@ -592,7 +632,7 @@ void tst_uncertaintycalculation::updateCorrelation_failure_changesNothing() {
     );
     QVERIFY( y1->getMonteCarloValid() );
     QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
-    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
+    QCOMPARE( unsaved( &calc ), wasUnsaved );
 }
 
 
@@ -602,7 +642,7 @@ void tst_uncertaintycalculation::updateInputParameter_failure_changesNothing() {
     const OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
     InputParameter *x1 { InputParameter::getByName( "X1" ) };
     const int stackSize { UndoStack::instance().getStackSize() };
-    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+    const bool wasUnsaved { unsaved( &calc ) };
 
     // Renaming X1 to X2, which already exists, must fail
     InputParameter::getInputModel()->selectRow(
@@ -624,7 +664,7 @@ void tst_uncertaintycalculation::updateInputParameter_failure_changesNothing() {
     QCOMPARE( x1->getStdUncertainty(), 1. );
     QVERIFY( y1->getMonteCarloValid() );
     QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
-    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
+    QCOMPARE( unsaved( &calc ), wasUnsaved );
 }
 
 
@@ -634,7 +674,7 @@ void tst_uncertaintycalculation::updateOutputParameter_failure_changesNothing(
     QVERIFY( addProjectWithMonteCarloResults( calc ) );
     OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
     const int stackSize { UndoStack::instance().getStackSize() };
-    const bool unsaved { calc.property( "unsavedChanges" ).toBool() };
+    const bool wasUnsaved { unsaved( &calc ) };
 
     // Renaming Y1 to Y2, which already exists, must fail
     OutputParameter renamed { *y1 };
@@ -653,7 +693,7 @@ void tst_uncertaintycalculation::updateOutputParameter_failure_changesNothing(
     QCOMPARE( y1->getFormula(), QString( "X1 + X2 + X3" ) );
     QVERIFY( y1->getMonteCarloValid() );
     QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
-    QCOMPARE( calc.property( "unsavedChanges" ).toBool(), unsaved );
+    QCOMPARE( unsaved( &calc ), wasUnsaved );
 }
 
 
@@ -864,7 +904,7 @@ void tst_uncertaintycalculation::loadProject_invalidProject_keepsOpenProject() {
     QCOMPARE( InputParameter::getAll().size(), 1 );
     QVERIFY( InputParameter::getByName( "X1" ) );
     QCOMPARE( calc.property( "projectFilePath" ).toUrl(), projectUrl );
-    QVERIFY( !calc.property( "unsavedChanges" ).toBool() );
+    QVERIFY( !unsaved( &calc ) );
     QVERIFY( UndoStack::instance().canUndo() );
 }
 
@@ -1121,14 +1161,14 @@ void tst_uncertaintycalculation::autoSave_savesChangesOrKeepsThemUnsaved() {
     InputParameter x1 {};
     x1.setName( "X1" );
     calc.addInputParameter( &x1 );
-    const bool unsavedWithoutFile { calc.property( "unsavedChanges" ).toBool() };
+    const bool unsavedWithoutFile { unsaved( &calc ) };
 
     // With a project file the changes are Auto Saved
     const bool saved { calc.saveProject( QUrl::fromLocalFile( path ) ) };
     InputParameter x2 {};
     x2.setName( "X2" );
     calc.addInputParameter( &x2 );
-    const bool unsavedWithFile { calc.property( "unsavedChanges" ).toBool() };
+    const bool unsavedWithFile { unsaved( &calc ) };
 
     QVERIFY( Settings::setAutoSaveProject( false ) );
 
@@ -1140,6 +1180,319 @@ void tst_uncertaintycalculation::autoSave_savesChangesOrKeepsThemUnsaved() {
     QVERIFY( file.readAll().contains( "\"X2\"" ) );
 }
 
+
+void tst_uncertaintycalculation::autoSave_undoRedo_savesRestoredState() {
+    // With Auto Save enabled, undo and redo are saved as well, so the project
+    // file always reflects the current state
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "project.sig" ) };
+    QFile file { path };
+
+    UncertaintyCalculation calc {};
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( calc.saveProject( QUrl::fromLocalFile( path ) ) );
+
+    QVERIFY( Settings::setAutoSaveProject( true ) );
+    InputParameter x2 {};
+    x2.setName( "X2" );
+    calc.addInputParameter( &x2 );
+    const bool unsavedAfterAdd { unsaved( &calc ) };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    const QByteArray afterAdd { file.readAll() };
+    file.close();
+
+    calc.undo();
+    const bool unsavedAfterUndo { unsaved( &calc ) };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    const QByteArray afterUndo { file.readAll() };
+    file.close();
+
+    calc.redo();
+    const bool unsavedAfterRedo { unsaved( &calc ) };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    const QByteArray afterRedo { file.readAll() };
+    file.close();
+
+    calc.restoreState( 0 );
+    const bool unsavedAfterRestore {
+        unsaved( &calc )
+    };
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    const QByteArray afterRestore { file.readAll() };
+    file.close();
+
+    QVERIFY( Settings::setAutoSaveProject( false ) );
+
+    QVERIFY( !unsavedAfterAdd );
+    QVERIFY( afterAdd.contains( "\"X2\"" ) );
+    QVERIFY( !unsavedAfterUndo );
+    QVERIFY( !afterUndo.contains( "\"X2\"" ) );
+    QVERIFY( afterUndo.contains( "\"X1\"" ) );
+    QVERIFY( !unsavedAfterRedo );
+    QVERIFY( afterRedo.contains( "\"X2\"" ) );
+    QVERIFY( !unsavedAfterRestore );
+    QVERIFY( !afterRestore.contains( "\"X1\"" ) );
+}
+
+
+void tst_uncertaintycalculation::unsavedChanges_initiallyFalse() {
+    UncertaintyCalculation calc {};
+    QVERIFY( !unsaved( calc ) );
+}
+
+
+void tst_uncertaintycalculation::unsavedChanges_noOpEdits_keepProjectSaved() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl url { QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) ) };
+
+    UncertaintyCalculation calc {};
+    addSimpleProject( calc );
+    QVERIFY( unsaved( calc ) );
+    QVERIFY( calc.saveProject( url ) );
+    QVERIFY( !unsaved( calc ) );
+
+    const int stackSize { UndoStack::instance().getStackSize() };
+    QSignalSpy unsavedSpy {
+        &calc,
+        &UncertaintyCalculation::unsavedChangesChanged
+    };
+
+    // Update the input parameter with identical values
+    InputParameter *x1 { InputParameter::getByName( "X1" ) };
+    InputParameter::getInputModel()->selectRow(
+        InputParameter::getRowIndex( x1->getId() )
+    );
+    const InputParameter sameX1 { *x1 };
+    QVERIFY( calc.updateInputParameter( &sameX1 ) );
+
+    // Update the output parameter with identical values
+    OutputParameter *y1 { OutputParameter::getByName( "Y1" ) };
+    OutputParameter::getOutputModel()->selectRow(
+        OutputParameter::getRowIndex( y1->getId() )
+    );
+    const OutputParameter sameY1 { *y1 };
+    QVERIFY( calc.updateOutputParameter( &sameY1 ) );
+
+    // Update the correlation with identical values
+    Correlation *correlation { Correlation::getAll().first() };
+    Correlation::getCorrelationModel()->selectRow(
+        Correlation::getRowIndex( correlation->getId() )
+    );
+    const Correlation sameCorrelation { *correlation };
+    QVERIFY( calc.updateCorrelation( &sameCorrelation ) );
+
+    // No transactions, no unsaved changes
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize );
+    QVERIFY( !unsaved( calc ) );
+    QCOMPARE( unsavedSpy.count(), 0 );
+
+    // Clearing an empty project is a no-op as well
+    calc.newProject();
+    QVERIFY( !unsaved( calc ) );
+    unsavedSpy.clear();
+    calc.userClearProject();
+    QCOMPARE( UndoStack::instance().getStackSize(), 0 );
+    QVERIFY( !unsaved( calc ) );
+    QCOMPARE( unsavedSpy.count(), 0 );
+}
+
+
+void tst_uncertaintycalculation::unsavedChanges_undoRedoBackToSavedState_isSaved(
+) {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl url { QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) ) };
+
+    UncertaintyCalculation calc {};
+    addSimpleProject( calc );
+    QVERIFY( calc.saveProject( url ) );
+    const int savedCursor { UndoStack::instance().getCursor() };
+    QSignalSpy unsavedSpy {
+        &calc,
+        &UncertaintyCalculation::unsavedChangesChanged
+    };
+
+    // A real change results in unsaved changes
+    InputParameter *x1 { InputParameter::getByName( "X1" ) };
+    InputParameter::getInputModel()->selectRow(
+        InputParameter::getRowIndex( x1->getId() )
+    );
+    InputParameter changedX1 { *x1 };
+    changedX1.setNominalValue( 5. );
+    QVERIFY( calc.updateInputParameter( &changedX1 ) );
+    QVERIFY( unsaved( calc ) );
+    QCOMPARE( unsavedSpy.count(), 1 );
+
+    // Undo back to the saved state
+    calc.undo();
+    QVERIFY( !unsaved( calc ) );
+    QCOMPARE( unsavedSpy.count(), 2 );
+
+    // Redo the change
+    calc.redo();
+    QVERIFY( unsaved( calc ) );
+    QCOMPARE( unsavedSpy.count(), 3 );
+
+    // Undo past the saved state
+    calc.undo();
+    calc.undo();
+    QVERIFY( unsaved( calc ) );
+
+    // Restore the saved state via the undo history
+    calc.restoreState( savedCursor );
+    QVERIFY( !unsaved( calc ) );
+
+    // Restore the empty project state, and back
+    calc.restoreState( 0 );
+    QVERIFY( unsaved( calc ) );
+    calc.restoreState( savedCursor );
+    QVERIFY( !unsaved( calc ) );
+}
+
+
+void tst_uncertaintycalculation::
+    unsavedChanges_savedStateInTruncatedRedoHistory_isUnreachable(
+) {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl url { QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) ) };
+
+    UncertaintyCalculation calc {};
+    addSimpleProject( calc );
+    QVERIFY( calc.saveProject( url ) );
+
+    // Undo below the saved state and make a new change: the saved state is
+    // removed from the redo history
+    calc.undo();
+    InputParameter x3 {};
+    x3.setName( "X3" );
+    calc.addInputParameter( &x3 );
+    QVERIFY( unsaved( calc ) );
+
+    for (
+        int index { 0 };
+        index <= UndoStack::instance().getStackSize();
+        ++index
+    ) {
+        calc.restoreState( index );
+        QVERIFY( unsaved( calc ) );
+    }
+
+    // Saving again results in a new saved state
+    QVERIFY( calc.saveProject() );
+    QVERIFY( !unsaved( calc ) );
+}
+
+
+void tst_uncertaintycalculation::unsavedChanges_newProject_isSaved() {
+    UncertaintyCalculation calc {};
+    addSimpleProject( calc );
+    QVERIFY( unsaved( calc ) );
+
+    // A new project has nothing to save (like the empty project on startup)
+    calc.newProject();
+    QVERIFY( !unsaved( calc ) );
+
+    InputParameter x1 {};
+    x1.setName( "X1" );
+    calc.addInputParameter( &x1 );
+    QVERIFY( unsaved( calc ) );
+
+    // Undoing all changes of the new project results in the new project state
+    calc.undo();
+    QVERIFY( !unsaved( calc ) );
+}
+
+
+void tst_uncertaintycalculation::unsavedChanges_loadProject_isSaved() {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl url { QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) ) };
+
+    UncertaintyCalculation calc {};
+    addSimpleProject( calc );
+    QVERIFY( calc.saveProject( url ) );
+
+    // Make an unsaved change and (re)load the project
+    calc.userClearProject();
+    QVERIFY( unsaved( calc ) );
+    QVERIFY( calc.loadProject( url ) );
+    QVERIFY( !unsaved( calc ) );
+    QCOMPARE( InputParameter::getAll().size(), 2 );
+
+    // A change and its undo after loading
+    calc.userClearProject();
+    QVERIFY( unsaved( calc ) );
+    calc.undo();
+    QVERIFY( !unsaved( calc ) );
+}
+
+
+void tst_uncertaintycalculation::
+    unsavedChanges_projectFileEditedOutsideApp_isIgnored(
+) {
+    // The unsaved changes state only follows the undo system; edits of the
+    // project file outside of the application are not taken into account
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QString path { tempDir.filePath( "project.sig" ) };
+
+    UncertaintyCalculation calc {};
+    addSimpleProject( calc );
+    QVERIFY( calc.saveProject( QUrl::fromLocalFile( path ) ) );
+    QVERIFY( !unsaved( calc ) );
+
+    // Overwrite the project file with an empty project
+    QFile file { path };
+    QVERIFY( file.open( QIODevice::WriteOnly | QIODevice::Truncate ) );
+    file.write( "{}" );
+    file.close();
+
+    QVERIFY( !unsaved( calc ) );
+
+    // A change and its undo returns to the state saved by the application
+    calc.userClearProject();
+    QVERIFY( unsaved( calc ) );
+    calc.undo();
+    QVERIFY( !unsaved( calc ) );
+
+    // The externally edited file is left untouched (no Auto Save)
+    QVERIFY( file.open( QIODevice::ReadOnly ) );
+    QCOMPARE( file.readAll(), QByteArray( "{}" ) );
+}
+
+
+void tst_uncertaintycalculation::unsavedChanges_monteCarlo_followsUndoSystem(
+) {
+    QTemporaryDir tempDir {};
+    QVERIFY( tempDir.isValid() );
+    const QUrl url { QUrl::fromLocalFile( tempDir.filePath( "project.sig" ) ) };
+
+    UncertaintyCalculation calc {};
+    addSimpleProject( calc );
+    QVERIFY( calc.saveProject( url ) );
+    const int stackSize { UndoStack::instance().getStackSize() };
+
+    // addOutputParameter() auto-selects the new row
+    QSignalSpy finishedSpy {
+        &calc,
+        &UncertaintyCalculation::monteCarloFinished
+    };
+    calc.runMonteCarlo();
+    QVERIFY( finishedSpy.wait( 30000 ) );
+    QVERIFY( OutputParameter::getByName( "Y1" )->getMonteCarloValid() );
+
+    // The Monte Carlo results are a transaction and an unsaved change
+    QCOMPARE( UndoStack::instance().getStackSize(), stackSize + 1 );
+    QVERIFY( unsaved( calc ) );
+
+    calc.undo();
+    QVERIFY( !unsaved( calc ) );
+}
 
 void tst_uncertaintycalculation::userClearProject_clearsEverythingAndIsUndoable(
 ) {

@@ -35,7 +35,7 @@ UncertaintyCalculation::UncertaintyCalculation(
         mUndoHistoryModel { UndoHistoryModel( this ) },
         mUnits { sDefaultUnits },
         mProjectFilePath {},
-        mUnsavedChanges {},
+        mUnsavedChanges { !UndoStack::instance().isClean() },
         mDiffUtil {},
         mAppSettings { appSettings }
 {
@@ -338,13 +338,16 @@ bool UncertaintyCalculation::loadProject( const QUrl &url ) {
             QString( sLoadFailedString ).arg( path ) + " " + error;
         return false;
     }
-    clearProject( false );  // Currently open project should not be saved
+    // Clearing and loading don't create transactions, so the currently open
+    // project isn't (Auto) Saved
+    clearProject();
     projectFromJson( project );
     setProjectFilePath( url );
-    setUnsavedChanges( false );
 
-    // Remove transactions from the previous project
+    // Remove transactions from the previous project. The loaded project is
+    // the clean (saved) state.
     UndoStack::instance().clear();
+    updateUnsavedChanges();
 
     return true;
 }
@@ -400,7 +403,9 @@ bool UncertaintyCalculation::saveProject( const QUrl &url ) {
         return false;
     }
     setProjectFilePath( url );
-    setUnsavedChanges( false );
+    // The current state of the undo stack is the saved state
+    UndoStack::instance().setClean();
+    updateUnsavedChanges();
     return true;
 }
 
@@ -502,8 +507,6 @@ void UncertaintyCalculation::addCorrelation( const Correlation *correlation ) {
                 " and " +
                 addedCorrelation->getInputParameterNameB()
             );
-
-            setUnsavedChanges( true );
         }
     }
 }
@@ -525,8 +528,6 @@ void UncertaintyCalculation::addInputParameter(
             diffUtil.commitChanges(
                 "Add input parameter " + addedParameter->getName()
             );
-
-            setUnsavedChanges( true );
         }
     }
 }
@@ -551,8 +552,6 @@ void UncertaintyCalculation::addOutputParameter(
             );
 
             connectToOutputParameter( addedParameter );
-
-            setUnsavedChanges( true );
         }
     }
 }
@@ -572,8 +571,10 @@ void UncertaintyCalculation::newProject() {
     resetProjectFilePath();
     clearProject();
 
-    // Remove transactions from the previous project
+    // Remove transactions from the previous project. The new (empty) project
+    // is the clean state: there is nothing to save until it is changed.
     UndoStack::instance().clear();
+    updateUnsavedChanges();
 }
 
 
@@ -603,8 +604,6 @@ void UncertaintyCalculation::removeCorrelation() {
                 diffUtil.commitChanges(
                     "Delete correlation between " + nameA + " and " + nameB
                 );
-
-                setUnsavedChanges( true );
             }
         }
     }
@@ -639,8 +638,6 @@ void UncertaintyCalculation::removeInputParameter() {
     recompileExpressions( diffUtil, false, id );
 
     diffUtil.commitChanges( "Delete input parameter " + name );
-
-    setUnsavedChanges( true );
 }
 
 
@@ -658,8 +655,6 @@ void UncertaintyCalculation::removeOutputParameter() {
                 diffUtil.commitChanges( "Delete output parameter " + name );
 
                 emitAllResultsChanged();
-
-                setUnsavedChanges( true );
             }
         }
     }
@@ -744,8 +739,6 @@ bool UncertaintyCalculation::updateCorrelation(
             " and " +
             newCorrelation.getInputParameterNameB()
         );
-
-        setUnsavedChanges( true );
         return true;
     }
     return false;
@@ -790,8 +783,6 @@ bool UncertaintyCalculation::updateInputParameter(
         }
 
         diffUtil.commitChanges( "Update input parameter " + originalName );
-
-        setUnsavedChanges( true );
         return true;
     }
     return false;
@@ -833,8 +824,6 @@ bool UncertaintyCalculation::updateOutputParameter(
         emitAllResultsChanged();
 
         diffUtil.commitChanges( "Update output parameter " + originalName );
-
-        setUnsavedChanges( true );
         return true;
     }
     return false;
@@ -868,8 +857,6 @@ void UncertaintyCalculation::userClearProject() {
     }
 
     diffUtil.commitChanges( "Clear project" );
-
-    setUnsavedChanges( true );
 }
 
 
@@ -923,13 +910,18 @@ void UncertaintyCalculation::onTransactionApplied() {
     // Notify the UI that the data of this object has changed
     emitAllResultsChanged();
     emit inputParameterChanged();
-
-    setUnsavedChanges( true );
 }
 
 
-void UncertaintyCalculation::unsavedChanges() {
-    setUnsavedChanges( true );
+void UncertaintyCalculation::onUndoCursorChanged() {
+    // Every data change (new transaction, undo, redo, restore state) moves the
+    // undo cursor: Auto Save when needed
+    updateUnsavedChanges( true );
+}
+
+
+void UncertaintyCalculation::onUndoCleanChanged() {
+    updateUnsavedChanges();
 }
 
 
@@ -1162,12 +1154,14 @@ int UncertaintyCalculation::getUndoCursor() const {
 }
 
 
-void UncertaintyCalculation::clearProject( bool unsavedChanges ) {
+void UncertaintyCalculation::clearProject() {
+    // Clears the models without creating a transaction. The caller is
+    // responsible for resetting the undo stack (and thereby the unsaved
+    // changes state).
     OutputParameter::clearModel();
     Correlation::clearModel();
     InputParameter::clearModel();
     emit inputParameterChanged();
-    setUnsavedChanges( unsavedChanges );
 }
 
 
@@ -1210,20 +1204,6 @@ void UncertaintyCalculation::connectToOutputParameter(
             &OutputParameter::lockedChanged,
             this,
             &UncertaintyCalculation::lockItemSelectionModels,
-            Qt::UniqueConnection
-        );
-        connect(
-            parameter,
-            &OutputParameter::monteCarloStarted,
-            this,
-            &UncertaintyCalculation::unsavedChanges,
-            Qt::UniqueConnection
-        );
-        connect(
-            parameter,
-            &OutputParameter::monteCarloFinished,
-            this,
-            &UncertaintyCalculation::unsavedChanges,
             Qt::UniqueConnection
         );
         connect(
@@ -1276,6 +1256,19 @@ void UncertaintyCalculation::createConnections() {
         &UndoStack::cursorChanged,
         this,
         &UncertaintyCalculation::undoCursorChanged
+    );
+    // The unsaved changes state follows the undo system
+    connect(
+        &UndoStack::instance(),
+        &UndoStack::cursorChanged,
+        this,
+        &UncertaintyCalculation::onUndoCursorChanged
+    );
+    connect(
+        &UndoStack::instance(),
+        &UndoStack::cleanChanged,
+        this,
+        &UncertaintyCalculation::onUndoCleanChanged
     );
 
     // Create connection to the application settings
@@ -1412,19 +1405,31 @@ void UncertaintyCalculation::setProjectFilePath( const QUrl &projectFilePath ) {
 }
 
 
-void UncertaintyCalculation::setUnsavedChanges( bool unsavedChanges ) {
+void UncertaintyCalculation::updateUnsavedChanges( bool autoSave ) {
+    // The unsaved changes state follows the undo system: the project has
+    // unsaved changes when the current undo state differs from the clean
+    // (saved/loaded/new) state. No-op edits don't create transactions and
+    // therefore don't result in unsaved changes. Undoing/redoing back to the
+    // saved state results in no unsaved changes. Note that the contents of
+    // the project file on disk (which may have been edited outside of Sigma)
+    // are deliberately not taken into account.
+    const bool unsavedChanges { !UndoStack::instance().isClean() };
     if (
+        autoSave &&
         unsavedChanges &&
         Settings::getAutoSaveProject() &&
         saveProject()
     ) {
-        // The changes are Auto Saved (saveProject() resets the unsaved
-        // changes). When saving isn't possible, e.g. for a project without a
-        // project file, the changes remain unsaved.
+        // The changes are Auto Saved (saveProject() marks the undo state as
+        // clean and updates the unsaved changes). When saving isn't possible,
+        // e.g. for a project without a project file, the changes remain
+        // unsaved.
         return;
     }
-    mUnsavedChanges = unsavedChanges;
-    emit unsavedChangesChanged();
+    if ( mUnsavedChanges != unsavedChanges ) {
+        mUnsavedChanges = unsavedChanges;
+        emit unsavedChangesChanged();
+    }
 }
 
 
