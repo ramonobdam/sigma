@@ -836,10 +836,10 @@ void tst_uncertaintycalculation::parseProjectJson_checksTheStructure_data() {
     // All fields are optional
     QTest::newRow( "empty object" ) << QByteArray( "{}" ) << true;
     QTest::newRow( "version only" )
-        << QByteArray( R"({ "Sigma version": "1.6.0" })" ) << true;
+        << QByteArray( R"({ "Sigma version": "1.6.1" })" ) << true;
     QTest::newRow( "all fields" )
         << QByteArray(
-               R"({ "Sigma version": "1.6.0", "inputParameters": [ {} ], )"
+               R"({ "Sigma version": "1.6.1", "inputParameters": [ {} ], )"
                R"("correlations": [], "outputParameters": [ {} ] })"
            )
         << true;
