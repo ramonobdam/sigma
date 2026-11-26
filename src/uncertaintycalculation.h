@@ -33,7 +33,7 @@ class UncertaintyCalculation : public QObject {
     Q_OBJECT
 
 public:
-    UncertaintyCalculation(
+    explicit UncertaintyCalculation(
         QObject *parent = nullptr,
         ApplicationSettings *appSettings = new ApplicationSettings()
     );
@@ -64,6 +64,7 @@ public:
     Q_INVOKABLE QString getNewOutputParameterName() const;
     Q_INVOKABLE QString getSelectedCorrelationReferences() const;
     Q_INVOKABLE QString getSelectedInputParameterReferences() const;
+    Q_INVOKABLE QString urlToFileName( const QUrl &url ) const;
     Q_INVOKABLE bool inputParameterIsConstant( const QString &name ) const;
     Q_INVOKABLE bool loadProject( const QUrl &url );
     Q_INVOKABLE bool saveCSV( const QUrl &url );
@@ -214,7 +215,8 @@ public slots:
     void lockItemSelectionModels();
     void onMonteCarloFinished();
     void onTransactionApplied();
-    void unsavedChanges();
+    void onUndoCleanChanged();
+    void onUndoCursorChanged();
 
 signals:
     void canUndoChanged();
@@ -258,7 +260,7 @@ private:
     int getHistogramHigherIndex() const;
     int getHistogramLowerIndex() const;
     int getUndoCursor() const;
-    void clearProject( bool unsavedChanges = true );
+    void clearProject();
     void connectToOutputParameter( const OutputParameter *parameter);
     void createConnections();
     void emitAllResultsChanged();
@@ -272,7 +274,7 @@ private:
     void resetDisplay();
     void resetProjectFilePath();
     void setProjectFilePath( const QUrl &projectFilePath );
-    void setUnsavedChanges(  bool unsavedChanges );
+    void updateUnsavedChanges( bool autoSave = false );
     void updateUnits();
 
     static constexpr QLatin1StringView sCorrelationsString {

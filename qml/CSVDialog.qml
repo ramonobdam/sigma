@@ -23,9 +23,7 @@ FileDialog {
     nameFilters: [ defaultSuffix + " (*." + defaultSuffix + ")" ]
     onAccepted: {
         if ( !calculation.saveCSV( selectedFile ) ) {
-            var urlObject = new URL( selectedFile )
-            let path = urlObject.pathname
-            fileName = path.substring( path.lastIndexOf( '/' ) + 1 )
+            fileName = calculation.urlToFileName( selectedFile )
             csvFailedDialog.show()
         }
     }
@@ -39,10 +37,10 @@ FileDialog {
         headerText: "The file " +
                     (
                         control.fileName.length > 0 ?
-                            "'" + control.fileName + "'" :
+                            "'" + control.fileName + "' " :
                             ""
                     ) +
-                    " could not be saved"
+                    "could not be saved"
         subText:
             "Please make sure the file is not locked and the disk is not full"
 

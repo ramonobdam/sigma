@@ -7,6 +7,7 @@
 
 #include <QLatin1StringView>
 #include <QString>
+#include <QUrl>
 
 // Namespace with string conversion functions and string constants
 namespace StringUtils {
@@ -14,6 +15,12 @@ namespace StringUtils {
     QString addQuotes( const QString &string );
     QString contributionToPercentageString( double contri, int decimals = 1 );
     void setupLocale();
+
+    // Path of a (file) URL for display, with the native separators of the
+    // platform (e.g. C:\dir\project.sig on Windows)
+    QString urlToLocalPath( const QUrl &url );
+    // File name of a (file) URL for display (e.g. project.sig)
+    QString urlToFileName( const QUrl &url );
 
     constexpr QLatin1StringView csvSeparator { "," };
     constexpr QLatin1StringView endl { "\n" };

@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 #include "stringutils.h"
+#include <QDir>
+#include <QFileInfo>
 #include <QLocale>
 #include <cmath>
 #ifdef Q_OS_WINDOWS
@@ -45,6 +47,24 @@ namespace StringUtils {
 #ifdef Q_OS_WINDOWS
         std::setlocale( LC_ALL, ".UTF-8" );
 #endif
+    }
+
+
+    QString urlToLocalPath( const QUrl &url ) {
+        // QUrl::toLocalFile() handles drive letters, network paths and encoded
+        // characters. Other URLs are shown as they are.
+        if ( url.isLocalFile() ) {
+            return QDir::toNativeSeparators( url.toLocalFile() );
+        }
+        return url.toDisplayString();
+    }
+
+
+    QString urlToFileName( const QUrl &url ) {
+        if ( url.isLocalFile() ) {
+            return QFileInfo( url.toLocalFile() ).fileName();
+        }
+        return url.fileName();
     }
 
 }

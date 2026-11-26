@@ -17,19 +17,23 @@ ApplicationWindow {
     property int titleBarHeight:
         Math.max( SafeArea.margins.top, Properties.minimumTitleBarHeight )
 
-    function saveProjectAs( closeWindowOnSuccess = false ) {
+    // The optional function afterSave (e.g. closing the window or opening a
+    // project) is only called when the project has been saved successfully
+    function saveProjectAs( afterSave = null ) {
         fileDialog.fileMode = FileDialog.SaveFile
-        fileDialog.closeWindowOnSuccess = closeWindowOnSuccess
+        fileDialog.afterSave = afterSave
         fileDialog.open()
     }
 
-    function saveProject( closeWindowOnSuccess = false) {
+    function saveProject( afterSave = null ) {
         let success = calculation.saveProject()
-        if ( success && closeWindowOnSuccess ) {
-            closeWindow()
+        if ( success && afterSave ) {
+            afterSave()
         }
         else if ( !success ) {
             projectFailed.save = true
+            projectFailed.fileURL = Properties.projectFilePath
+            projectFailed.afterSave = afterSave
             projectFailed.show()
         }
     }
@@ -42,6 +46,7 @@ ApplicationWindow {
         }
         else {
             fileDialog.fileMode = FileDialog.OpenFile
+            fileDialog.afterSave = null
             fileDialog.open()
         }
     }
@@ -195,7 +200,7 @@ ApplicationWindow {
         }
 
         // Open 'discard unsaved changes?' dialog if needed
-        if ( Properties.unsavedChanges && !discardUnsavedChanges.closeWindow ) {
+        if ( Properties.unsavedChanges && !discardUnsavedChanges.discardChanges ) {
             close.accepted = false
             discardUnsavedChanges.mode = DiscardUnsavedChanges.Close
             discardUnsavedChanges.show()
