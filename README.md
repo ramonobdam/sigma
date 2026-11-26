@@ -237,7 +237,7 @@ A *Sigma* project JSON object contains the *Sigma* version and three arrays:
 
 ```json
 {
-    "Sigma version":    "1.6.0",
+    "Sigma version":    "1.6.1",
     "inputParameters":  [ ... ],
     "correlations":     [ ... ],
     "outputParameters": [ ... ]
